@@ -303,10 +303,8 @@ export namespace Live2DCubismFramework {
      * 後置き++演算子
      */
     public increment(): iterator<T> {
-      const iteold = new iterator<T>(this._vector, this._index++);
-      this._vector = iteold._vector;
-      this._index = iteold._index;
-      return this;
+      const iteold = new iterator<T>(this._vector, this._index++); // 古い値を保存
+      return iteold;
     }
 
     /**
@@ -314,9 +312,7 @@ export namespace Live2DCubismFramework {
      */
     public decrement(): iterator<T> {
       const iteold = new iterator<T>(this._vector, this._index--); // 古い値を保存
-      this._vector = iteold._vector;
-      this._index = iteold._index;
-      return this;
+      return iteold;
     }
 
     /**

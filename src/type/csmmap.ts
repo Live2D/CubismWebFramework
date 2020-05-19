@@ -272,9 +272,7 @@ export namespace Live2DCubismFramework {
      */
     public increment(): iterator<_KeyT, _ValT> {
       const iteold = new iterator<_KeyT, _ValT>(this._map, this._index++); // 古い値を保存
-      this._map = iteold._map;
-      this._index = iteold._index;
-      return this;
+      return iteold;
     }
 
     /**
