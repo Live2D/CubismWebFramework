@@ -31,6 +31,8 @@ export namespace Live2DCubismFramework {
       this._stateWeight = 0.0;
       this._lastEventCheckSeconds = 0.0;
       this._motionQueueEntryHandle = this;
+      this._fadeOutSeconds = 0.0;
+      this._isTriggeredFadeOut = false;
     }
 
     /**
@@ -43,12 +45,22 @@ export namespace Live2DCubismFramework {
     }
 
     /**
+     * フェードアウト時間と開始判定の設定
+     * @param fadeOutSeconds フェードアウトにかかる時間[秒]
+     */
+    public setFadeOut(fadeOutSeconds: number): void {
+      this._fadeOutSeconds = fadeOutSeconds;
+      this._isTriggeredFadeOut = true;
+    }
+
+    /**
      * フェードアウトの開始
      * @param fadeOutSeconds フェードアウトにかかる時間[秒]
      * @param userTimeSeconds デルタ時間の積算値[秒]
      */
-    public startFadeout(fadeoutSeconds: number, userTimeSeconds: number): void {
-      const newEndTimeSeconds: number = userTimeSeconds + fadeoutSeconds;
+    public startFadeOut(fadeOutSeconds: number, userTimeSeconds: number): void {
+      const newEndTimeSeconds: number = userTimeSeconds + fadeOutSeconds;
+      this._isTriggeredFadeOut = true;
 
       if (
         this._endTimeSeconds < 0.0 ||
@@ -189,16 +201,32 @@ export namespace Live2DCubismFramework {
      *
      * @return 最後にイベントの発火をチェックした時間[秒]
      */
-    public getLastCheckEventTime(): number {
+    public getLastCheckEventSeconds(): number {
       return this._lastEventCheckSeconds;
     }
 
     /**
      * 最後にイベントをチェックした時間を設定
-     * @param checkTime 最後にイベントをチェックした時間[秒]
+     * @param checkSeconds 最後にイベントをチェックした時間[秒]
      */
-    public setLastCheckEventTime(checkTime: number): void {
-      this._lastEventCheckSeconds = checkTime;
+    public setLastCheckEventSeconds(checkSeconds: number): void {
+      this._lastEventCheckSeconds = checkSeconds;
+    }
+
+    /**
+     * フェードアウト開始判定の取得
+     * @return フェードアウト開始するかどうか
+     */
+    public isTriggeredFadeOut(): boolean {
+      return this._isTriggeredFadeOut && this._endTimeSeconds < 0.0;
+    }
+
+    /**
+     * フェードアウト時間の取得
+     * @return フェードアウト時間[秒]
+     */
+    public getFadeOutSeconds(): number {
+      return this._fadeOutSeconds;
     }
 
     _autoDelete: boolean; // 自動削除
@@ -213,6 +241,8 @@ export namespace Live2DCubismFramework {
     _stateTimeSeconds: number; // 時刻の状態[秒]
     _stateWeight: number; // 重みの状態
     _lastEventCheckSeconds: number; // 最終のMotion側のチェックした時間
+    private _fadeOutSeconds: number; // フェードアウト時間[秒]
+    private _isTriggeredFadeOut: boolean; // フェードアウト開始フラグ
 
     _motionQueueEntryHandle: CubismMotionQueueEntryHandle; // インスタンスごとに一意の値を持つ識別番号
   }

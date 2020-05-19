@@ -81,10 +81,7 @@ export namespace Live2DCubismFramework {
           continue;
         }
 
-        motionQueueEntry.startFadeout(
-          motionQueueEntry._motion.getFadeOutTime(),
-          userTimeSeconds
-        ); // フェードアウトを開始し終了する
+        motionQueueEntry.setFadeOut(motionQueueEntry._motion.getFadeOutTime()); // フェードアウト設定
       }
 
       motionQueueEntry = new CubismMotionQueueEntry(); // 終了時に破棄する
@@ -290,7 +287,7 @@ export namespace Live2DCubismFramework {
 
         // ------ ユーザトリガーイベントを検査する ----
         const firedList: csmVector<csmString> = motion.getFiredEvent(
-          motionQueueEntry.getLastCheckEventTime() -
+          motionQueueEntry.getLastCheckEventSeconds() -
             motionQueueEntry.getStartTime(),
           userTimeSeconds - motionQueueEntry.getStartTime()
         );
@@ -299,7 +296,7 @@ export namespace Live2DCubismFramework {
           this._eventCallBack(this, firedList.at(i), this._eventCustomData);
         }
 
-        motionQueueEntry.setLastCheckEventTime(userTimeSeconds);
+        motionQueueEntry.setLastCheckEventSeconds(userTimeSeconds);
 
         // ------ 終了済みの処理があれば削除する ------
         if (motionQueueEntry.isFinished()) {
@@ -308,6 +305,12 @@ export namespace Live2DCubismFramework {
           motionQueueEntry = null;
           ite = this._motions.erase(ite); // 削除
         } else {
+          if (motionQueueEntry.isTriggeredFadeOut()) {
+            motionQueueEntry.startFadeOut(
+              motionQueueEntry.getFadeOutSeconds(),
+              userTimeSeconds
+            );
+          }
           ite.preIncrement();
         }
       }
