@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 * Fix implementation of `iterator#increment` in `csmmap` and `csmvector`.
 * Fix delay in starting fade-out for expressions.
+* Fix Physics input reflect flag on evaluate.
 * Fix `Int` to `Float` when getting `PhysicsSettings.Vertices.Radius` in `physics3.json` parsing.
    * **[INFO]** This fix may change the behavior of the physics operations.
      The behavior changes if the value of `PhysicsSettings.Vertices.Radius` in `physics3.json` is less than `1.0`.
