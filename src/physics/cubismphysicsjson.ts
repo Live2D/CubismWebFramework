@@ -609,7 +609,7 @@ export namespace Live2DCubismFramework {
         .getValueByString(Vertices)
         .getValueByIndex(vertexIndex)
         .getValueByString(Radius)
-        .toInt();
+        .toFloat();
     }
 
     /**
