@@ -10,7 +10,9 @@
  *         デフォルト値の仕様は以下のマニュアルに基づく<br>
  *         https://docs.live2d.com/cubism-editor-manual/standard-parametor-list/
  */
-export const CubismDefaultParameterId = Object.freeze({
+export const CubismDefaultParameterId = Object.freeze<{
+  [key: string]: string;
+}>({
   // パーツID
   HitAreaPrefix: 'HitArea',
   HitAreaHead: 'Head',
