@@ -54,7 +54,7 @@ let s_cubismIdManager: CubismIdManager = null;
 /**
  * Framework内で使う定数の宣言
  */
-export const Constant = Object.freeze<{ [key: string]: number }>({
+export const Constant = Object.freeze<Record<string, number>>({
   vertexOffset: 0, // メッシュ頂点のオフセット値
   vertexStep: 2 // メッシュ頂点のステップ値
 });
