@@ -6,20 +6,17 @@
  */
 
 import {
-  Live2DCubismFramework as cubismframework,
-  LogLevel
-} from '../live2dcubismframework';
-import {
   CSM_LOG_LEVEL,
-  CSM_LOG_LEVEL_VERBOSE,
   CSM_LOG_LEVEL_DEBUG,
+  CSM_LOG_LEVEL_ERROR,
   CSM_LOG_LEVEL_INFO,
-  CSM_LOG_LEVEL_WARNING,
-  CSM_LOG_LEVEL_ERROR
+  CSM_LOG_LEVEL_VERBOSE,
+  CSM_LOG_LEVEL_WARNING
 } from '../cubismframeworkconfig';
+import { CubismFramework, LogLevel } from '../live2dcubismframework';
 
 export const CubismLogPrint = (level: LogLevel, fmt: string, args: any[]) => {
-  Live2DCubismFramework.CubismDebug.print(level, '[CSM]' + fmt, args);
+  CubismDebug.print(level, '[CSM]' + fmt, args);
 };
 
 export const CubismLogPrintIn = (level: LogLevel, fmt: string, args: any[]) => {
@@ -98,69 +95,68 @@ if (CSM_LOG_LEVEL <= CSM_LOG_LEVEL_VERBOSE) {
   };
 }
 
-//------------ LIVE2D NAMESPACE ------------
-export namespace Live2DCubismFramework {
+/**
+ * デバッグ用のユーティリティクラス。
+ * ログの出力、バイトのダンプなど
+ */
+export class CubismDebug {
   /**
-   * デバッグ用のユーティリティクラス。
-   * ログの出力、バイトのダンプなど
+   * ログを出力する。第一引数にログレベルを設定する。
+   * CubismFramework.initialize()時にオプションで設定されたログ出力レベルを下回る場合はログに出さない。
+   *
+   * @param logLevel ログレベルの設定
+   * @param format 書式付き文字列
+   * @param args 可変長引数
    */
-  export class CubismDebug {
-    /**
-     * ログを出力する。第一引数にログレベルを設定する。
-     * CubismFramework.initialize()時にオプションで設定されたログ出力レベルを下回る場合はログに出さない。
-     *
-     * @param logLevel ログレベルの設定
-     * @param format 書式付き文字列
-     * @param args 可変長引数
-     */
-    public static print(
-      logLevel: LogLevel,
-      format: string,
-      args?: any[]
-    ): void {
-      // オプションで設定されたログ出力レベルを下回る場合はログに出さない
-      if (logLevel < cubismframework.CubismFramework.getLoggingLevel()) {
-        return;
-      }
-
-      const logPrint: Live2DCubismCore.csmLogFunction =
-        cubismframework.CubismFramework.coreLogFunction;
-
-      if (!logPrint) return;
-
-      const buffer: string = format.replace(/\{(\d+)\}/g, (m, k) => {
-        return args[k];
-      });
-      logPrint(buffer);
+  public static print(logLevel: LogLevel, format: string, args?: any[]): void {
+    // オプションで設定されたログ出力レベルを下回る場合はログに出さない
+    if (logLevel < CubismFramework.getLoggingLevel()) {
+      return;
     }
 
-    /**
-     * データから指定した長さだけダンプ出力する。
-     * CubismFramework.initialize()時にオプションで設定されたログ出力レベルを下回る場合はログに出さない。
-     *
-     * @param logLevel ログレベルの設定
-     * @param data ダンプするデータ
-     * @param length ダンプする長さ
-     */
-    public static dumpBytes(
-      logLevel: LogLevel,
-      data: Uint8Array,
-      length: number
-    ): void {
-      for (let i = 0; i < length; i++) {
-        if (i % 16 == 0 && i > 0) this.print(logLevel, '\n');
-        else if (i % 8 == 0 && i > 0) this.print(logLevel, '  ');
-        this.print(logLevel, '{0} ', [data[i] & 0xff]);
-      }
+    const logPrint: Live2DCubismCore.csmLogFunction =
+      CubismFramework.coreLogFunction;
 
-      this.print(logLevel, '\n');
-    }
+    if (!logPrint) return;
 
-    /**
-     * private コンストラクタ
-     */
-    private constructor() {}
+    const buffer: string = format.replace(/\{(\d+)\}/g, (m, k) => {
+      return args[k];
+    });
+    logPrint(buffer);
   }
+
+  /**
+   * データから指定した長さだけダンプ出力する。
+   * CubismFramework.initialize()時にオプションで設定されたログ出力レベルを下回る場合はログに出さない。
+   *
+   * @param logLevel ログレベルの設定
+   * @param data ダンプするデータ
+   * @param length ダンプする長さ
+   */
+  public static dumpBytes(
+    logLevel: LogLevel,
+    data: Uint8Array,
+    length: number
+  ): void {
+    for (let i = 0; i < length; i++) {
+      if (i % 16 == 0 && i > 0) this.print(logLevel, '\n');
+      else if (i % 8 == 0 && i > 0) this.print(logLevel, '  ');
+      this.print(logLevel, '{0} ', [data[i] & 0xff]);
+    }
+
+    this.print(logLevel, '\n');
+  }
+
+  /**
+   * private コンストラクタ
+   */
+  private constructor() {}
 }
 
-//------------ LIVE2D NAMESPACE ------------
+// Namespace definition for compatibility.
+import * as $ from './cubismdebug';
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Live2DCubismFramework {
+  export const CubismDebug = $.CubismDebug;
+  export type CubismDebug = $.CubismDebug;
+}

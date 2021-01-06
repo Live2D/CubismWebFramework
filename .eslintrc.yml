@@ -23,7 +23,6 @@ rules:
     - error
     - allow:
       - constructors
-  '@typescript-eslint/no-namespace': warn
   'no-fallthrough': warn
   '@typescript-eslint/unbound-method': off
   'no-inner-declarations': off

@@ -10,56 +10,109 @@
  *         デフォルト値の仕様は以下のマニュアルに基づく<br>
  *         https://docs.live2d.com/cubism-editor-manual/standard-parametor-list/
  */
-export namespace Live2DCubismFramework {
+export const CubismDefaultParameterId = Object.freeze<Record<string, string>>({
   // パーツID
-  export const HitAreaPrefix = 'HitArea';
-  export const HitAreaHead = 'Head';
-  export const HitAreaBody = 'Body';
-  export const PartsIdCore = 'Parts01Core';
-  export const PartsArmPrefix = 'Parts01Arm_';
-  export const PartsArmLPrefix = 'Parts01ArmL_';
-  export const PartsArmRPrefix = 'Parts01ArmR_';
-
+  HitAreaPrefix: 'HitArea',
+  HitAreaHead: 'Head',
+  HitAreaBody: 'Body',
+  PartsIdCore: 'Parts01Core',
+  PartsArmPrefix: 'Parts01Arm_',
+  PartsArmLPrefix: 'Parts01ArmL_',
+  PartsArmRPrefix: 'Parts01ArmR_',
   // パラメータID
-  export const ParamAngleX = 'ParamAngleX';
-  export const ParamAngleY = 'ParamAngleY';
-  export const ParamAngleZ = 'ParamAngleZ';
-  export const ParamEyeLOpen = 'ParamEyeLOpen';
-  export const ParamEyeLSmile = 'ParamEyeLSmile';
-  export const ParamEyeROpen = 'ParamEyeROpen';
-  export const ParamEyeRSmile = 'ParamEyeRSmile';
-  export const ParamEyeBallX = 'ParamEyeBallX';
-  export const ParamEyeBallY = 'ParamEyeBallY';
-  export const ParamEyeBallForm = 'ParamEyeBallForm';
-  export const ParamBrowLY = 'ParamBrowLY';
-  export const ParamBrowRY = 'ParamBrowRY';
-  export const ParamBrowLX = 'ParamBrowLX';
-  export const ParamBrowRX = 'ParamBrowRX';
-  export const ParamBrowLAngle = 'ParamBrowLAngle';
-  export const ParamBrowRAngle = 'ParamBrowRAngle';
-  export const ParamBrowLForm = 'ParamBrowLForm';
-  export const ParamBrowRForm = 'ParamBrowRForm';
-  export const ParamMouthForm = 'ParamMouthForm';
-  export const ParamMouthOpenY = 'ParamMouthOpenY';
-  export const ParamCheek = 'ParamCheek';
-  export const ParamBodyAngleX = 'ParamBodyAngleX';
-  export const ParamBodyAngleY = 'ParamBodyAngleY';
-  export const ParamBodyAngleZ = 'ParamBodyAngleZ';
-  export const ParamBreath = 'ParamBreath';
-  export const ParamArmLA = 'ParamArmLA';
-  export const ParamArmRA = 'ParamArmRA';
-  export const ParamArmLB = 'ParamArmLB';
-  export const ParamArmRB = 'ParamArmRB';
-  export const ParamHandL = 'ParamHandL';
-  export const ParamHandR = 'ParamHandR';
-  export const ParamHairFront = 'ParamHairFront';
-  export const ParamHairSide = 'ParamHairSide';
-  export const ParamHairBack = 'ParamHairBack';
-  export const ParamHairFluffy = 'ParamHairFluffy';
-  export const ParamShoulderY = 'ParamShoulderY';
-  export const ParamBustX = 'ParamBustX';
-  export const ParamBustY = 'ParamBustY';
-  export const ParamBaseX = 'ParamBaseX';
-  export const ParamBaseY = 'ParamBaseY';
-  export const ParamNONE = 'NONE:';
+  ParamAngleX: 'ParamAngleX',
+  ParamAngleY: 'ParamAngleY',
+  ParamAngleZ: 'ParamAngleZ',
+  ParamEyeLOpen: 'ParamEyeLOpen',
+  ParamEyeLSmile: 'ParamEyeLSmile',
+  ParamEyeROpen: 'ParamEyeROpen',
+  ParamEyeRSmile: 'ParamEyeRSmile',
+  ParamEyeBallX: 'ParamEyeBallX',
+  ParamEyeBallY: 'ParamEyeBallY',
+  ParamEyeBallForm: 'ParamEyeBallForm',
+  ParamBrowLY: 'ParamBrowLY',
+  ParamBrowRY: 'ParamBrowRY',
+  ParamBrowLX: 'ParamBrowLX',
+  ParamBrowRX: 'ParamBrowRX',
+  ParamBrowLAngle: 'ParamBrowLAngle',
+  ParamBrowRAngle: 'ParamBrowRAngle',
+  ParamBrowLForm: 'ParamBrowLForm',
+  ParamBrowRForm: 'ParamBrowRForm',
+  ParamMouthForm: 'ParamMouthForm',
+  ParamMouthOpenY: 'ParamMouthOpenY',
+  ParamCheek: 'ParamCheek',
+  ParamBodyAngleX: 'ParamBodyAngleX',
+  ParamBodyAngleY: 'ParamBodyAngleY',
+  ParamBodyAngleZ: 'ParamBodyAngleZ',
+  ParamBreath: 'ParamBreath',
+  ParamArmLA: 'ParamArmLA',
+  ParamArmRA: 'ParamArmRA',
+  ParamArmLB: 'ParamArmLB',
+  ParamArmRB: 'ParamArmRB',
+  ParamHandL: 'ParamHandL',
+  ParamHandR: 'ParamHandR',
+  ParamHairFront: 'ParamHairFront',
+  ParamHairSide: 'ParamHairSide',
+  ParamHairBack: 'ParamHairBack',
+  ParamHairFluffy: 'ParamHairFluffy',
+  ParamShoulderY: 'ParamShoulderY',
+  ParamBustX: 'ParamBustX',
+  ParamBustY: 'ParamBustY',
+  ParamBaseX: 'ParamBaseX',
+  ParamBaseY: 'ParamBaseY',
+  ParamNONE: 'NONE:'
+});
+
+// Namespace definition for compatibility.
+import * as $ from './cubismdefaultparameterid';
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Live2DCubismFramework {
+  export const HitAreaBody = $.CubismDefaultParameterId.HitAreaBody;
+  export const HitAreaHead = $.CubismDefaultParameterId.HitAreaHead;
+  export const HitAreaPrefix = $.CubismDefaultParameterId.HitAreaPrefix;
+  export const ParamAngleX = $.CubismDefaultParameterId.ParamAngleX;
+  export const ParamAngleY = $.CubismDefaultParameterId.ParamAngleY;
+  export const ParamAngleZ = $.CubismDefaultParameterId.ParamAngleZ;
+  export const ParamArmLA = $.CubismDefaultParameterId.ParamArmLA;
+  export const ParamArmLB = $.CubismDefaultParameterId.ParamArmLB;
+  export const ParamArmRA = $.CubismDefaultParameterId.ParamArmRA;
+  export const ParamArmRB = $.CubismDefaultParameterId.ParamArmRB;
+  export const ParamBaseX = $.CubismDefaultParameterId.ParamBaseX;
+  export const ParamBaseY = $.CubismDefaultParameterId.ParamBaseY;
+  export const ParamBodyAngleX = $.CubismDefaultParameterId.ParamBodyAngleX;
+  export const ParamBodyAngleY = $.CubismDefaultParameterId.ParamBodyAngleY;
+  export const ParamBodyAngleZ = $.CubismDefaultParameterId.ParamBodyAngleZ;
+  export const ParamBreath = $.CubismDefaultParameterId.ParamBreath;
+  export const ParamBrowLAngle = $.CubismDefaultParameterId.ParamBrowLAngle;
+  export const ParamBrowLForm = $.CubismDefaultParameterId.ParamBrowLForm;
+  export const ParamBrowLX = $.CubismDefaultParameterId.ParamBrowLX;
+  export const ParamBrowLY = $.CubismDefaultParameterId.ParamBrowLY;
+  export const ParamBrowRAngle = $.CubismDefaultParameterId.ParamBrowRAngle;
+  export const ParamBrowRForm = $.CubismDefaultParameterId.ParamBrowRForm;
+  export const ParamBrowRX = $.CubismDefaultParameterId.ParamBrowRX;
+  export const ParamBrowRY = $.CubismDefaultParameterId.ParamBrowRY;
+  export const ParamBustX = $.CubismDefaultParameterId.ParamBustX;
+  export const ParamBustY = $.CubismDefaultParameterId.ParamBustY;
+  export const ParamCheek = $.CubismDefaultParameterId.ParamCheek;
+  export const ParamEyeBallForm = $.CubismDefaultParameterId.ParamEyeBallForm;
+  export const ParamEyeBallX = $.CubismDefaultParameterId.ParamEyeBallX;
+  export const ParamEyeBallY = $.CubismDefaultParameterId.ParamEyeBallY;
+  export const ParamEyeLOpen = $.CubismDefaultParameterId.ParamEyeLOpen;
+  export const ParamEyeLSmile = $.CubismDefaultParameterId.ParamEyeLSmile;
+  export const ParamEyeROpen = $.CubismDefaultParameterId.ParamEyeROpen;
+  export const ParamEyeRSmile = $.CubismDefaultParameterId.ParamEyeRSmile;
+  export const ParamHairBack = $.CubismDefaultParameterId.ParamHairBack;
+  export const ParamHairFluffy = $.CubismDefaultParameterId.ParamHairFluffy;
+  export const ParamHairFront = $.CubismDefaultParameterId.ParamHairFront;
+  export const ParamHairSide = $.CubismDefaultParameterId.ParamHairSide;
+  export const ParamHandL = $.CubismDefaultParameterId.ParamHandL;
+  export const ParamHandR = $.CubismDefaultParameterId.ParamHandR;
+  export const ParamMouthForm = $.CubismDefaultParameterId.ParamMouthForm;
+  export const ParamMouthOpenY = $.CubismDefaultParameterId.ParamMouthOpenY;
+  export const ParamNONE = $.CubismDefaultParameterId.ParamNONE;
+  export const ParamShoulderY = $.CubismDefaultParameterId.ParamShoulderY;
+  export const PartsArmLPrefix = $.CubismDefaultParameterId.PartsArmLPrefix;
+  export const PartsArmPrefix = $.CubismDefaultParameterId.PartsArmPrefix;
+  export const PartsArmRPrefix = $.CubismDefaultParameterId.PartsArmRPrefix;
+  export const PartsIdCore = $.CubismDefaultParameterId.PartsIdCore;
 }

@@ -3,8 +3,8 @@
   "scripts": {
     "build": "tsc",
     "test": "tsc --noEmit",
-    "lint": "eslint src -f codeframe --ext .ts",
-    "lint:fix": "eslint src -f codeframe --ext .ts --fix",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
     "clean": "rimraf dist"
   },
   "devDependencies": {

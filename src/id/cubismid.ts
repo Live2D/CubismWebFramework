@@ -5,69 +5,75 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { Live2DCubismFramework as csmstring } from '../type/csmstring';
-import csmString = csmstring.csmString;
+import { csmString } from '../type/csmstring';
 
-export namespace Live2DCubismFramework {
+/**
+ * パラメータ名・パーツ名・Drawable名を保持
+ *
+ * パラメータ名・パーツ名・Drawable名を保持するクラス。
+ */
+export class CubismId {
   /**
-   * パラメータ名・パーツ名・Drawable名を保持
-   *
-   * パラメータ名・パーツ名・Drawable名を保持するクラス。
+   * ID名を取得する
    */
-  export class CubismId {
-    /**
-     * ID名を取得する
-     */
-    public getString(): csmString {
-      return this._id;
-    }
-
-    /**
-     * コンストラクタ
-     */
-    public constructor(id: string | csmString) {
-      if (typeof id === 'string') {
-        this._id = new csmString(id);
-        return;
-      }
-
-      this._id = id;
-    }
-
-    /**
-     * idを比較
-     * @param c 比較するid
-     * @return 同じならばtrue,異なっていればfalseを返す
-     */
-    public isEqual(c: string | csmString | CubismId): boolean {
-      if (typeof c === 'string') {
-        return this._id.isEqual(c);
-      } else if (c instanceof csmString) {
-        return this._id.isEqual(c.s);
-      } else if (c instanceof CubismId) {
-        return this._id.isEqual(c._id.s);
-      }
-      return false;
-    }
-
-    /**
-     * idを比較
-     * @param c 比較するid
-     * @return 同じならばtrue,異なっていればfalseを返す
-     */
-    public isNotEqual(c: string | csmString | CubismId): boolean {
-      if (typeof c == 'string') {
-        return !this._id.isEqual(c);
-      } else if (c instanceof csmString) {
-        return !this._id.isEqual(c.s);
-      } else if (c instanceof CubismId) {
-        return !this._id.isEqual(c._id.s);
-      }
-      return false;
-    }
-
-    private _id: csmString; // ID名
+  public getString(): csmString {
+    return this._id;
   }
 
-  export declare type CubismIdHandle = CubismId;
+  /**
+   * コンストラクタ
+   */
+  public constructor(id: string | csmString) {
+    if (typeof id === 'string') {
+      this._id = new csmString(id);
+      return;
+    }
+
+    this._id = id;
+  }
+
+  /**
+   * idを比較
+   * @param c 比較するid
+   * @return 同じならばtrue,異なっていればfalseを返す
+   */
+  public isEqual(c: string | csmString | CubismId): boolean {
+    if (typeof c === 'string') {
+      return this._id.isEqual(c);
+    } else if (c instanceof csmString) {
+      return this._id.isEqual(c.s);
+    } else if (c instanceof CubismId) {
+      return this._id.isEqual(c._id.s);
+    }
+    return false;
+  }
+
+  /**
+   * idを比較
+   * @param c 比較するid
+   * @return 同じならばtrue,異なっていればfalseを返す
+   */
+  public isNotEqual(c: string | csmString | CubismId): boolean {
+    if (typeof c == 'string') {
+      return !this._id.isEqual(c);
+    } else if (c instanceof csmString) {
+      return !this._id.isEqual(c.s);
+    } else if (c instanceof CubismId) {
+      return !this._id.isEqual(c._id.s);
+    }
+    return false;
+  }
+
+  private _id: csmString; // ID名
+}
+
+export declare type CubismIdHandle = CubismId;
+
+// Namespace definition for compatibility.
+import * as $ from './cubismid';
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Live2DCubismFramework {
+  export const CubismId = $.CubismId;
+  export type CubismId = $.CubismId;
+  export type CubismIdHandle = $.CubismIdHandle;
 }
