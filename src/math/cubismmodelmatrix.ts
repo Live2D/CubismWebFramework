@@ -26,7 +26,7 @@ export class CubismModelMatrix extends CubismMatrix44 {
     this._width = w !== undefined ? w : 0.0;
     this._height = h !== undefined ? h : 0.0;
 
-    this.setHeight(1.0);
+    this.setHeight(2.0);
   }
 
   /**
