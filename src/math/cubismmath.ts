@@ -11,6 +11,8 @@ import { CubismVector2 } from './cubismvector2';
  * 数値計算などに使用するユーティリティクラス
  */
 export class CubismMath {
+  static readonly Epsilon: number = 0.00001;
+
   /**
    * 第一引数の値を最小値と最大値の範囲に収めた値を返す
    *
@@ -66,6 +68,33 @@ export class CubismMath {
    */
   static sqrt(x: number): number {
     return Math.sqrt(x);
+  }
+
+  /**
+   * 立方根を求める
+   * @param x -> 立方根を求める値
+   * @return 値の立方根
+   */
+  static cbrt(x: number): number {
+    if (x === 0) {
+      return x;
+    }
+
+    let cx: number = x;
+    const isNegativeNumber: boolean = cx < 0;
+
+    if (isNegativeNumber) {
+      cx = -cx;
+    }
+
+    let ret: number;
+    if (cx === Infinity) {
+      ret = Infinity;
+    } else {
+      ret = Math.exp(Math.log(cx) / 3);
+      ret = (cx / (ret * ret) + 2 * ret) / 3;
+    }
+    return isNegativeNumber ? -ret : ret;
   }
 
   /**
@@ -183,6 +212,111 @@ export class CubismMath {
     ret.y = this.cos(totalAngle);
 
     return ret;
+  }
+
+  /**
+   * 三次方程式の三次項の係数が0になったときに補欠的に二次方程式の解をもとめる。
+   * a * x^2 + b * x + c = 0
+   *
+   * @param   a -> 二次項の係数値
+   * @param   b -> 一次項の係数値
+   * @param   c -> 定数項の値
+   * @return  二次方程式の解
+   */
+  static quadraticEquation(a: number, b: number, c: number): number {
+    if (this.abs(a) < CubismMath.Epsilon) {
+      if (this.abs(b) < CubismMath.Epsilon) {
+        return -c;
+      }
+      return -c / b;
+    }
+
+    return -(b + this.sqrt(b * b - 4.0 * a * c)) / (2.0 * a);
+  }
+
+  /**
+   * カルダノの公式によってベジェのt値に該当する３次方程式の解を求める。
+   * 重解になったときには0.0～1.0の値になる解を返す。
+   *
+   * a * x^3 + b * x^2 + c * x + d = 0
+   *
+   * @param   a -> 三次項の係数値
+   * @param   b -> 二次項の係数値
+   * @param   c -> 一次項の係数値
+   * @param   d -> 定数項の値
+   * @return  0.0～1.0の間にある解
+   */
+  static cardanoAlgorithmForBezier(
+    a: number,
+    b: number,
+    c: number,
+    d: number
+  ): number {
+    if (this.sqrt(a) < CubismMath.Epsilon) {
+      return this.range(this.quadraticEquation(b, c, d), 0.0, 1.0);
+    }
+
+    const ba: number = b / a;
+    const ca: number = c / a;
+    const da: number = d / a;
+
+    const p: number = (3.0 * ca - ba * ba) / 3.0;
+    const p3: number = p / 3.0;
+    const q: number = (2.0 * ba * ba * ba - 9.0 * ba * ca + 27.0 * da) / 27.0;
+    const q2: number = q / 2.0;
+    const discriminant: number = q2 * q2 + p3 * p3 * p3;
+
+    const center = 0.5;
+    const threshold: number = center + 0.01;
+
+    if (discriminant < 0.0) {
+      const mp3: number = -p / 3.0;
+      const mp33: number = mp3 * mp3 * mp3;
+      const r: number = this.sqrt(mp33);
+      const t: number = -q / (2.0 * r);
+      const cosphi: number = this.range(t, -1.0, 1.0);
+      const phi: number = Math.acos(cosphi);
+      const crtr: number = this.cbrt(r);
+      const t1: number = 2.0 * crtr;
+
+      const root1: number = t1 * this.cos(phi / 3.0) - ba / 3.0;
+      if (this.abs(root1 - center) < threshold) {
+        return this.range(root1, 0.0, 1.0);
+      }
+
+      const root2: number =
+        t1 * this.cos((phi + 2.0 * Math.PI) / 3.0) - ba / 3.0;
+      if (this.abs(root2 - center) < threshold) {
+        return this.range(root2, 0.0, 1.0);
+      }
+
+      const root3: number =
+        t1 * this.cos((phi + 4.0 * Math.PI) / 3.0) - ba / 3.0;
+      return this.range(root3, 0.0, 1.0);
+    }
+
+    if (discriminant == 0.0) {
+      let u1: number;
+      if (q2 < 0.0) {
+        u1 = this.cbrt(-q2);
+      } else {
+        u1 = -this.cbrt(q2);
+      }
+
+      const root1: number = 2.0 * u1 - ba / 3.0;
+      if (this.abs(root1 - center) < threshold) {
+        return this.range(root1, 0.0, 1.0);
+      }
+
+      const root2: number = -u1 - ba / 3.0;
+      return this.range(root2, 0.0, 1.0);
+    }
+
+    const sd: number = this.sqrt(discriminant);
+    const u1: number = this.cbrt(sd - q2);
+    const v1: number = this.cbrt(sd + q2);
+    const root1: number = u1 - v1 - ba / 3.0;
+    return this.range(root1, 0.0, 1.0);
   }
 
   /**

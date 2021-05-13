@@ -1,4 +1,4 @@
-# Cubism Web Framework
+# \[Beta Version\] Cubism Web Framework
 
 Live2D Cubism 4 Editor で出力したモデルをアプリケーションで利用するためのフレームワークです。
 
@@ -6,6 +6,10 @@ Live2D Cubism 4 Editor で出力したモデルをアプリケーションで利
 モデルをロードするには Live2D Cubism Core ライブラリと組み合わせて使用します。
 
 ビルドを行うことで、ブラウザで利用可能な JavaScript ライブラリとして利用することができます。
+
+**本 SDK は、 Beta バージョンとなります。先行して新機能を取り込んでいるため、不安定な挙動を示す場合がございます。安定した製品をお求めの方は、公式サイトから配布されている正式版のパッケージ又は `develop` `master` ブランチをご利用ください。**
+
+**\[Beta Version\] の SDK の不具合、各種ご意見等に関しましては、 Live2D コミュニティ にてご連絡ください。直接のコードに対する指摘、修正等は、直接 Pull requests としてご投稿ください。**
 
 
 ## ライセンス
