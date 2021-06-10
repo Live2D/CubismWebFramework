@@ -14,6 +14,7 @@ import { CubismJson } from '../utils/cubismjson';
 const Meta = 'Meta';
 const Duration = 'Duration';
 const Loop = 'Loop';
+const AreBeziersRestricted = 'AreBeziersRestricted';
 const CurveCount = 'CurveCount';
 const Fps = 'Fps';
 const TotalSegmentCount = 'TotalSegmentCount';
@@ -73,6 +74,20 @@ export class CubismMotionJson {
       .getValueByString(Meta)
       .getValueByString(Loop)
       .toBoolean();
+  }
+
+  public getEvaluationOptionFlag(flagType: number): boolean {
+    if (
+      EvaluationOptionFlag.EvaluationOptionFlag_AreBeziersRistricted == flagType
+    ) {
+      return this._json
+        .getRoot()
+        .getValueByString(Meta)
+        .getValueByString(AreBeziersRestricted)
+        .toBoolean();
+    }
+
+    return false;
   }
 
   /**
@@ -330,7 +345,7 @@ export class CubismMotionJson {
       .getValueByString(UserData)
       .getValueByIndex(userDataIndex)
       .getValueByString(Time)
-      .toInt();
+      .toFloat();
   }
 
   /**
@@ -350,6 +365,13 @@ export class CubismMotionJson {
   }
 
   _json: CubismJson; // motion3.jsonのデータ
+}
+
+/**
+ * @brief ベジェカーブの解釈方法のフラグタイプ
+ */
+export enum EvaluationOptionFlag {
+  EvaluationOptionFlag_AreBeziersRistricted = 0 ///< ベジェハンドルの規制状態
 }
 
 // Namespace definition for compatibility.

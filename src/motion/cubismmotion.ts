@@ -22,7 +22,7 @@ import {
   CubismMotionSegment,
   CubismMotionSegmentType
 } from './cubismmotioninternal';
-import { CubismMotionJson } from './cubismmotionjson';
+import { CubismMotionJson, EvaluationOptionFlag } from './cubismmotionjson';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
 
 const EffectNameEyeBlink = 'EyeBlink';
@@ -30,6 +30,11 @@ const EffectNameLipSync = 'LipSync';
 const TargetNameModel = 'Model';
 const TargetNameParameter = 'Parameter';
 const TargetNamePartOpacity = 'PartOpacity';
+
+/**
+ * Cubism SDK R2 以前のモーションを再現させるなら true 、アニメータのモーションを正しく再現するなら false 。
+ */
+const UseOldBeziersCurveMotion = false;
 
 function lerpPoints(
   a: CubismMotionPoint,
@@ -60,6 +65,109 @@ function bezierEvaluate(points: CubismMotionPoint[], time: number): number {
   if (t < 0.0) {
     t = 0.0;
   }
+
+  const p01: CubismMotionPoint = lerpPoints(points[0], points[1], t);
+  const p12: CubismMotionPoint = lerpPoints(points[1], points[2], t);
+  const p23: CubismMotionPoint = lerpPoints(points[2], points[3], t);
+
+  const p012: CubismMotionPoint = lerpPoints(p01, p12, t);
+  const p123: CubismMotionPoint = lerpPoints(p12, p23, t);
+
+  return lerpPoints(p012, p123, t).value;
+}
+
+function bezierEvaluateBinarySearch(
+  points: CubismMotionPoint[],
+  time: number
+): number {
+  const x_error = 0.01;
+
+  const x: number = time;
+  let x1: number = points[0].time;
+  let x2: number = points[3].time;
+  let cx1: number = points[1].time;
+  let cx2: number = points[2].time;
+
+  let ta = 0.0;
+  let tb = 1.0;
+  let t = 0.0;
+  let i = 0;
+
+  for (let var33 = true; i < 20; ++i) {
+    if (x < x1 + x_error) {
+      t = ta;
+      break;
+    }
+
+    if (x2 - x_error < x) {
+      t = tb;
+      break;
+    }
+
+    let centerx: number = (cx1 + cx2) * 0.5;
+    cx1 = (x1 + cx1) * 0.5;
+    cx2 = (x2 + cx2) * 0.5;
+    const ctrlx12: number = (cx1 + centerx) * 0.5;
+    const ctrlx21: number = (cx2 + centerx) * 0.5;
+    centerx = (ctrlx12 + ctrlx21) * 0.5;
+    if (x < centerx) {
+      tb = (ta + tb) * 0.5;
+      if (centerx - x_error < x) {
+        t = tb;
+        break;
+      }
+
+      x2 = centerx;
+      cx2 = ctrlx12;
+    } else {
+      ta = (ta + tb) * 0.5;
+      if (x < centerx + x_error) {
+        t = ta;
+        break;
+      }
+
+      x1 = centerx;
+      cx1 = ctrlx21;
+    }
+  }
+
+  if (i == 20) {
+    t = (ta + tb) * 0.5;
+  }
+
+  if (t < 0.0) {
+    t = 0.0;
+  }
+  if (t > 1.0) {
+    t = 1.0;
+  }
+
+  const p01: CubismMotionPoint = lerpPoints(points[0], points[1], t);
+  const p12: CubismMotionPoint = lerpPoints(points[1], points[2], t);
+  const p23: CubismMotionPoint = lerpPoints(points[2], points[3], t);
+
+  const p012: CubismMotionPoint = lerpPoints(p01, p12, t);
+  const p123: CubismMotionPoint = lerpPoints(p12, p23, t);
+
+  return lerpPoints(p012, p123, t).value;
+}
+
+function bezierEvaluateCardanoInterpretation(
+  points: CubismMotionPoint[],
+  time: number
+): number {
+  const x: number = time;
+  const x1: number = points[0].time;
+  const x2: number = points[3].time;
+  const cx1: number = points[1].time;
+  const cx2: number = points[2].time;
+
+  const a: number = x2 - 3.0 * cx2 + 3.0 * cx1 - x1;
+  const b: number = 3.0 * cx2 - 6.0 * cx1 + 3.0 * x1;
+  const c: number = 3.0 * cx1 - 3.0 * x1;
+  const d: number = x1 - x;
+
+  const t: number = CubismMath.cardanoAlgorithmForBezier(a, b, c, d);
 
   const p01: CubismMotionPoint = lerpPoints(points[0], points[1], t);
   const p12: CubismMotionPoint = lerpPoints(points[1], points[2], t);
@@ -616,6 +724,10 @@ export class CubismMotion extends ACubismMotion {
     this._motionData.fps = json.getMotionFps();
     this._motionData.eventCount = json.getEventCount();
 
+    const areBeziersRestructed: boolean = json.getEvaluationOptionFlag(
+      EvaluationOptionFlag.EvaluationOptionFlag_AreBeziersRistricted
+    );
+
     if (json.isExistMotionFadeInTime()) {
       this._fadeInSeconds =
         json.getMotionFadeInTime() < 0.0 ? 1.0 : json.getMotionFadeInTime();
@@ -750,9 +862,16 @@ export class CubismMotion extends ACubismMotion {
           case CubismMotionSegmentType.CubismMotionSegmentType_Bezier: {
             this._motionData.segments.at(totalSegmentCount).segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_Bezier;
-            this._motionData.segments.at(
-              totalSegmentCount
-            ).evaluate = bezierEvaluate;
+
+            if (areBeziersRestructed || UseOldBeziersCurveMotion) {
+              this._motionData.segments.at(
+                totalSegmentCount
+              ).evaluate = bezierEvaluate;
+            } else {
+              this._motionData.segments.at(
+                totalSegmentCount
+              ).evaluate = bezierEvaluateCardanoInterpretation;
+            }
 
             this._motionData.points.at(
               totalPointCount
