@@ -345,7 +345,7 @@ export class CubismMotionJson {
       .getValueByString(UserData)
       .getValueByIndex(userDataIndex)
       .getValueByString(Time)
-      .toInt();
+      .toFloat();
   }
 
   /**
