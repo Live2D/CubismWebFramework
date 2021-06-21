@@ -7,6 +7,7 @@
 
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
+import { csmString } from '../type/csmstring';
 import { CubismJson } from '../utils/cubismjson';
 import { Motion3 } from '../specs/motion3';
 
@@ -16,29 +17,27 @@ import { Motion3 } from '../specs/motion3';
 export class CubismMotionJson {
   /**
    * コンストラクタ
-   * @param content Buffer or json string of motion3.json
+   * @param source Data of motion3.json
    * @param size Buffer size
    */
-  public constructor(content: ArrayBuffer | string, size?: number) {
-    if (content instanceof ArrayBuffer) {
+  public constructor(source: Motion3 | string); // From JSON object or text
+  /** @deprecated */
+  public constructor(source: ArrayBuffer, size: number); // From JSON buffer
+  public constructor(source: Motion3 | string | ArrayBuffer, size?: number) {
+    if (source instanceof ArrayBuffer) {
       // For compatibility
-      this._json = CubismJson.create(content, size ?? content.byteLength);
+      this._json = CubismJson.create(source, size ?? source.byteLength);
       // Convert ArrayBuffer to string
-      // https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-      content = String.fromCharCode.apply(
+      const text = String.fromCharCode.apply(
         null,
-        new Uint16Array(content)
-      ) as string;
+        [].slice.call(new Uint8Array(source))
+      );
+      this.json = JSON.parse(text);
+    } else if (typeof source === 'string') {
+      this.json = JSON.parse(source);
+    } else {
+      this.json = source;
     }
-    this.json = JSON.parse(content);
-  }
-
-  /**
-   * Create CubismMotionJson from json content
-   * @param content Json string of motion3.json
-   */
-  public static fromJson(content: string): CubismMotionJson {
-    return new CubismMotionJson(content);
   }
 
   /**
@@ -161,7 +160,7 @@ export class CubismMotionJson {
    */
   public getMotionCurveId(curveIndex: number): CubismIdHandle | undefined {
     const id = this.json.Curves[curveIndex]?.Id;
-    return id != null ? CubismFramework.getIdManager().getId(id) : id;
+    return id != null ? CubismFramework.getIdManager().getId(id) : undefined;
   }
 
   /**
@@ -254,8 +253,9 @@ export class CubismMotionJson {
    * @param userDataIndex イベントのインデックス
    * @return イベントの文字列
    */
-  public getEventValue(userDataIndex: number): string | undefined {
-    return this.json.UserData?.[userDataIndex]?.Value;
+  public getEventValue(userDataIndex: number): csmString | undefined {
+    const value = this.json.UserData?.[userDataIndex]?.Value;
+    return value != null ? new csmString(value) : undefined;
   }
 
   /** @deprecated For comparability */
