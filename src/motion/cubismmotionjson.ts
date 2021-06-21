@@ -32,11 +32,11 @@ export class CubismMotionJson {
         null,
         [].slice.call(new Uint8Array(source))
       );
-      this.json = JSON.parse(text);
+      this.data = JSON.parse(text);
     } else if (typeof source === 'string') {
-      this.json = JSON.parse(source);
+      this.data = JSON.parse(source);
     } else {
-      this.json = source;
+      this.data = source;
     }
   }
 
@@ -55,7 +55,7 @@ export class CubismMotionJson {
    * @return モーションの長さ[秒]
    */
   public getMotionDuration(): number {
-    return this.json.Meta.Duration;
+    return this.data.Meta.Duration;
   }
 
   /**
@@ -64,7 +64,7 @@ export class CubismMotionJson {
    * @return false ループしない
    */
   public isMotionLoop(): boolean | undefined {
-    return this.json.Meta.Loop;
+    return this.data.Meta.Loop;
   }
 
   public getEvaluationOptionFlag(flagType: number): boolean | undefined {
@@ -72,7 +72,7 @@ export class CubismMotionJson {
       EvaluationOptionFlag.EvaluationOptionFlag_AreBeziersRistricted ===
       flagType
     ) {
-      return this.json.Meta.AreBeziersRestricted;
+      return this.data.Meta.AreBeziersRestricted;
     }
 
     return false;
@@ -83,7 +83,7 @@ export class CubismMotionJson {
    * @return モーションカーブの個数
    */
   public getMotionCurveCount(): number {
-    return this.json.Meta.CurveCount;
+    return this.data.Meta.CurveCount;
   }
 
   /**
@@ -91,7 +91,7 @@ export class CubismMotionJson {
    * @return フレームレート[FPS]
    */
   public getMotionFps(): number {
-    return this.json.Meta.Fps;
+    return this.data.Meta.Fps;
   }
 
   /**
@@ -99,7 +99,7 @@ export class CubismMotionJson {
    * @return モーションのセグメントの取得
    */
   public getMotionTotalSegmentCount(): number {
-    return this.json.Meta.TotalSegmentCount;
+    return this.data.Meta.TotalSegmentCount;
   }
 
   /**
@@ -107,7 +107,7 @@ export class CubismMotionJson {
    * @return モーションのカーブの制御点の総合計
    */
   public getMotionTotalPointCount(): number {
-    return this.json.Meta.TotalPointCount;
+    return this.data.Meta.TotalPointCount;
   }
 
   /**
@@ -116,7 +116,7 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionFadeInTime(): boolean {
-    return this.json.Meta.FadeInTime != null;
+    return this.data.Meta.FadeInTime != null;
   }
 
   /**
@@ -125,7 +125,7 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionFadeOutTime(): boolean {
-    return this.json.Meta.FadeOutTime != null;
+    return this.data.Meta.FadeOutTime != null;
   }
 
   /**
@@ -133,7 +133,7 @@ export class CubismMotionJson {
    * @return フェードイン時間[秒]
    */
   public getMotionFadeInTime(): number | undefined {
-    return this.json.Meta.FadeInTime;
+    return this.data.Meta.FadeInTime;
   }
 
   /**
@@ -141,7 +141,7 @@ export class CubismMotionJson {
    * @return フェードアウト時間[秒]
    */
   public getMotionFadeOutTime(): number | undefined {
-    return this.json.Meta.FadeOutTime;
+    return this.data.Meta.FadeOutTime;
   }
 
   /**
@@ -150,7 +150,7 @@ export class CubismMotionJson {
    * @return カーブの種類
    */
   public getMotionCurveTarget(curveIndex: number): string | undefined {
-    return this.json.Curves[curveIndex]?.Target;
+    return this.data.Curves[curveIndex]?.Target;
   }
 
   /**
@@ -159,7 +159,7 @@ export class CubismMotionJson {
    * @return カーブのID
    */
   public getMotionCurveId(curveIndex: number): CubismIdHandle | undefined {
-    const id = this.json.Curves[curveIndex]?.Id;
+    const id = this.data.Curves[curveIndex]?.Id;
     return id != null ? CubismFramework.getIdManager().getId(id) : undefined;
   }
 
@@ -170,7 +170,7 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionCurveFadeInTime(curveIndex: number): boolean {
-    return this.json.Curves[curveIndex]?.FadeInTime != null;
+    return this.data.Curves[curveIndex]?.FadeInTime != null;
   }
 
   /**
@@ -180,7 +180,7 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionCurveFadeOutTime(curveIndex: number): boolean {
-    return this.json.Curves[curveIndex]?.FadeOutTime != null;
+    return this.data.Curves[curveIndex]?.FadeOutTime != null;
   }
 
   /**
@@ -189,7 +189,7 @@ export class CubismMotionJson {
    * @return フェードイン時間[秒]
    */
   public getMotionCurveFadeInTime(curveIndex: number): number | undefined {
-    return this.json.Curves[curveIndex]?.FadeInTime;
+    return this.data.Curves[curveIndex]?.FadeInTime;
   }
 
   /**
@@ -198,7 +198,7 @@ export class CubismMotionJson {
    * @return フェードアウト時間[秒]
    */
   public getMotionCurveFadeOutTime(curveIndex: number): number | undefined {
-    return this.json.Curves[curveIndex]?.FadeOutTime;
+    return this.data.Curves[curveIndex]?.FadeOutTime;
   }
 
   /**
@@ -207,7 +207,7 @@ export class CubismMotionJson {
    * @return モーションのカーブのセグメントの個数
    */
   public getMotionCurveSegmentCount(curveIndex: number): number | undefined {
-    return this.json.Curves[curveIndex]?.Segments.length;
+    return this.data.Curves[curveIndex]?.Segments.length;
   }
 
   /**
@@ -220,7 +220,7 @@ export class CubismMotionJson {
     curveIndex: number,
     segmentIndex: number
   ): number | undefined {
-    return this.json.Curves[curveIndex]?.Segments[segmentIndex];
+    return this.data.Curves[curveIndex]?.Segments[segmentIndex];
   }
 
   /**
@@ -228,7 +228,7 @@ export class CubismMotionJson {
    * @return イベントの個数
    */
   public getEventCount(): number | undefined {
-    return this.json.Meta.UserDataCount;
+    return this.data.Meta.UserDataCount;
   }
 
   /**
@@ -236,7 +236,7 @@ export class CubismMotionJson {
    * @return イベントの総文字数
    */
   public getTotalEventValueSize(): number | undefined {
-    return this.json.Meta.TotalUserDataSize;
+    return this.data.Meta.TotalUserDataSize;
   }
 
   /**
@@ -245,7 +245,7 @@ export class CubismMotionJson {
    * @return イベントの時間[秒]
    */
   public getEventTime(userDataIndex: number): number | undefined {
-    return this.json.UserData?.[userDataIndex]?.Time;
+    return this.data.UserData?.[userDataIndex]?.Time;
   }
 
   /**
@@ -254,14 +254,14 @@ export class CubismMotionJson {
    * @return イベントの文字列
    */
   public getEventValue(userDataIndex: number): csmString | undefined {
-    const value = this.json.UserData?.[userDataIndex]?.Value;
+    const value = this.data.UserData?.[userDataIndex]?.Value;
     return value != null ? new csmString(value) : undefined;
   }
 
   /** @deprecated For comparability */
   _json: CubismJson | null | undefined;
 
-  json: Motion3;
+  data: Motion3;
 }
 
 /**
