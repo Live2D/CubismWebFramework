@@ -8,6 +8,7 @@
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
 import { csmString } from '../type/csmstring';
+import { csmVector } from '../type/csmvector';
 import { CubismJson } from '../utils/cubismjson';
 
 // JSON keys
@@ -225,12 +226,12 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionCurveFadeInTime(curveIndex: number): boolean {
-    return !this._json
+    const value = this._json
       .getRoot()
       .getValueByString(Curves)
       .getValueByIndex(curveIndex)
-      .getValueByString(FadeInTime)
-      .isNull();
+      .getValueByString(FadeInTime);
+    return !(value.isNull() || value.isError());
   }
 
   /**
@@ -240,12 +241,12 @@ export class CubismMotionJson {
    * @return false 存在しない
    */
   public isExistMotionCurveFadeOutTime(curveIndex: number): boolean {
-    return !this._json
+    const value = this._json
       .getRoot()
       .getValueByString(Curves)
       .getValueByIndex(curveIndex)
-      .getValueByString(FadeOutTime)
-      .isNull();
+      .getValueByString(FadeOutTime);
+    return !(value.isNull() || value.isError());
   }
 
   /**
@@ -287,7 +288,7 @@ export class CubismMotionJson {
       .getValueByString(Curves)
       .getValueByIndex(curveIndex)
       .getValueByString(Segments)
-      .getVector()
+      .getVector(new csmVector())
       .getSize();
   }
 
