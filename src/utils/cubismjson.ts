@@ -195,6 +195,7 @@ export abstract class Value {
 
     JsonError.errorValue = new JsonError('ERROR', true);
     this.nullValue = new JsonNullvalue();
+    this.errorValue = new JsonError('ERROR', true);
 
     Value.s_dummyKeys = new csmVector<string>();
   }
