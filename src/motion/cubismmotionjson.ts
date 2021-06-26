@@ -22,7 +22,7 @@ export class CubismMotionJson {
    */
   public constructor(source: Motion3 | string); // From JSON object or text
   /** @deprecated */
-  public constructor(source: ArrayBuffer, size: number); // From JSON buffer
+  public constructor(source: ArrayBuffer, size?: number); // From JSON buffer
   public constructor(source: Motion3 | string | ArrayBuffer, size?: number) {
     if (source instanceof ArrayBuffer) {
       // For compatibility
@@ -45,9 +45,7 @@ export class CubismMotionJson {
    * デストラクタ相当の処理
    */
   public release(): void {
-    if (this._json) {
-      CubismJson.delete(this._json);
-    }
+    // Nothing to do
   }
 
   /**
