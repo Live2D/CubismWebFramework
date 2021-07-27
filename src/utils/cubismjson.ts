@@ -74,7 +74,7 @@ export abstract class Value {
   /**
    * 要素をコンテナで返す(array)
    */
-  public getVector(defaultValue?: csmVector<Value>): csmVector<Value> {
+  public getVector(defaultValue = new csmVector<Value>()): csmVector<Value> {
     return defaultValue;
   }
 
@@ -192,10 +192,8 @@ export abstract class Value {
   public static staticInitializeNotForClientCall(): void {
     JsonBoolean.trueValue = new JsonBoolean(true);
     JsonBoolean.falseValue = new JsonBoolean(false);
-
-    JsonError.errorValue = new JsonError('ERROR', true);
-    this.nullValue = new JsonNullvalue();
-
+    Value.errorValue = new JsonError('ERROR', true);
+    Value.nullValue = new JsonNullvalue();
     Value.s_dummyKeys = new csmVector<string>();
   }
 
@@ -205,13 +203,7 @@ export abstract class Value {
   public static staticReleaseNotForClientCall(): void {
     JsonBoolean.trueValue = null;
     JsonBoolean.falseValue = null;
-    JsonError.errorValue = null;
-    Value.nullValue = null;
-    Value.s_dummyKeys = null;
-
-    JsonBoolean.trueValue = null;
-    JsonBoolean.falseValue = null;
-    JsonError.errorValue = null;
+    Value.errorValue = null;
     Value.nullValue = null;
     Value.s_dummyKeys = null;
   }
@@ -968,6 +960,14 @@ export class JsonNullvalue extends Value {
    */
   public isStatic(): boolean {
     return true;
+  }
+
+  /**
+   * Valueにエラー値をセットする
+   */
+  public setErrorNotForClientCall(s: string): Value {
+    this._stringBuffer = s;
+    return JsonError.nullValue;
   }
 
   /**
