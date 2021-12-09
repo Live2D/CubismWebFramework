@@ -215,7 +215,7 @@ export class CubismMotionQueueEntry {
    * @return フェードアウト開始するかどうか
    */
   public isTriggeredFadeOut(): boolean {
-    return this._isTriggeredFadeOut && this._endTimeSeconds < 0.0;
+    return this._isTriggeredFadeOut;
   }
 
   /**

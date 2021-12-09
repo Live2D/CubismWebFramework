@@ -38,7 +38,6 @@ export class CubismMotionQueueManager {
     for (let i = 0; i < this._motions.getSize(); ++i) {
       if (this._motions.at(i)) {
         this._motions.at(i).release();
-        this._motions.set(i, void 0);
         this._motions.set(i, null);
       }
     }
@@ -111,7 +110,6 @@ export class CubismMotionQueueManager {
 
       if (motion == null) {
         motionQueueEntry.release();
-        motionQueueEntry = void 0;
         motionQueueEntry = null;
         ite = this._motions.erase(ite); // 削除
         continue;
@@ -137,7 +135,6 @@ export class CubismMotionQueueManager {
   public isFinishedByHandle(
     motionQueueEntryNumber: CubismMotionQueueEntryHandle
   ): boolean {
-    // 既にモーションがあれば終了フラグを立てる
     for (
       let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
       ite.notEqual(this._motions.end());
@@ -181,7 +178,6 @@ export class CubismMotionQueueManager {
 
       // ----- 終了済みの処理があれば削除する ------
       motionQueueEntry.release();
-      motionQueueEntry = void 0;
       motionQueueEntry = null;
       ite = this._motions.erase(ite); // 削除
     }
@@ -198,7 +194,6 @@ export class CubismMotionQueueManager {
     motionQueueEntryNumber: any
   ): CubismMotionQueueEntry {
     //------- 処理を行う -------
-    // 既にモーションがあれば終了フラグを立てる
     for (
       let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
       ite.notEqual(this._motions.end());
@@ -262,7 +257,6 @@ export class CubismMotionQueueManager {
 
       if (motion == null) {
         motionQueueEntry.release();
-        motionQueueEntry = void 0;
         motionQueueEntry = null;
         ite = this._motions.erase(ite); // 削除
 
@@ -289,7 +283,6 @@ export class CubismMotionQueueManager {
       // ------ 終了済みの処理があれば削除する ------
       if (motionQueueEntry.isFinished()) {
         motionQueueEntry.release();
-        motionQueueEntry = void 0;
         motionQueueEntry = null;
         ite = this._motions.erase(ite); // 削除
       } else {

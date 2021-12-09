@@ -11,7 +11,11 @@ import { CubismMath } from '../math/cubismmath';
 import { CubismModel } from '../model/cubismmodel';
 import { csmString } from '../type/csmstring';
 import { csmVector } from '../type/csmvector';
-import { CSM_ASSERT, CubismLogDebug } from '../utils/cubismdebug';
+import {
+  CSM_ASSERT,
+  CubismLogDebug,
+  CubismLogWarning
+} from '../utils/cubismdebug';
 import { ACubismMotion, FinishedMotionCallback } from './acubismmotion';
 import {
   CubismMotionCurve,
@@ -783,6 +787,10 @@ export class CubismMotion extends ACubismMotion {
       ) {
         this._motionData.curves.at(curveCount).type =
           CubismMotionCurveTarget.CubismMotionCurveTarget_PartOpacity;
+      } else {
+        CubismLogWarning(
+          'Warning : Unable to get segment type from Curve! The number of "CurveCount" may be incorrect!'
+        );
       }
 
       this._motionData.curves.at(curveCount).id = json.getMotionCurveId(
