@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [4-r.4] - 2021-12-09
+
+### Fixed
+
+* Fix useless void 0.
+* Fix a warning when `SegmentType` could not be obtained when loading motion.
+* Fix return correct error values for out-of-index arguments in cubismjson by [@cocor-au-lait](https://github.com/cocor-au-lait).
+* Fix a bug that motions currently played do not fade out when play a motion.
+
 
 ## [4-r.3] - 2021-06-10
 
@@ -57,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[4-r.4]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3...4-r.4
 [4-r.3]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3-beta.1...4-r.3
 [4-r.3-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.2...4-r.3-beta.1
 [4-r.2]: https://github.com/Live2D/CubismWebFramework/compare/4-r.1...4-r.2

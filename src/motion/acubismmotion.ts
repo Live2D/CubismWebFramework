@@ -26,7 +26,6 @@ export abstract class ACubismMotion {
    */
   public static delete(motion: ACubismMotion): void {
     motion.release();
-    motion = void 0;
     motion = null;
   }
 
