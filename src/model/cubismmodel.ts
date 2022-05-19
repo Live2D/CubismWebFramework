@@ -7,10 +7,22 @@
 
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
-import { CubismBlendMode } from '../rendering/cubismrenderer';
+import {
+  CubismBlendMode,
+  CubismTextureColor,
+} from '../rendering/cubismrenderer';
 import { csmMap } from '../type/csmmap';
 import { csmVector } from '../type/csmvector';
 import { CSM_ASSERT } from '../utils/cubismdebug';
+
+/**
+ * SDK側から与えられたDrawableの乗算色・スクリーン色上書きフラグと
+ * その色を保持する構造体
+ */
+export class DrawableColorData {
+  isOverwritten = false;
+  Color: CubismTextureColor = new CubismTextureColor();
+}
 
 /**
  * モデル
@@ -68,6 +80,190 @@ export class CubismModel {
         this._savedParameters.pushBack(this._parameterValues[i]);
       }
     }
+  }
+
+  /**
+   * 乗算色を取得する
+   * @param index Drawablesのインデックス
+   * @returns 指定したdrawableの乗算色(RGBA)
+   */
+  public getMultiplyColor(index: number): CubismTextureColor {
+    // Drawableとモデル全体の乗算色上書きフラグがどちらもtrueな場合、モデル全体の上書きフラグが優先される
+    if (
+      this.getOverwriteFlagForModelMultiplyColors() ||
+      this.getOverwriteFlagForDrawableMultiplyColors(index)
+    ) {
+      return this._userMultiplyColors.at(index).Color;
+    }
+
+    const color = this.getDrawableMultiplyColor(index);
+    return color;
+  }
+
+  /**
+   * スクリーン色を取得する
+   * @param index Drawablesのインデックス
+   * @returns 指定したdrawableのスクリーン色(RGBA)
+   */
+  public getScreenColor(index: number): CubismTextureColor {
+    // Drawableとモデル全体のスクリーン色上書きフラグがどちらもtrueな場合、モデル全体の上書きフラグが優先される
+    if (
+      this.getOverwriteFlagForModelScreenColors() ||
+      this.getOverwriteFlagForDrawableScreenColors(index)
+    ) {
+      return this._userScreenColors.at(index).Color;
+    }
+
+    const color = this.getDrawableScreenColor(index);
+    return color;
+  }
+
+  /**
+   * 乗算色をセットする
+   * @param index Drawablesのインデックス
+   * @param color 設定する乗算色(CubismTextureColor)
+   */
+  public setMultiplyColorByTextureColor(
+    index: number,
+    color: CubismTextureColor
+  ) {
+    this.setMultiplyColorByRGBA(index, color.R, color.G, color.B, color.A);
+  }
+
+  /**
+   * 乗算色をセットする
+   * @param index Drawablesのインデックス
+   * @param r 設定する乗算色のR値
+   * @param g 設定する乗算色のG値
+   * @param b 設定する乗算色のB値
+   * @param a 設定する乗算色のA値
+   */
+  public setMultiplyColorByRGBA(
+    index: number,
+    r: number,
+    g: number,
+    b: number,
+    a = 1.0
+  ) {
+    this._userMultiplyColors.at(index).Color.R = r;
+    this._userMultiplyColors.at(index).Color.G = g;
+    this._userMultiplyColors.at(index).Color.B = b;
+    this._userMultiplyColors.at(index).Color.A = a;
+  }
+
+  /**
+   * スクリーン色をセットする
+   * @param index Drawablesのインデックス
+   * @param color 設定するスクリーン色(CubismTextureColor)
+   */
+  public setScreenColorByTextureColor(
+    index: number,
+    color: CubismTextureColor
+  ) {
+    this.setScreenColorByRGBA(index, color.R, color.G, color.B, color.A);
+  }
+
+  /**
+   * スクリーン色をセットする
+   * @param index Drawablesのインデックス
+   * @param r 設定するスクリーン色のR値
+   * @param g 設定するスクリーン色のG値
+   * @param b 設定するスクリーン色のB値
+   * @param a 設定するスクリーン色のA値
+   */
+  public setScreenColorByRGBA(
+    index: number,
+    r: number,
+    g: number,
+    b: number,
+    a = 1.0
+  ) {
+    this._userScreenColors.at(index).Color.R = r;
+    this._userScreenColors.at(index).Color.G = g;
+    this._userScreenColors.at(index).Color.B = b;
+    this._userScreenColors.at(index).Color.A = a;
+  }
+
+  /**
+   * SDKから指定したモデルの乗算色を上書きするか
+   * @returns true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverwriteFlagForModelMultiplyColors(): boolean {
+    return this._isOverwrittenModelMultiplyColors;
+  }
+
+  /**
+   * SDKから指定したモデルのスクリーン色を上書きするか
+   * @returns true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverwriteFlagForModelScreenColors(): boolean {
+    return this._isOverwrittenModelScreenColors;
+  }
+
+  /**
+   * SDKから指定したモデルの乗算色を上書きするかセットする
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverwriteFlagForModelMultiplyColors(value: boolean) {
+    this._isOverwrittenModelMultiplyColors = value;
+  }
+
+  /**
+   * SDKから指定したモデルのスクリーン色を上書きするかセットする
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverwriteFlagForModelScreenColors(value: boolean) {
+    this._isOverwrittenModelScreenColors = value;
+  }
+
+  /**
+   * SDKから指定したDrawableIndexの乗算色を上書きするか
+   * @returns true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverwriteFlagForDrawableMultiplyColors(
+    drawableindex: number
+  ): boolean {
+    return this._userMultiplyColors.at(drawableindex).isOverwritten;
+  }
+
+  /**
+   * SDKから指定したDrawableIndexのスクリーン色を上書きするか
+   * @returns true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverwriteFlagForDrawableScreenColors(
+    drawableindex: number
+  ): boolean {
+    return this._userMultiplyColors.at(drawableindex).isOverwritten;
+  }
+
+  /**
+   * SDKから指定したDrawableIndexの乗算色を上書きするかセットする
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverwriteFlagForDrawableMultiplyColors(
+    drawableindex: number,
+    value: boolean
+  ) {
+    this._userMultiplyColors.at(drawableindex).isOverwritten = value;
+  }
+
+  /**
+   * SDKから指定したDrawableIndexのスクリーン色を上書きするかセットする
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverwriteFlagForDrawableScreenColors(
+    drawableindex: number,
+    value: boolean
+  ) {
+    this._userScreenColors.at(drawableindex).isOverwritten = value;
   }
 
   /**
@@ -547,6 +743,40 @@ export class CubismModel {
   }
 
   /**
+   * Drawableの乗算色の取得
+   * @param drawableIndex Drawableのインデックス
+   * @return drawableの乗算色(RGBA)
+   * スクリーン色はRGBAで取得されるが、Aは必ず0
+   */
+  public getDrawableMultiplyColor(drawableIndex: number): CubismTextureColor {
+    const multiplyColors: Float32Array = this._model.drawables.multiplyColors;
+    const index = drawableIndex * 4;
+    const multiplyColor: CubismTextureColor = new CubismTextureColor();
+    multiplyColor.R = multiplyColors[index];
+    multiplyColor.G = multiplyColors[index + 1];
+    multiplyColor.B = multiplyColors[index + 2];
+    multiplyColor.A = multiplyColors[index + 3];
+    return multiplyColor;
+  }
+
+  /**
+   * Drawableのスクリーン色の取得
+   * @param drawableIndex Drawableのインデックス
+   * @return drawableのスクリーン色(RGBA)
+   * スクリーン色はRGBAで取得されるが、Aは必ず0
+   */
+  public getDrawableScreenColor(drawableIndex: number): CubismTextureColor {
+    const screenColors: Float32Array = this._model.drawables.screenColors;
+    const index = drawableIndex * 4;
+    const screenColor: CubismTextureColor = new CubismTextureColor();
+    screenColor.R = screenColors[index];
+    screenColor.G = screenColors[index + 1];
+    screenColor.B = screenColors[index + 2];
+    screenColor.A = screenColors[index + 3];
+    return screenColor;
+  }
+
+  /**
    * Drawableのカリング情報の取得
    * @param drawableIndex Drawableのインデックス
    * @return drawableのカリング情報
@@ -696,6 +926,24 @@ export class CubismModel {
   }
 
   /**
+   * Drawableの乗算色・スクリーン色の変化情報の取得
+   *
+   * 直近のCubismModel.update関数でDrawableの乗算色・スクリーン色が変化したかを取得する。
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @return true Drawableの乗算色・スクリーン色が直近のCubismModel.update関数で変化した
+   * @return false Drawableの乗算色・スクリーン色が直近のCubismModel.update関数で変化してない
+   */
+  public getDrawableDynamicFlagBlendColorDidChange(
+    drawableIndex: number
+  ): boolean {
+    const dynamicFlags: Uint8Array = this._model.drawables.dynamicFlags;
+    return Live2DCubismCore.Utils.hasBlendColorDidChangeBit(
+      dynamicFlags[drawableIndex]
+    );
+  }
+
+  /**
    * 保存されたパラメータの読み込み
    */
   public loadParameters(): void {
@@ -750,11 +998,25 @@ export class CubismModel {
       const drawableIds: string[] = this._model.drawables.ids;
       const drawableCount: number = this._model.drawables.count;
 
+      this._userMultiplyColors = new csmVector<DrawableColorData>();
+      this._userMultiplyColors.updateSize(
+        drawableCount,
+        DrawableColorData,
+        true
+      );
+
+      this._userScreenColors = new csmVector<DrawableColorData>();
+      this._userScreenColors.updateSize(drawableCount, DrawableColorData, true);
+
       this._drawableIds.prepareCapacity(drawableCount);
       for (let i = 0; i < drawableCount; ++i) {
         this._drawableIds.pushBack(
           CubismFramework.getIdManager().getId(drawableIds[i])
         );
+
+        // shaderに影響しない色で初期化
+        this.setMultiplyColorByRGBA(i, 1.0, 1.0, 1.0, 1.0);
+        this.setScreenColorByRGBA(i, 0.0, 0.0, 0.0, 1.0);
       }
     }
   }
@@ -773,6 +1035,10 @@ export class CubismModel {
     this._parameterIds = new csmVector<CubismIdHandle>();
     this._drawableIds = new csmVector<CubismIdHandle>();
     this._partIds = new csmVector<CubismIdHandle>();
+    this._isOverwrittenModelMultiplyColors = false;
+    this._isOverwrittenModelScreenColors = false;
+    this._userMultiplyColors = null;
+    this._userScreenColors = null;
 
     this._notExistPartId = new csmMap<CubismIdHandle, number>();
     this._notExistParameterId = new csmMap<CubismIdHandle, number>();
@@ -795,6 +1061,11 @@ export class CubismModel {
   private _notExistParameterId: csmMap<CubismIdHandle, number>; // 存在していないパラメータIDのリスト
 
   private _savedParameters: csmVector<number>; // 保存されたパラメータ
+
+  private _isOverwrittenModelMultiplyColors: boolean; // SDK上でモデル全体の乗算色を上書きするか判定するフラグ
+  private _isOverwrittenModelScreenColors: boolean; // SDK上でモデル全体のスクリーン色を上書きするか判定するフラグ
+  private _userMultiplyColors: csmVector<DrawableColorData>; // Drawableごとに設定する乗算色と上書きフラグを管理するリスト
+  private _userScreenColors: csmVector<DrawableColorData>; // Drawableごとに設定するスクリーン色と上書きフラグを管理するリスト
 
   private _model: Live2DCubismCore.Model; // モデル
 

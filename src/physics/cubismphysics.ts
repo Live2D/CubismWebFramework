@@ -16,7 +16,7 @@ import {
   CubismPhysicsRig,
   CubismPhysicsSource,
   CubismPhysicsSubRig,
-  CubismPhysicsTargetType
+  CubismPhysicsTargetType,
 } from './cubismphysicsinternal';
 import { CubismPhysicsJson } from './cubismphysicsjson';
 
@@ -294,31 +294,19 @@ export class CubismPhysics {
       particleIndex = 0;
 
     for (let i = 0; i < this._physicsRig.settings.getSize(); ++i) {
-      this._physicsRig.settings.at(
-        i
-      ).normalizationPosition.minimum = json.getNormalizationPositionMinimumValue(
-        i
-      );
-      this._physicsRig.settings.at(
-        i
-      ).normalizationPosition.maximum = json.getNormalizationPositionMaximumValue(
-        i
-      );
-      this._physicsRig.settings.at(
-        i
-      ).normalizationPosition.defalut = json.getNormalizationPositionDefaultValue(
-        i
-      );
+      this._physicsRig.settings.at(i).normalizationPosition.minimum =
+        json.getNormalizationPositionMinimumValue(i);
+      this._physicsRig.settings.at(i).normalizationPosition.maximum =
+        json.getNormalizationPositionMaximumValue(i);
+      this._physicsRig.settings.at(i).normalizationPosition.defalut =
+        json.getNormalizationPositionDefaultValue(i);
 
-      this._physicsRig.settings.at(
-        i
-      ).normalizationAngle.minimum = json.getNormalizationAngleMinimumValue(i);
-      this._physicsRig.settings.at(
-        i
-      ).normalizationAngle.maximum = json.getNormalizationAngleMaximumValue(i);
-      this._physicsRig.settings.at(
-        i
-      ).normalizationAngle.defalut = json.getNormalizationAngleDefaultValue(i);
+      this._physicsRig.settings.at(i).normalizationAngle.minimum =
+        json.getNormalizationAngleMinimumValue(i);
+      this._physicsRig.settings.at(i).normalizationAngle.maximum =
+        json.getNormalizationAngleMaximumValue(i);
+      this._physicsRig.settings.at(i).normalizationAngle.defalut =
+        json.getNormalizationAngleDefaultValue(i);
 
       // Input
       this._physicsRig.settings.at(i).inputCount = json.getInputCount(i);
@@ -330,9 +318,8 @@ export class CubismPhysics {
           i,
           j
         );
-        this._physicsRig.inputs.at(
-          inputIndex + j
-        ).reflect = json.getInputReflect(i, j);
+        this._physicsRig.inputs.at(inputIndex + j).reflect =
+          json.getInputReflect(i, j);
 
         if (json.getInputType(i, j) == PhysicsTypeTagX) {
           this._physicsRig.inputs.at(inputIndex + j).type =
@@ -356,9 +343,8 @@ export class CubismPhysics {
 
         this._physicsRig.inputs.at(inputIndex + j).source.targetType =
           CubismPhysicsTargetType.CubismPhysicsTargetType_Parameter;
-        this._physicsRig.inputs.at(
-          inputIndex + j
-        ).source.id = json.getInputSourceId(i, j);
+        this._physicsRig.inputs.at(inputIndex + j).source.id =
+          json.getInputSourceId(i, j);
       }
       inputIndex += this._physicsRig.settings.at(i).inputCount;
 
@@ -367,57 +353,45 @@ export class CubismPhysics {
       this._physicsRig.settings.at(i).baseOutputIndex = outputIndex;
 
       for (let j = 0; j < this._physicsRig.settings.at(i).outputCount; ++j) {
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).destinationParameterIndex = -1;
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).vertexIndex = json.getOutputVertexIndex(i, j);
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).angleScale = json.getOutputAngleScale(i, j);
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).weight = json.getOutputWeight(i, j);
+        this._physicsRig.outputs.at(outputIndex + j).destinationParameterIndex =
+          -1;
+        this._physicsRig.outputs.at(outputIndex + j).vertexIndex =
+          json.getOutputVertexIndex(i, j);
+        this._physicsRig.outputs.at(outputIndex + j).angleScale =
+          json.getOutputAngleScale(i, j);
+        this._physicsRig.outputs.at(outputIndex + j).weight =
+          json.getOutputWeight(i, j);
         this._physicsRig.outputs.at(outputIndex + j).destination.targetType =
           CubismPhysicsTargetType.CubismPhysicsTargetType_Parameter;
 
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).destination.id = json.getOutputDestinationId(i, j);
+        this._physicsRig.outputs.at(outputIndex + j).destination.id =
+          json.getOutputDestinationId(i, j);
 
         if (json.getOutputType(i, j) == PhysicsTypeTagX) {
           this._physicsRig.outputs.at(outputIndex + j).type =
             CubismPhysicsSource.CubismPhysicsSource_X;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getValue = getOutputTranslationX;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getScale = getOutputScaleTranslationX;
+          this._physicsRig.outputs.at(outputIndex + j).getValue =
+            getOutputTranslationX;
+          this._physicsRig.outputs.at(outputIndex + j).getScale =
+            getOutputScaleTranslationX;
         } else if (json.getOutputType(i, j) == PhysicsTypeTagY) {
           this._physicsRig.outputs.at(outputIndex + j).type =
             CubismPhysicsSource.CubismPhysicsSource_Y;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getValue = getOutputTranslationY;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getScale = getOutputScaleTranslationY;
+          this._physicsRig.outputs.at(outputIndex + j).getValue =
+            getOutputTranslationY;
+          this._physicsRig.outputs.at(outputIndex + j).getScale =
+            getOutputScaleTranslationY;
         } else if (json.getOutputType(i, j) == PhysicsTypeTagAngle) {
           this._physicsRig.outputs.at(outputIndex + j).type =
             CubismPhysicsSource.CubismPhysicsSource_Angle;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getValue = getOutputAngle;
-          this._physicsRig.outputs.at(
-            outputIndex + j
-          ).getScale = getOutputScaleAngle;
+          this._physicsRig.outputs.at(outputIndex + j).getValue =
+            getOutputAngle;
+          this._physicsRig.outputs.at(outputIndex + j).getScale =
+            getOutputScaleAngle;
         }
 
-        this._physicsRig.outputs.at(
-          outputIndex + j
-        ).reflect = json.getOutputReflect(i, j);
+        this._physicsRig.outputs.at(outputIndex + j).reflect =
+          json.getOutputReflect(i, j);
       }
       outputIndex += this._physicsRig.settings.at(i).outputCount;
 
@@ -426,21 +400,16 @@ export class CubismPhysics {
       this._physicsRig.settings.at(i).baseParticleIndex = particleIndex;
 
       for (let j = 0; j < this._physicsRig.settings.at(i).particleCount; ++j) {
-        this._physicsRig.particles.at(
-          particleIndex + j
-        ).mobility = json.getParticleMobility(i, j);
-        this._physicsRig.particles.at(
-          particleIndex + j
-        ).delay = json.getParticleDelay(i, j);
-        this._physicsRig.particles.at(
-          particleIndex + j
-        ).acceleration = json.getParticleAcceleration(i, j);
-        this._physicsRig.particles.at(
-          particleIndex + j
-        ).radius = json.getParticleRadius(i, j);
-        this._physicsRig.particles.at(
-          particleIndex + j
-        ).position = json.getParticlePosition(i, j);
+        this._physicsRig.particles.at(particleIndex + j).mobility =
+          json.getParticleMobility(i, j);
+        this._physicsRig.particles.at(particleIndex + j).delay =
+          json.getParticleDelay(i, j);
+        this._physicsRig.particles.at(particleIndex + j).acceleration =
+          json.getParticleAcceleration(i, j);
+        this._physicsRig.particles.at(particleIndex + j).radius =
+          json.getParticleRadius(i, j);
+        this._physicsRig.particles.at(particleIndex + j).position =
+          json.getParticlePosition(i, j);
       }
 
       particleIndex += this._physicsRig.settings.at(i).particleCount;

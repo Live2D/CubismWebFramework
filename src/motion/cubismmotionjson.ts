@@ -371,7 +371,7 @@ export class CubismMotionJson {
  * @brief ベジェカーブの解釈方法のフラグタイプ
  */
 export enum EvaluationOptionFlag {
-  EvaluationOptionFlag_AreBeziersRistricted = 0 ///< ベジェハンドルの規制状態
+  EvaluationOptionFlag_AreBeziersRistricted = 0, ///< ベジェハンドルの規制状態
 }
 
 // Namespace definition for compatibility.

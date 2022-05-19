@@ -307,7 +307,7 @@ export class CubismJson {
    * return false: 失敗
    */
   public parseBytes(buffer: ArrayBuffer, size: number): boolean {
-    const endPos: number[] = new Array(1); // 参照渡しにするため配列
+    const endPos: number[] = new Array<number>(1); // 参照渡しにするため配列
     const decodeBuffer: string = this.arrayBufferToString(buffer);
     this._root = this.parseValue(decodeBuffer, size, 0, endPos);
 

@@ -13,7 +13,7 @@ import { csmVector } from '../type/csmvector';
  * 物理演算の適用先の種類
  */
 export enum CubismPhysicsTargetType {
-  CubismPhysicsTargetType_Parameter // パラメータに対して適用
+  CubismPhysicsTargetType_Parameter, // パラメータに対して適用
 }
 
 /**
@@ -22,7 +22,7 @@ export enum CubismPhysicsTargetType {
 export enum CubismPhysicsSource {
   CubismPhysicsSource_X, // X軸の位置から
   CubismPhysicsSource_Y, // Y軸の位置から
-  CubismPhysicsSource_Angle // 角度から
+  CubismPhysicsSource_Angle, // 角度から
 }
 
 /**
@@ -243,7 +243,8 @@ export namespace Live2DCubismFramework {
   export type CubismPhysicsTargetType = $.CubismPhysicsTargetType;
   export const PhysicsJsonEffectiveForces = $.PhysicsJsonEffectiveForces;
   export type PhysicsJsonEffectiveForces = $.PhysicsJsonEffectiveForces;
-  export type normalizedPhysicsParameterValueGetter = $.normalizedPhysicsParameterValueGetter;
+  export type normalizedPhysicsParameterValueGetter =
+    $.normalizedPhysicsParameterValueGetter;
   export type physicsScaleGetter = $.physicsScaleGetter;
   export type physicsValueGetter = $.physicsValueGetter;
 }

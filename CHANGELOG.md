@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+
+## [4-r.5-beta.1] - 2022-05-19
+
+### Added
+
+* Add processing related to multiply colors and screen colors added in Cubism 4.2.
+
+### Fixed
+
+* Fix usage of Anisotropy filtering.
+* Fix model was not displayed when the number of masks exceeded the limit.
+* Fix getTextureDirectory() to return the directory name of the 0th texture path.
+
+
 ## [4-r.4] - 2021-12-09
 
 ### Fixed
@@ -66,6 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[4-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.4...4-r.5-beta.1
 [4-r.4]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3...4-r.4
 [4-r.3]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3-beta.1...4-r.3
 [4-r.3-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.2...4-r.3-beta.1

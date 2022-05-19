@@ -174,7 +174,7 @@ export class CubismExpressionMotion extends ACubismMotion {
 export enum ExpressionBlendType {
   ExpressionBlendType_Add = 0, // 加算
   ExpressionBlendType_Multiply = 1, // 乗算
-  ExpressionBlendType_Overwrite = 2 // 上書き
+  ExpressionBlendType_Overwrite = 2, // 上書き
 }
 
 /**
