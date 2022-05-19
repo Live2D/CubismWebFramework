@@ -159,7 +159,7 @@ export abstract class CubismRenderer {
    * @param n パラメータの値
    */
   public setAnisotropy(n: number): void {
-    this._anisortopy = n;
+    this._anisotropy = n;
   }
 
   /**
@@ -167,7 +167,7 @@ export abstract class CubismRenderer {
    * @return 異方性フィルタリングのパラメータ
    */
   public getAnisotropy(): number {
-    return this._anisortopy;
+    return this._anisotropy;
   }
 
   /**
@@ -184,7 +184,7 @@ export abstract class CubismRenderer {
   protected constructor() {
     this._isCulling = false;
     this._isPremultipliedAlpha = false;
-    this._anisortopy = 0.0;
+    this._anisotropy = 0.0;
     this._model = null;
     this._modelColor = new CubismTextureColor();
 
@@ -218,6 +218,8 @@ export abstract class CubismRenderer {
     indexArray: Uint16Array,
     vertexArray: Float32Array,
     uvArray: Float32Array,
+    multiplyColor: CubismTextureColor,
+    screenColor: CubismTextureColor,
     opacity: number,
     colorBlendMode: CubismBlendMode,
     invertedMask: boolean
@@ -226,20 +228,20 @@ export abstract class CubismRenderer {
   /**
    * レンダラが保持する静的なリソースを開放する
    */
-  public static staticRelease: Function;
+  public static staticRelease: any;
 
   protected _mvpMatrix4x4: CubismMatrix44; // Model-View-Projection 行列
   protected _modelColor: CubismTextureColor; // モデル自体のカラー（RGBA）
   protected _isCulling: boolean; // カリングが有効ならtrue
   protected _isPremultipliedAlpha: boolean; // 乗算済みαならtrue
-  protected _anisortopy: any; // テクスチャの異方性フィルタリングのパラメータ
+  protected _anisotropy: any; // テクスチャの異方性フィルタリングのパラメータ
   protected _model: CubismModel; // レンダリング対象のモデル
 }
 
 export enum CubismBlendMode {
   CubismBlendMode_Normal = 0, // 通常
   CubismBlendMode_Additive = 1, // 加算
-  CubismBlendMode_Multiplicative = 2 // 乗算
+  CubismBlendMode_Multiplicative = 2, // 乗算
 }
 
 /**

@@ -19,9 +19,8 @@ export class CubismMoc {
    */
   public static create(mocBytes: ArrayBuffer): CubismMoc {
     let cubismMoc: CubismMoc = null;
-    const moc: Live2DCubismCore.Moc = Live2DCubismCore.Moc.fromArrayBuffer(
-      mocBytes
-    );
+    const moc: Live2DCubismCore.Moc =
+      Live2DCubismCore.Moc.fromArrayBuffer(mocBytes);
 
     if (moc) {
       cubismMoc = new CubismMoc(moc);

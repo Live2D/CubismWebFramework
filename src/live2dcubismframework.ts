@@ -10,7 +10,7 @@ import { CubismRenderer } from './rendering/cubismrenderer';
 import {
   CSM_ASSERT,
   CubismLogInfo,
-  CubismLogWarning
+  CubismLogWarning,
 } from './utils/cubismdebug';
 import { Value } from './utils/cubismjson';
 
@@ -56,7 +56,7 @@ let s_cubismIdManager: CubismIdManager = null;
  */
 export const Constant = Object.freeze<Record<string, number>>({
   vertexOffset: 0, // メッシュ頂点のオフセット値
-  vertexStep: 2 // メッシュ頂点のステップ値
+  vertexStep: 2, // メッシュ頂点のステップ値
 });
 
 export function csmDelete<T>(address: T): void {
@@ -263,7 +263,7 @@ export enum LogLevel {
   LogLevel_Info, // Infoログ
   LogLevel_Warning, // 警告ログ
   LogLevel_Error, // エラーログ
-  LogLevel_Off // ログ出力無効
+  LogLevel_Off, // ログ出力無効
 }
 
 // Namespace definition for compatibility.
