@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [4-r.5-beta.2] - 2022-06-02
+
+### Fixed
+
+* Fixed a bug that caused Multiply Color / Screen Color of different objects to be applied.
+  * See `CHANGELOG.md` in Core.
+  * No modifications to Samples and Framework.
+
+
 ## [4-r.5-beta.1] - 2022-05-19
 
 ### Added
 
-* Add processing related to multiply colors and screen colors added in Cubism 4.2.
+* Add processing related to Multiply Color / Screen Color added in Cubism 4.2.
 
 ### Fixed
 
@@ -80,6 +89,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[4-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5-beta.1...4-r.5-beta.2
 [4-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.4...4-r.5-beta.1
 [4-r.4]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3...4-r.4
 [4-r.3]: https://github.com/Live2D/CubismWebFramework/compare/4-r.3-beta.1...4-r.3
