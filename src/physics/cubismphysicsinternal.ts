@@ -208,6 +208,7 @@ export class CubismPhysicsRig {
     this.particles = new csmVector<CubismPhysicsParticle>();
     this.gravity = new CubismVector2(0, 0);
     this.wind = new CubismVector2(0, 0);
+    this.fps = 0.0;
   }
 
   subRigCount: number; // 物理演算の物理点の個数
@@ -217,6 +218,7 @@ export class CubismPhysicsRig {
   particles: csmVector<CubismPhysicsParticle>; // 物理演算の物理点のリスト
   gravity: CubismVector2; // 重力
   wind: CubismVector2; // 風
+  fps: number; //物理演算動作FPS
 }
 
 // Namespace definition for compatibility.

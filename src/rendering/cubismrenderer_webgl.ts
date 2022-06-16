@@ -502,7 +502,7 @@ export class CubismClippingManager_WebGL {
           // チャンネルも切り替える必要がある(A,R,G,B)
           renderer.setClippingContextBufferForMask(clipContext);
           renderer.drawMesh(
-            model.getDrawableTextureIndices(clipDrawIndex),
+            model.getDrawableTextureIndex(clipDrawIndex),
             model.getDrawableVertexIndexCount(clipDrawIndex),
             model.getDrawableVertexCount(clipDrawIndex),
             model.getDrawableVertexIndices(clipDrawIndex),
@@ -2115,7 +2115,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       this.setIsCulling(this.getModel().getDrawableCulling(drawableIndex));
 
       this.drawMesh(
-        this.getModel().getDrawableTextureIndices(drawableIndex),
+        this.getModel().getDrawableTextureIndex(drawableIndex),
         this.getModel().getDrawableVertexIndexCount(drawableIndex),
         this.getModel().getDrawableVertexCount(drawableIndex),
         this.getModel().getDrawableVertexIndices(drawableIndex),
