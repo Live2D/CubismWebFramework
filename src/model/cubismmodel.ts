@@ -417,6 +417,18 @@ export class CubismModel {
   }
 
   /**
+   * パラメータの種類の取得
+   * @param parameterIndex パラメータのインデックス
+   * @return csmParameterType_Normal -> 通常のパラメータ
+   *          csmParameterType_BlendShape -> ブレンドシェイプパラメータ
+   */
+  public getParameterType(
+    parameterIndex: number
+  ): Live2DCubismCore.csmParameterType {
+    return this._model.parameters.types[parameterIndex];
+  }
+
+  /**
    * パラメータの最大値の取得
    * @param parameterIndex パラメータのインデックス
    * @return パラメータの最大値
@@ -786,6 +798,15 @@ export class CubismModel {
     screenColor.B = screenColors[index + 2];
     screenColor.A = screenColors[index + 3];
     return screenColor;
+  }
+
+  /**
+   * Drawableの親パーツのインデックスの取得
+   * @param drawableIndex Drawableのインデックス
+   * @return drawableの親パーツのインデックス
+   */
+  public getDrawableParentPartIndex(drawableIndex: number): number {
+    return this._model.drawables.parentPartIndices[drawableIndex];
   }
 
   /**
