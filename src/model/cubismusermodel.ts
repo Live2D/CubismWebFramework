@@ -129,14 +129,20 @@ export class CubismUserModel {
    */
   public loadModel(buffer: ArrayBuffer) {
     this._moc = CubismMoc.create(buffer);
-    this._model = this._moc.createModel();
-    this._model.saveParameters();
 
-    if (this._moc == null || this._model == null) {
+    if (this._moc == null) {
+      CubismLogError('Failed to CubismMoc.create().');
+      return;
+    }
+
+    this._model = this._moc.createModel();
+
+    if (this._model == null) {
       CubismLogError('Failed to CreateModel().');
       return;
     }
 
+    this._model.saveParameters();
     this._modelMatrix = new CubismModelMatrix(
       this._model.getCanvasWidth(),
       this._model.getCanvasHeight()
