@@ -24,7 +24,10 @@ export class CubismMoc {
 
     if (moc) {
       cubismMoc = new CubismMoc(moc);
-      cubismMoc._mocVersion = Live2DCubismCore.Version.csmGetMocVersion(moc);
+      cubismMoc._mocVersion = Live2DCubismCore.Version.csmGetMocVersion(
+        moc,
+        mocBytes
+      );
     }
 
     return cubismMoc;
