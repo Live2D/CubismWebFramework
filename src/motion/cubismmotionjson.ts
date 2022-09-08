@@ -8,7 +8,7 @@
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
 import { csmString } from '../type/csmstring';
-import { CubismJson } from '../utils/cubismjson';
+import { CubismJson, JsonMap } from '../utils/cubismjson';
 
 // JSON keys
 const Meta = 'Meta';

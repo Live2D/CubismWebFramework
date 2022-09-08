@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+
+## [4-r.5] - 2022-09-08
+
+### Added
+
+* Add the multilingual supported documents.
+* Add immediate stabilization of physics.
+* Implemented a process to switch between `CubismJson` parsing and `JSON.parse()`.
+
+
 ## [4-r.5-beta.5] - 2022-08-04
 
 ### Fixed
@@ -116,6 +126,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[4-r.5]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5-beta.5...4-r.5
 [4-r.5-beta.5]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5-beta.4...4-r.5-beta.5
 [4-r.5-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5-beta.3...4-r.5-beta.4
 [4-r.5-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5-beta.2...4-r.5-beta.3
