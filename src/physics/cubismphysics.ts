@@ -145,19 +145,22 @@ export class CubismPhysics {
             CubismPhysicsSource.CubismPhysicsSource_X;
           this._physicsRig.inputs.at(
             inputIndex + j
-          ).getNormalizedParameterValue = getInputTranslationXFromNormalizedParameterValue;
+          ).getNormalizedParameterValue =
+            getInputTranslationXFromNormalizedParameterValue;
         } else if (json.getInputType(i, j) == PhysicsTypeTagY) {
           this._physicsRig.inputs.at(inputIndex + j).type =
             CubismPhysicsSource.CubismPhysicsSource_Y;
           this._physicsRig.inputs.at(
             inputIndex + j
-          ).getNormalizedParameterValue = getInputTranslationYFromNormalizedParamterValue;
+          ).getNormalizedParameterValue =
+            getInputTranslationYFromNormalizedParamterValue;
         } else if (json.getInputType(i, j) == PhysicsTypeTagAngle) {
           this._physicsRig.inputs.at(inputIndex + j).type =
             CubismPhysicsSource.CubismPhysicsSource_Angle;
           this._physicsRig.inputs.at(
             inputIndex + j
-          ).getNormalizedParameterValue = getInputAngleFromNormalizedParameterValue;
+          ).getNormalizedParameterValue =
+            getInputAngleFromNormalizedParameterValue;
         }
 
         this._physicsRig.inputs.at(inputIndex + j).source.targetType =

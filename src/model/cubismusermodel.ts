@@ -277,14 +277,15 @@ export class CubismUserModel {
 
   /**
    * レンダラを作成して初期化を実行する
+   * @param maskBufferCount バッファの生成数
    */
-  public createRenderer(): void {
+  public createRenderer(maskBufferCount = 1): void {
     if (this._renderer) {
       this.deleteRenderer();
     }
 
     this._renderer = new CubismRenderer_WebGL();
-    this._renderer.initialize(this._model);
+    this._renderer.initialize(this._model, maskBufferCount);
   }
 
   /**

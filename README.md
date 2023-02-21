@@ -21,14 +21,15 @@ Please check the [license](LICENSE.md) before using this SDK.
 
 ### Node.js
 
-* 18.8.0
-* 16.17.0
-* 14.20.0
+* 19.6.0
+* 18.14.0
+* 16.19.0
+* 14.21.2
 
 
 ### TypeScript
 
-4.8.2
+4.9.5
 
 
 ## Development environment construction
