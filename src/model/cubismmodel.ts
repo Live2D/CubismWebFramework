@@ -25,6 +25,25 @@ export class DrawableColorData {
 }
 
 /**
+ * テクスチャのカリング設定を管理するための構造体
+ */
+export class DrawableCullingData {
+  /**
+   * コンストラクタ
+   *
+   * @param isOverwritten
+   * @param isCulling
+   */
+  public constructor(isOverwritten = false, isCulling = false) {
+    isOverwritten = this.isOverwritten;
+    isCulling = this.isCulling;
+  }
+
+  public isOverwritten: boolean;
+  public isCulling: boolean;
+}
+
+/**
  * モデル
  *
  * Mocデータから生成されるモデルのクラス。
@@ -38,6 +57,18 @@ export class CubismModel {
     this._model.update();
 
     this._model.drawables.resetDynamicFlags();
+  }
+
+  /**
+   * PixelsPerUnitを取得する
+   * @returns PixelsPerUnit
+   */
+  public getPixelsPerUnit(): number {
+    if (this._model == null) {
+      return 0.0;
+    }
+
+    return this._model.canvasinfo.PixelsPerUnit;
   }
 
   /**
@@ -264,6 +295,79 @@ export class CubismModel {
     value: boolean
   ) {
     this._userScreenColors.at(drawableindex).isOverwritten = value;
+  }
+
+  /**
+   * Drawableのカリング情報を取得する。
+   *
+   * @param   drawableIndex   Drawableのインデックス
+   * @return  Drawableのカリング情報
+   */
+  public getDrawableCulling(drawableIndex: number): boolean {
+    if (
+      this.getOverwriteFlagForModelCullings() ||
+      this.getOverwriteFlagForDrawableCullings(drawableIndex)
+    ) {
+      return this._userCullings.at(drawableIndex).isCulling;
+    }
+
+    const constantFlags = this._model.drawables.constantFlags;
+    return !Live2DCubismCore.Utils.hasIsDoubleSidedBit(
+      constantFlags[drawableIndex]
+    );
+  }
+
+  /**
+   * Drawableのカリング情報を設定する。
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @param isCulling カリング情報
+   */
+  public setDrawableCulling(drawableIndex: number, isCulling: boolean): void {
+    this._userCullings.at(drawableIndex).isCulling = isCulling;
+  }
+
+  /**
+   * SDKからモデル全体のカリング設定を上書きするか。
+   *
+   * @retval  true    ->  SDK上のカリング設定を使用
+   * @retval  false   ->  モデルのカリング設定を使用
+   */
+  public getOverwriteFlagForModelCullings(): boolean {
+    return this._isOverwrittenCullings;
+  }
+
+  /**
+   * SDKからモデル全体のカリング設定を上書きするかを設定する。
+   *
+   * @param isOverwrittenCullings SDK上のカリング設定を使うならtrue、モデルのカリング設定を使うならfalse
+   */
+  public setOverwriteFlagForModelCullings(
+    isOverwrittenCullings: boolean
+  ): void {
+    this._isOverwrittenCullings = isOverwrittenCullings;
+  }
+
+  /**
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @retval  true    ->  SDK上のカリング設定を使用
+   * @retval  false   ->  モデルのカリング設定を使用
+   */
+  public getOverwriteFlagForDrawableCullings(drawableIndex: number): boolean {
+    return this._userCullings.at(drawableIndex).isOverwritten;
+  }
+
+  /**
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @param isOverwrittenCullings SDK上のカリング設定を使うならtrue、モデルのカリング設定を使うならfalse
+   */
+  public setOverwriteFlagForDrawableCullings(
+    drawableIndex: number,
+    isOverwrittenCullings: boolean
+  ): void {
+    this._userCullings.at(drawableIndex).isOverwritten = isOverwrittenCullings;
   }
 
   /**
@@ -810,19 +914,6 @@ export class CubismModel {
   }
 
   /**
-   * Drawableのカリング情報の取得
-   * @param drawableIndex Drawableのインデックス
-   * @return drawableのカリング情報
-   */
-  public getDrawableCulling(drawableIndex: number): boolean {
-    const constantFlags = this._model.drawables.constantFlags;
-
-    return !Live2DCubismCore.Utils.hasIsDoubleSidedBit(
-      constantFlags[drawableIndex]
-    );
-  }
-
-  /**
    * Drawableのブレンドモードを取得
    * @param drawableIndex Drawableのインデックス
    * @return drawableのブレンドモード
@@ -1041,6 +1132,14 @@ export class CubismModel {
       this._userScreenColors = new csmVector<DrawableColorData>();
       this._userScreenColors.updateSize(drawableCount, DrawableColorData, true);
 
+      // カリング設定
+      this._userCullings = new csmVector<DrawableCullingData>();
+      this._userCullings.updateSize(drawableCount, DrawableCullingData, true);
+      const userCulling: DrawableCullingData = new DrawableCullingData(
+        false,
+        false
+      );
+
       this._drawableIds.prepareCapacity(drawableCount);
       for (let i = 0; i < drawableCount; ++i) {
         this._drawableIds.pushBack(
@@ -1050,6 +1149,8 @@ export class CubismModel {
         // shaderに影響しない色で初期化
         this.setMultiplyColorByRGBA(i, 1.0, 1.0, 1.0, 1.0);
         this.setScreenColorByRGBA(i, 0.0, 0.0, 0.0, 1.0);
+
+        this._userCullings.pushBack(userCulling);
       }
     }
   }
@@ -1070,6 +1171,7 @@ export class CubismModel {
     this._partIds = new csmVector<CubismIdHandle>();
     this._isOverwrittenModelMultiplyColors = false;
     this._isOverwrittenModelScreenColors = false;
+    this._isOverwrittenCullings = false;
     this._userMultiplyColors = null;
     this._userScreenColors = null;
 
@@ -1111,6 +1213,9 @@ export class CubismModel {
   private _parameterIds: csmVector<CubismIdHandle>;
   private _partIds: csmVector<CubismIdHandle>;
   private _drawableIds: csmVector<CubismIdHandle>;
+
+  private _isOverwrittenCullings: boolean; // モデルのカリング設定をすべて上書きするか？
+  private _userCullings: csmVector<DrawableCullingData>; // カリング設定の配列
 }
 
 // Namespace definition for compatibility.
