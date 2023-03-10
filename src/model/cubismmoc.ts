@@ -110,6 +110,15 @@ export class CubismMoc {
     return this._mocVersion;
   }
 
+  /**
+   * .moc3 の整合性を検証する
+   */
+  public static hasMocConsistency(mocBytes: ArrayBuffer): boolean {
+    const hasMocConsistency =
+      Live2DCubismCore.Moc.prototype.hasMocConsistency(mocBytes);
+    return hasMocConsistency === 1 ? true : false;
+  }
+
   _moc: Live2DCubismCore.Moc; // Mocデータ
   _modelCount: number; // Mocデータから作られたモデルの個数
   _mocVersion: number; // 読み込んだモデルの.moc3 Version
