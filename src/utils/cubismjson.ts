@@ -214,6 +214,8 @@ export abstract class Value {
 
   public static errorValue: Value; // 一時的な返り値として返すエラー。 CubismFramework::Disposeするまではdeleteしない
   public static nullValue: Value; // 一時的な返り値として返すNULL。   CubismFramework::Disposeするまではdeleteしない
+
+  [key: string]: any; // 明示的に連想配列をany型で指定
 }
 
 /**

@@ -186,8 +186,8 @@ export class CubismPhysics {
 
       for (let j = 0; j < this._physicsRig.settings.at(i).outputCount; ++j) {
         // initialize
-        currentRigOutput.outputs[j] = 0.0;
-        previousRigOutput.outputs[j] = 0.0;
+        currentRigOutput.outputs.set(j, 0.0);
+        previousRigOutput.outputs.set(j, 0.0);
 
         this._physicsRig.outputs.at(outputIndex + j).destinationParameterIndex =
           -1;
@@ -395,8 +395,8 @@ export class CubismPhysics {
           this._options.gravity
         );
 
-        this._currentRigOutputs.at(settingIndex).outputs[i] = outputValue;
-        this._previousRigOutputs.at(settingIndex).outputs[i] = outputValue;
+        this._currentRigOutputs.at(settingIndex).outputs.set(i, outputValue);
+        this._previousRigOutputs.at(settingIndex).outputs.set(i, outputValue);
 
         const destinationParameterIndex: number =
           currentOutputs[i].destinationParameterIndex;
@@ -532,8 +532,12 @@ export class CubismPhysics {
           currentSetting.baseOutputIndex
         );
         for (let i = 0; i < currentSetting.outputCount; ++i) {
-          this._previousRigOutputs.at(settingIndex).outputs[i] =
-            this._currentRigOutputs.at(settingIndex).outputs[i];
+          this._previousRigOutputs
+            .at(settingIndex)
+            .outputs.set(
+              i,
+              this._currentRigOutputs.at(settingIndex).outputs.at(i)
+            );
         }
       }
 
@@ -645,7 +649,7 @@ export class CubismPhysics {
             this._options.gravity
           );
 
-          this._currentRigOutputs.at(settingIndex).outputs[i] = outputValue;
+          this._currentRigOutputs.at(settingIndex).outputs.set(i, outputValue);
 
           const destinationParameterIndex: number =
             currentOutputs[i].destinationParameterIndex;
@@ -732,8 +736,9 @@ export class CubismPhysics {
           outParameterValues,
           parameterMinimumValues[destinationParameterIndex],
           parameterMaximumValues[destinationParameterIndex],
-          this._previousRigOutputs.at(settingIndex).outputs[i] * (1 - weight) +
-            this._currentRigOutputs.at(settingIndex).outputs[i] * weight,
+          this._previousRigOutputs.at(settingIndex).outputs.at(i) *
+            (1 - weight) +
+            this._currentRigOutputs.at(settingIndex).outputs.at(i) * weight,
           currentOutputs[i]
         );
 

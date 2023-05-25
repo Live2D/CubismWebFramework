@@ -478,7 +478,7 @@ export class CubismClippingManager_WebGL {
         index < this._clearedFrameBufferflags.getSize();
         index++
       ) {
-        this._clearedFrameBufferflags[index] = false;
+        this._clearedFrameBufferflags.set(index, false);
       }
 
       // 実際にマスクを生成する
@@ -626,12 +626,12 @@ export class CubismClippingManager_WebGL {
             );
 
             // マスクがクリアされていないなら処理する
-            if (!this._clearedFrameBufferflags[clipContext._bufferIndex]) {
+            if (!this._clearedFrameBufferflags.at(clipContext._bufferIndex)) {
               // マスクをクリアする
               // (仮仕様) 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダーCd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
               this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
               this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-              this._clearedFrameBufferflags[clipContext._bufferIndex] = true;
+              this._clearedFrameBufferflags.set(clipContext._bufferIndex, true);
             }
 
             // 今回専用の変換を適用して描く

@@ -25,11 +25,14 @@ export class CubismJsonExtension {
   static parseJsonObject(obj: Value, map: JsonMap) {
     Object.keys(obj).forEach((key) => {
       if (typeof obj[key] == 'boolean') {
-        map.put(key, new JsonBoolean(obj[key]));
+        const convValue = Boolean(obj[key]);
+        map.put(key, new JsonBoolean(convValue));
       } else if (typeof obj[key] == 'string') {
-        map.put(key, new JsonString(obj[key]));
+        const convValue = String(obj[key]);
+        map.put(key, new JsonString(convValue));
       } else if (typeof obj[key] == 'number') {
-        map.put(key, new JsonFloat(obj[key]));
+        const convValue = Number(obj[key]);
+        map.put(key, new JsonFloat(convValue));
       } else if (obj[key] instanceof Array) {
         map.put(key, CubismJsonExtension.parseJsonArray(obj[key]));
       } else if (obj[key] instanceof Object) {
@@ -52,12 +55,15 @@ export class CubismJsonExtension {
     Object.keys(obj).forEach((key) => {
       const convKey = Number(key);
       if (typeof convKey == 'number') {
-        if (typeof obj[convKey] == 'boolean') {
-          arr.add(new JsonBoolean(obj[convKey]));
-        } else if (typeof obj[convKey] == 'string') {
-          arr.add(new JsonString(obj[convKey]));
-        } else if (typeof obj[convKey] == 'number') {
-          arr.add(new JsonFloat(obj[convKey]));
+        if (typeof obj[key] == 'boolean') {
+          const convValue = Boolean(obj[key]);
+          arr.add(new JsonBoolean(convValue));
+        } else if (typeof obj[key] == 'string') {
+          const convValue = String(obj[key]);
+          arr.add(new JsonString(convValue));
+        } else if (typeof obj[key] == 'number') {
+          const convValue = Number(obj[key]);
+          arr.add(new JsonFloat(convValue));
         } else if (obj[key] instanceof Array) {
           arr.add(this.parseJsonArray(obj[key]));
         } else if (obj[key] instanceof Object) {
@@ -75,9 +81,10 @@ export class CubismJsonExtension {
       } else if (obj[key] == null) {
         arr.add(new JsonNullvalue());
       } else {
+        const convValue = Array(obj[key]);
         // 配列ともObjectとも判定できなかった場合でも処理する
-        for (let i = 0; i < obj[key].length; i++) {
-          arr.add(obj[key][i]);
+        for (let i = 0; i < convValue.length; i++) {
+          arr.add(convValue[i]);
         }
       }
     });
