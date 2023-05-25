@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [4-r.7] - 2023-05-25
+
+### Added
+
+* Add compiler options `noImplicitAny` and `useUnknownInCatchVariables` to `tsconfig.json`.
+* Add some function for checking consistency of MOC3.
+  * Add the function of checking consistency on reviving a MOC3. (`CubismMoc::Create`)
+* Add a function to parse the opacity from `.motion3.json`.
+* Add some functions to change Multiply and Screen colors on a per part basis.
+
+### Changed
+
+* Change access specifier for `CubismExpressionMotion`.
+
+### Fixed
+
+* Fix to support added compiler options `noImplicitAny` and `useUnknownInCatchVariables`.
+
+
 ## [4-r.6.2] - 2023-03-16
 
 ### Fixed
@@ -163,6 +182,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[4-r.7]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6.2...4-r.7
 [4-r.6.2]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6.1...4-r.6.2
 [4-r.6.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6...4-r.6.1
 [4-r.6]: https://github.com/Live2D/CubismWebFramework/compare/4-r.5...4-r.6

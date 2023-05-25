@@ -5,7 +5,7 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { CSM_ASSERT } from '../utils/cubismdebug';
+import { CSM_ASSERT, CubismLogError } from '../utils/cubismdebug';
 import { CubismModel } from './cubismmodel';
 
 /**
@@ -17,8 +17,23 @@ export class CubismMoc {
   /**
    * Mocデータの作成
    */
-  public static create(mocBytes: ArrayBuffer): CubismMoc {
+  public static create(
+    mocBytes: ArrayBuffer,
+    shouldCheckMocConsistency: boolean
+  ): CubismMoc {
     let cubismMoc: CubismMoc = null;
+
+    if (shouldCheckMocConsistency) {
+      // .moc3の整合性を確認
+      const consistency = this.hasMocConsistency(mocBytes);
+
+      if (!consistency) {
+        // 整合性が確認できなければ処理しない
+        CubismLogError(`Inconsistent MOC3.`);
+        return cubismMoc;
+      }
+    }
+
     const moc: Live2DCubismCore.Moc =
       Live2DCubismCore.Moc.fromArrayBuffer(mocBytes);
 
@@ -114,9 +129,9 @@ export class CubismMoc {
    * .moc3 の整合性を検証する
    */
   public static hasMocConsistency(mocBytes: ArrayBuffer): boolean {
-    const hasMocConsistency =
+    const isConsistent =
       Live2DCubismCore.Moc.prototype.hasMocConsistency(mocBytes);
-    return hasMocConsistency === 1 ? true : false;
+    return isConsistent === 1 ? true : false;
   }
 
   _moc: Live2DCubismCore.Moc; // Mocデータ

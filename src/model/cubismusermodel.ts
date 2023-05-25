@@ -127,8 +127,8 @@ export class CubismUserModel {
    *
    * @param buffer    moc3ファイルが読み込まれているバッファ
    */
-  public loadModel(buffer: ArrayBuffer) {
-    this._moc = CubismMoc.create(buffer);
+  public loadModel(buffer: ArrayBuffer, shouldCheckMocConsistency = false) {
+    this._moc = CubismMoc.create(buffer, shouldCheckMocConsistency);
 
     if (this._moc == null) {
       CubismLogError('Failed to CubismMoc.create().');
@@ -359,6 +359,7 @@ export class CubismUserModel {
     this._accelerationX = 0.0;
     this._accelerationY = 0.0;
     this._accelerationZ = 0.0;
+    this._mocConsistency = false;
     this._debugMode = false;
     this._renderer = null;
 
@@ -433,6 +434,7 @@ export class CubismUserModel {
   protected _accelerationX: number; // X軸方向の加速度
   protected _accelerationY: number; // Y軸方向の加速度
   protected _accelerationZ: number; // Z軸方向の加速度
+  protected _mocConsistency: boolean; // MOC3一貫性検証するかどうか
   protected _debugMode: boolean; // デバッグモードかどうか
 
   private _renderer: CubismRenderer_WebGL; // レンダラ

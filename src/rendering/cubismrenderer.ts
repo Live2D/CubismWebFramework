@@ -288,11 +288,11 @@ export class CubismTextureColor {
   /**
    * コンストラクタ
    */
-  constructor() {
-    this.R = 1.0;
-    this.G = 1.0;
-    this.B = 1.0;
-    this.A = 1.0;
+  constructor(r = 1.0, g = 1.0, b = 1.0, a = 1.0) {
+    this.R = r;
+    this.G = g;
+    this.B = b;
+    this.A = a;
   }
 
   R: number; // 赤チャンネル
