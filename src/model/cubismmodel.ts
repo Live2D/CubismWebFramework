@@ -9,7 +9,7 @@ import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
 import {
   CubismBlendMode,
-  CubismTextureColor,
+  CubismTextureColor
 } from '../rendering/cubismrenderer';
 import { csmMap } from '../type/csmmap';
 import { csmVector } from '../type/csmvector';
@@ -844,6 +844,18 @@ export class CubismModel {
    */
   public getParameterDefaultValue(parameterIndex: number): number {
     return this._model.parameters.defaultValues[parameterIndex];
+  }
+
+  /**
+   * 指定したパラメータindexのIDを取得
+   *
+   * @param parameterIndex パラメータのインデックス
+   * @returns パラメータID
+   */
+  public getParameterId(parameterIndex: number): CubismIdHandle {
+    return CubismFramework.getIdManager().getId(
+      this._model.parameters.ids[parameterIndex]
+    );
   }
 
   /**

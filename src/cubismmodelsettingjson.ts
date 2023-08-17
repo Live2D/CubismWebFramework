@@ -73,7 +73,7 @@ enum FrequestNode {
   FrequestNode_Textures, // getRoot().getValueByString(FileReferences).getValueByString(Textures)
   FrequestNode_Physics, // getRoot().getValueByString(FileReferences).getValueByString(Physics)
   FrequestNode_Pose, // getRoot().getValueByString(FileReferences).getValueByString(Pose)
-  FrequestNode_HitAreas, // getRoot().getValueByString(HitAreas)
+  FrequestNode_HitAreas // getRoot().getValueByString(HitAreas)
 }
 
 /**

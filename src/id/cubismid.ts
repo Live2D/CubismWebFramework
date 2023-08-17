@@ -11,25 +11,28 @@ import { csmString } from '../type/csmstring';
  * パラメータ名・パーツ名・Drawable名を保持
  *
  * パラメータ名・パーツ名・Drawable名を保持するクラス。
+ *
+ * @note 指定したID文字列からCubismIdを取得する際はこのクラスの生成メソッドを呼ばず、
+ *       CubismIdManager().getId(id)を使用してください
  */
 export class CubismId {
+  /**
+   * 内部で使用するCubismIdクラス生成メソッド
+   *
+   * @param id ID文字列
+   * @returns CubismId
+   * @note 指定したID文字列からCubismIdを取得する際は
+   *       CubismIdManager().getId(id)を使用してください
+   */
+  public static _createIdInternal(id: string | csmString) {
+    return new CubismId(id);
+  }
+
   /**
    * ID名を取得する
    */
   public getString(): csmString {
     return this._id;
-  }
-
-  /**
-   * コンストラクタ
-   */
-  public constructor(id: string | csmString) {
-    if (typeof id === 'string') {
-      this._id = new csmString(id);
-      return;
-    }
-
-    this._id = id;
   }
 
   /**
@@ -62,6 +65,20 @@ export class CubismId {
       return !this._id.isEqual(c._id.s);
     }
     return false;
+  }
+
+  /**
+   * プライベートコンストラクタ
+   *
+   * @note ユーザーによる生成は許可しません
+   */
+  private constructor(id: string | csmString) {
+    if (typeof id === 'string') {
+      this._id = new csmString(id);
+      return;
+    }
+
+    this._id = id;
   }
 
   private _id: csmString; // ID名

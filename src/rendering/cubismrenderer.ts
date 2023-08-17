@@ -7,6 +7,8 @@
 
 import { CubismMatrix44 } from '../math/cubismmatrix44';
 import { CubismModel } from '../model/cubismmodel';
+import { csmRect } from '../type/csmrectf';
+import { ICubismClippingManager } from './cubismclippingmanager';
 
 /**
  * モデル描画を処理するレンダラ
@@ -124,6 +126,24 @@ export abstract class CubismRenderer {
   }
 
   /**
+   * 透明度を考慮したモデルの色を計算する。
+   *
+   * @param opacity 透明度
+   *
+   * @return RGBAのカラー情報
+   */
+  getModelColorWithOpacity(opacity: number): CubismTextureColor {
+    const modelColorRGBA: CubismTextureColor = this.getModelColor();
+    modelColorRGBA.A *= opacity;
+    if (this.isPremultipliedAlpha()) {
+      modelColorRGBA.R *= modelColorRGBA.A;
+      modelColorRGBA.G *= modelColorRGBA.A;
+      modelColorRGBA.B *= modelColorRGBA.A;
+    }
+    return modelColorRGBA;
+  }
+
+  /**
    * 乗算済みαの有効・無効をセットする
    * 有効にするならtrue、無効にするならfalseをセットする
    */
@@ -225,33 +245,6 @@ export abstract class CubismRenderer {
   public abstract doDrawModel(): void;
 
   /**
-   * 描画オブジェクト（アートメッシュ）を描画する
-   * ポリゴンメッシュとテクスチャ番号をセットで渡す。
-   * @param textureNo 描画するテクスチャ番号
-   * @param indexCount 描画オブジェクトのインデックス値
-   * @param vertexCount ポリゴンメッシュの頂点数
-   * @param indexArray ポリゴンメッシュ頂点のインデックス配列
-   * @param vertexArray ポリゴンメッシュの頂点配列
-   * @param uvArray uv配列
-   * @param opacity 不透明度
-   * @param colorBlendMode カラーブレンディングのタイプ
-   * @param invertedMask マスク使用時のマスクの反転使用
-   */
-  public abstract drawMesh(
-    textureNo: number,
-    indexCount: number,
-    vertexCount: number,
-    indexArray: Uint16Array,
-    vertexArray: Float32Array,
-    uvArray: Float32Array,
-    multiplyColor: CubismTextureColor,
-    screenColor: CubismTextureColor,
-    opacity: number,
-    colorBlendMode: CubismBlendMode,
-    invertedMask: boolean
-  ): void;
-
-  /**
    * モデル描画直前のレンダラのステートを保持する
    */
   protected abstract saveProfile(): void;
@@ -278,7 +271,7 @@ export abstract class CubismRenderer {
 export enum CubismBlendMode {
   CubismBlendMode_Normal = 0, // 通常
   CubismBlendMode_Additive = 1, // 加算
-  CubismBlendMode_Multiplicative = 2, // 乗算
+  CubismBlendMode_Multiplicative = 2 // 乗算
 }
 
 /**
@@ -299,6 +292,75 @@ export class CubismTextureColor {
   G: number; // 緑チャンネル
   B: number; // 青チャンネル
   A: number; // αチャンネル
+}
+
+/**
+ * クリッピングマスクのコンテキスト
+ */
+export abstract class CubismClippingContext {
+  /**
+   * 引数付きコンストラクタ
+   */
+  public constructor(clippingDrawableIndices: Int32Array, clipCount: number) {
+    // クリップしている（＝マスク用の）Drawableのインデックスリスト
+    this._clippingIdList = clippingDrawableIndices;
+
+    // マスクの数
+    this._clippingIdCount = clipCount;
+
+    this._allClippedDrawRect = new csmRect();
+    this._layoutBounds = new csmRect();
+
+    this._clippedDrawableIndexList = [];
+
+    this._matrixForMask = new CubismMatrix44();
+    this._matrixForDraw = new CubismMatrix44();
+
+    this._bufferIndex = 0;
+  }
+
+  /**
+   * このマスクを管理するマネージャのインスタンスを取得する
+   * @return クリッピングマネージャのインスタンス
+   */
+  public abstract getClippingManager(): ICubismClippingManager;
+
+  /**
+   * デストラクタ相当の処理
+   */
+  public release(): void {
+    if (this._layoutBounds != null) {
+      this._layoutBounds = null;
+    }
+
+    if (this._allClippedDrawRect != null) {
+      this._allClippedDrawRect = null;
+    }
+
+    if (this._clippedDrawableIndexList != null) {
+      this._clippedDrawableIndexList = null;
+    }
+  }
+
+  /**
+   * このマスクにクリップされる描画オブジェクトを追加する
+   *
+   * @param drawableIndex クリッピング対象に追加する描画オブジェクトのインデックス
+   */
+  public addClippedDrawable(drawableIndex: number) {
+    this._clippedDrawableIndexList.push(drawableIndex);
+  }
+
+  public _isUsing: boolean; // 現在の描画状態でマスクの準備が必要ならtrue
+  public readonly _clippingIdList: Int32Array; // クリッピングマスクのIDリスト
+  public _clippingIdCount: number; // クリッピングマスクの数
+  public _layoutChannelNo: number; // RGBAのいずれのチャンネルにこのクリップを配置するか（0:R, 1:G, 2:B, 3:A）
+  public _layoutBounds: csmRect; // マスク用チャンネルのどの領域にマスクを入れるか（View座標-1~1, UVは0~1に直す）
+  public _allClippedDrawRect: csmRect; // このクリッピングで、クリッピングされるすべての描画オブジェクトの囲み矩形（毎回更新）
+  public _matrixForMask: CubismMatrix44; // マスクの位置計算結果を保持する行列
+  public _matrixForDraw: CubismMatrix44; // 描画オブジェクトの位置計算結果を保持する行列
+  public _clippedDrawableIndexList: number[]; // このマスクにクリップされる描画オブジェクトのリスト
+  public _bufferIndex: number; // このマスクが割り当てられるレンダーテクスチャ（フレームバッファ）やカラーバッファのインデックス
 }
 
 // Namespace definition for compatibility.

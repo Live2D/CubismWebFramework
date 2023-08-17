@@ -226,6 +226,15 @@ export class CubismMotionQueueEntry {
     return this._fadeOutSeconds;
   }
 
+  /**
+   * モーションの取得
+   *
+   * @return モーション
+   */
+  public getCubismMotion(): ACubismMotion {
+    return this._motion;
+  }
+
   _autoDelete: boolean; // 自動削除
   _motion: ACubismMotion; // モーション
 

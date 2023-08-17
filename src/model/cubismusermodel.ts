@@ -14,6 +14,7 @@ import { CubismModelMatrix } from '../math/cubismmodelmatrix';
 import { CubismTargetPoint } from '../math/cubismtargetpoint';
 import { ACubismMotion, FinishedMotionCallback } from '../motion/acubismmotion';
 import { CubismExpressionMotion } from '../motion/cubismexpressionmotion';
+import { CubismExpressionMotionManager } from '../motion/cubismexpressionmotionmanager';
 import { CubismMotion } from '../motion/cubismmotion';
 import { CubismMotionManager } from '../motion/cubismmotionmanager';
 import { CubismMotionQueueManager } from '../motion/cubismmotionqueuemanager';
@@ -371,7 +372,7 @@ export class CubismUserModel {
     );
 
     // 表情マネージャーを作成
-    this._expressionManager = new CubismMotionManager();
+    this._expressionManager = new CubismExpressionMotionManager();
 
     // ドラッグによるアニメーション
     this._dragManager = new CubismTargetPoint();
@@ -415,7 +416,7 @@ export class CubismUserModel {
   protected _model: CubismModel; // Modelインスタンス
 
   protected _motionManager: CubismMotionManager; // モーション管理
-  protected _expressionManager: CubismMotionManager; // 表情管理
+  protected _expressionManager: CubismExpressionMotionManager; // 表情管理
   protected _eyeBlink: CubismEyeBlink; // 自動まばたき
   protected _breath: CubismBreath; // 呼吸
   protected _modelMatrix: CubismModelMatrix; // モデル行列
