@@ -17,7 +17,7 @@ import {
   CubismPhysicsRig,
   CubismPhysicsSource,
   CubismPhysicsSubRig,
-  CubismPhysicsTargetType,
+  CubismPhysicsTargetType
 } from './cubismphysicsinternal';
 import { CubismPhysicsJson } from './cubismphysicsjson';
 

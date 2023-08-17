@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.1-beta.1] - 2023-08-17
+
+### Added
+
+* Add the function to get the ID of a given parameter.(`CubismModel.getParameterId`)
+* Add the `CubismExpressionMotionManager` class.
+
+### Changed
+
+* Change the visibility of the `CubismId` constructor to private.
+  * Please use `CubismFramework.getIdManager().getId()` to get `CubismId`.
+* Change the word `DrawMesh` to `DrawMeshWebGL`.
+
+### Fixed
+
+* Fix a bug that the value applied by multiply was not appropriate during expression transitions.
+* Fix the structure of the class in renderer.
+* Fix a issue where `ARRAY_BUFFER` was used on multiple targets.
+* Separate shader class from `cubismrenderer` class.
+* Separate the high precision mask process from the clipping mask setup process.
+
+### Removed
+
+* Remove several arguments of `DrawMesh` function.
+
+
 ## [4-r.7] - 2023-05-25
 
 ### Added
@@ -182,6 +208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.1-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.7...5-r.1-beta.1
 [4-r.7]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6.2...4-r.7
 [4-r.6.2]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6.1...4-r.6.2
 [4-r.6.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.6...4-r.6.1

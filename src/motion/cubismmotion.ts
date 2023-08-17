@@ -14,7 +14,7 @@ import { csmVector } from '../type/csmvector';
 import {
   CSM_ASSERT,
   CubismLogDebug,
-  CubismLogWarning,
+  CubismLogWarning
 } from '../utils/cubismdebug';
 import { ACubismMotion, FinishedMotionCallback } from './acubismmotion';
 import {
@@ -24,7 +24,7 @@ import {
   CubismMotionEvent,
   CubismMotionPoint,
   CubismMotionSegment,
-  CubismMotionSegmentType,
+  CubismMotionSegmentType
 } from './cubismmotioninternal';
 import { CubismMotionJson, EvaluationOptionFlag } from './cubismmotionjson';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
@@ -212,7 +212,7 @@ function evaluateCurve(
     // Get first point of next segment.
     pointPosition =
       motionData.segments.at(i).basePointIndex +
-      (motionData.segments.at(i).segmentType ==
+      ((motionData.segments.at(i).segmentType as CubismMotionSegmentType) ==
       CubismMotionSegmentType.CubismMotionSegmentType_Bezier
         ? 3
         : 1);

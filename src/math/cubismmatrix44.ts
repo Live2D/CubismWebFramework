@@ -33,7 +33,7 @@ export class CubismMatrix44 {
   ): void {
     const c: Float32Array = new Float32Array([
       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-      0.0,
+      0.0
     ]);
 
     const n = 4;
@@ -57,7 +57,7 @@ export class CubismMatrix44 {
   public loadIdentity(): void {
     const c: Float32Array = new Float32Array([
       1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-      1.0,
+      1.0
     ]);
 
     this.setMatrix(c);
@@ -175,7 +175,7 @@ export class CubismMatrix44 {
       x,
       y,
       0.0,
-      1.0,
+      1.0
     ]);
 
     CubismMatrix44.multiply(tr1, this._tr, this._tr);
@@ -235,7 +235,7 @@ export class CubismMatrix44 {
       0.0,
       0.0,
       0.0,
-      1.0,
+      1.0
     ]);
 
     CubismMatrix44.multiply(tr1, this._tr, this._tr);

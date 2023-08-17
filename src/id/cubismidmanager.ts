@@ -57,7 +57,7 @@ export class CubismIdManager {
         return result;
       }
 
-      result = new CubismId(id);
+      result = CubismId._createIdInternal(id);
       this._ids.pushBack(result);
     } else {
       return this.registerId(id.s);

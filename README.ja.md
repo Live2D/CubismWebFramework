@@ -4,7 +4,7 @@
 
 # Cubism Web Framework
 
-Live2D Cubism 4 Editor で出力したモデルをアプリケーションで利用するためのフレームワークです。
+Live2D Cubism Editor で出力したモデルをアプリケーションで利用するためのフレームワークです。
 
 モデルを表示、操作するための各種機能を提供します。
 モデルをロードするには Live2D Cubism Core ライブラリと組み合わせて使用します。
@@ -17,18 +17,27 @@ Live2D Cubism 4 Editor で出力したモデルをアプリケーションで利
 本 SDK を使用する前に、[ライセンス](LICENSE.md)をご確認ください。
 
 
+## Cubism 5新機能や過去バージョンとの互換性について
+
+本 SDK はCubism 5に対応した製品です。
+
+Cubism 5 Editorに搭載された新機能のSDK対応については [こちら](https://docs.live2d.com/cubism-sdk-manual/cubism-5-new-functions/)をご確認ください。
+
+過去バージョンのCubism SDKとの互換性については [こちら](https://docs.live2d.com/cubism-sdk-manual/compatibility-with-cubism-5/)をご確認ください。
+
+
 ## 開発環境
 
 ### Node.js
 
-* 20.1.0
-* 18.16.0
-* 16.20.0
+* 20.5.1
+* 18.17.1
+* 16.20.2
 
 
 ### TypeScript
 
-5.0.4
+5.1.6
 
 
 ## 開発環境構築

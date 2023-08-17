@@ -12,7 +12,7 @@ import {
   JsonMap,
   JsonNullvalue,
   JsonString,
-  Value,
+  Value
 } from './cubismjson';
 
 /**

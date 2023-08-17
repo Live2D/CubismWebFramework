@@ -14,7 +14,10 @@ export class CubismVector2 {
   /**
    * コンストラクタ
    */
-  public constructor(public x?: number, public y?: number) {
+  public constructor(
+    public x?: number,
+    public y?: number
+  ) {
     this.x = x == undefined ? 0.0 : x;
 
     this.y = y == undefined ? 0.0 : y;

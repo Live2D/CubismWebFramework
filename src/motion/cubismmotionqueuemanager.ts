@@ -184,12 +184,24 @@ export class CubismMotionQueueManager {
   }
 
   /**
-       * 指定したCubismMotionQueueEntryの取得
+   * @brief CubismMotionQueueEntryの配列の取得
+   *
+   * CubismMotionQueueEntryの配列を取得する。
+   *
+   * @return  CubismMotionQueueEntryの配列へのポインタ
+   * @retval  NULL   見つからなかった
+   */
+  public getCubismMotionQueueEntries(): csmVector<CubismMotionQueueEntry> {
+    return this._motions;
+  }
 
-        * @param   motionQueueEntryNumber  モーションの識別番号
-        * @return  指定したCubismMotionQueueEntry
-        * @return  null   見つからなかった
-        */
+  /**
+   * 指定したCubismMotionQueueEntryの取得
+
+   * @param   motionQueueEntryNumber  モーションの識別番号
+   * @return  指定したCubismMotionQueueEntry
+   * @return  null   見つからなかった
+   */
   public getCubismMotionQueueEntry(
     motionQueueEntryNumber: any
   ): CubismMotionQueueEntry {
