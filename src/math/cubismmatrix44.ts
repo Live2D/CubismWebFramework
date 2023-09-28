@@ -253,8 +253,10 @@ export class CubismMatrix44 {
   }
 
   /**
-   * 現在の行列に行列を乗算
+   * 引数で与えられた行列にこの行列を乗算する。
+   * (引数で与えられた行列) * (この行列)
    *
+   * @note 関数名と実際の計算内容に乖離があるため、今後計算順が修正される可能性があります。
    * @param m 行列
    */
   public multiplyByMatrix(m: CubismMatrix44): void {
