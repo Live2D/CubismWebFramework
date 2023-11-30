@@ -844,7 +844,9 @@ export class CubismMotion extends ACubismMotion {
           curveCount,
           segmentPosition
         );
-        switch (segment) {
+
+        const segmentType: CubismMotionSegmentType = segment;
+        switch (segmentType) {
           case CubismMotionSegmentType.CubismMotionSegmentType_Linear: {
             this._motionData.segments.at(totalSegmentCount).segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_Linear;
