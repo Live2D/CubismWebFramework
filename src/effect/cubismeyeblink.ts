@@ -87,8 +87,9 @@ export class CubismEyeBlink {
     this._userTimeSeconds += deltaTimeSeconds;
     let parameterValue: number;
     let t = 0.0;
+    const blinkingState: EyeState = this._blinkingState;
 
-    switch (this._blinkingState) {
+    switch (blinkingState) {
       case EyeState.EyeState_Closing:
         t =
           (this._userTimeSeconds - this._stateStartTimeSeconds) /

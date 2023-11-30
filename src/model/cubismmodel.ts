@@ -1225,10 +1225,10 @@ export class CubismModel {
     )
       ? CubismBlendMode.CubismBlendMode_Additive
       : Live2DCubismCore.Utils.hasBlendMultiplicativeBit(
-          constantFlags[drawableIndex]
-        )
-      ? CubismBlendMode.CubismBlendMode_Multiplicative
-      : CubismBlendMode.CubismBlendMode_Normal;
+            constantFlags[drawableIndex]
+          )
+        ? CubismBlendMode.CubismBlendMode_Multiplicative
+        : CubismBlendMode.CubismBlendMode_Normal;
   }
 
   /**
