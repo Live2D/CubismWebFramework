@@ -158,12 +158,18 @@ export class CubismUserModel {
    * @param onFinishedMotionHandler モーション再生終了時に呼び出されるコールバック関数
    * @return モーションクラス
    */
-  public loadMotion = (
+  public loadMotion(
     buffer: ArrayBuffer,
     size: number,
     name: string,
     onFinishedMotionHandler?: FinishedMotionCallback
-  ) => CubismMotion.create(buffer, size, onFinishedMotionHandler);
+  ): CubismMotion {
+    if (buffer == null || size == 0) {
+      CubismLogError('Failed to loadMotion().');
+      return null;
+    }
+    return CubismMotion.create(buffer, size, onFinishedMotionHandler);
+  }
 
   /**
    * 表情データの読み込み
@@ -176,6 +182,10 @@ export class CubismUserModel {
     size: number,
     name: string
   ): ACubismMotion {
+    if (buffer == null || size == 0) {
+      CubismLogError('Failed to loadExpression().');
+      return null;
+    }
     return CubismExpressionMotion.create(buffer, size);
   }
 
@@ -185,6 +195,10 @@ export class CubismUserModel {
    * @param size バッファのサイズ
    */
   public loadPose(buffer: ArrayBuffer, size: number): void {
+    if (buffer == null || size == 0) {
+      CubismLogError('Failed to loadPose().');
+      return;
+    }
     this._pose = CubismPose.create(buffer, size);
   }
 
@@ -194,6 +208,10 @@ export class CubismUserModel {
    * @param size バッファのサイズ
    */
   public loadUserData(buffer: ArrayBuffer, size: number): void {
+    if (buffer == null || size == 0) {
+      CubismLogError('Failed to loadUserData().');
+      return;
+    }
     this._modelUserData = CubismModelUserData.create(buffer, size);
   }
 
@@ -203,6 +221,10 @@ export class CubismUserModel {
    * @param size    バッファのサイズ
    */
   public loadPhysics(buffer: ArrayBuffer, size: number): void {
+    if (buffer == null || size == 0) {
+      CubismLogError('Failed to loadPhysics().');
+      return;
+    }
     this._physics = CubismPhysics.create(buffer, size);
   }
 

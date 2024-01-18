@@ -33,8 +33,12 @@ export class CubismPose {
    * @return 作成されたインスタンス
    */
   public static create(pose3json: ArrayBuffer, size: number): CubismPose {
-    const ret: CubismPose = new CubismPose();
     const json: CubismJson = CubismJson.create(pose3json, size);
+    if (!json) {
+      return null;
+    }
+
+    const ret: CubismPose = new CubismPose();
     const root: Value = json.getRoot();
 
     // フェード時間の指定

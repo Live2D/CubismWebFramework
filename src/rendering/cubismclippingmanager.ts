@@ -401,7 +401,7 @@ export abstract class CubismClippingManager<
       ) {
         const clipContext: T_ClippingContext =
           this._clippingContextListForMask.at(index);
-        clipContext._layoutChannelNo = 0; // どうせ毎回消すので固定
+        clipContext._layoutChannelIndex = 0; // どうせ毎回消すので固定
         clipContext._layoutBounds.x = 0.0;
         clipContext._layoutBounds.y = 0.0;
         clipContext._layoutBounds.width = 1.0;
@@ -414,39 +414,49 @@ export abstract class CubismClippingManager<
     // レンダーテクスチャが1枚なら9分割する（最大36枚）
     const layoutCountMaxValue = this._renderTextureCount <= 1 ? 9 : 8;
 
-    // 指定された数のレンダーテクスチャを極力いっぱいに使ってマスクをレイアウトする（デフォルトなら1）
-    // マスクグループの数が4以下ならRGBA各チャンネルに1つずつマスクを配置し、5以上6以下ならRGBAを2,2,1,1と配置する
-    let countPerSheetDiv: number = usingClipCount / this._renderTextureCount; // レンダーテクスチャ1枚あたり何枚割り当てるか
-    let countPerSheetMod: number = usingClipCount % this._renderTextureCount; // この番号のレンダーテクスチャまでに一つずつ配分する
+    // 指定された数のレンダーテクスチャを極力いっぱいに使ってマスクをレイアウトする（デフォルトなら1）。
+    // マスクグループの数が4以下ならRGBA各チャンネルに1つずつマスクを配置し、5以上6以下ならRGBAを2,2,1,1と配置する。
+    let countPerSheetDiv: number = usingClipCount / this._renderTextureCount; // レンダーテクスチャ1枚あたり何枚割り当てるか。
+    const reduceLayoutTextureCount: number =
+      usingClipCount % this._renderTextureCount; // レイアウトの数を1枚減らすレンダーテクスチャの数（この数だけのレンダーテクスチャが対象）。
 
-    // 小数点は切り捨てる
-    countPerSheetDiv = ~~countPerSheetDiv;
-    countPerSheetMod = ~~countPerSheetMod;
+    // 1枚に割り当てるマスクの分割数を取りたいため、小数点は切り上げる
+    countPerSheetDiv = Math.ceil(countPerSheetDiv);
 
     // RGBAを順番に使っていく
-    let div: number = countPerSheetDiv / ColorChannelCount; // 1チャンネルに配置する基本のマスク
-    let mod: number = countPerSheetDiv % ColorChannelCount; // 余り、この番号のチャンネルまでに一つずつ配分する
+    let divCount: number = countPerSheetDiv / ColorChannelCount; // 1チャンネルに配置する基本のマスク
+    const modCount: number = countPerSheetDiv % ColorChannelCount; // 余り、この番号のチャンネルまでに一つずつ配分する（インデックスではない）
 
     // 小数点は切り捨てる
-    div = ~~div;
-    mod = ~~mod;
+    divCount = ~~divCount;
 
     // RGBAそれぞれのチャンネルを用意していく（0:R, 1:G, 2:B, 3:A）
     let curClipIndex = 0; // 順番に設定していく
 
     for (
-      let renderTextureNo = 0;
-      renderTextureNo < this._renderTextureCount;
-      renderTextureNo++
+      let renderTextureIndex = 0;
+      renderTextureIndex < this._renderTextureCount;
+      renderTextureIndex++
     ) {
-      for (let channelNo = 0; channelNo < ColorChannelCount; channelNo++) {
+      for (
+        let channelIndex = 0;
+        channelIndex < ColorChannelCount;
+        channelIndex++
+      ) {
         // このチャンネルにレイアウトする数
-        let layoutCount: number = div + (channelNo < mod ? 1 : 0);
+        // NOTE: レイアウト数 = 1チャンネルに配置する基本のマスク + 余りのマスクを置くチャンネルなら1つ追加
+        let layoutCount: number = divCount + (channelIndex < modCount ? 1 : 0);
 
-        // このレンダーテクスチャにまだ割り当てられていなければ追加する
-        const checkChannelNo = mod + 1 >= ColorChannelCount ? 0 : mod + 1;
-        if (layoutCount < layoutCountMaxValue && channelNo == checkChannelNo) {
-          layoutCount += renderTextureNo < countPerSheetMod ? 1 : 0;
+        // レイアウトの数を1枚減らす場合にそれを行うチャンネルを決定
+        // divが0の時は正常なインデックスの範囲内になるように調整
+        const checkChannelIndex = modCount + (divCount < 1 ? -1 : 0);
+
+        // 今回が対象のチャンネルかつ、レイアウトの数を1枚減らすレンダーテクスチャが存在する場合
+        if (channelIndex == checkChannelIndex && reduceLayoutTextureCount > 0) {
+          // 現在のレンダーテクスチャが、対象のレンダーテクスチャであればレイアウトの数を1枚減らす。
+          layoutCount -= !(renderTextureIndex < reduceLayoutTextureCount)
+            ? 1
+            : 0;
         }
 
         // 分割方法を決定する
@@ -456,12 +466,12 @@ export abstract class CubismClippingManager<
           // 全てをそのまま使う
           const clipContext: T_ClippingContext =
             this._clippingContextListForMask.at(curClipIndex++);
-          clipContext._layoutChannelNo = channelNo;
+          clipContext._layoutChannelIndex = channelIndex;
           clipContext._layoutBounds.x = 0.0;
           clipContext._layoutBounds.y = 0.0;
           clipContext._layoutBounds.width = 1.0;
           clipContext._layoutBounds.height = 1.0;
-          clipContext._bufferIndex = renderTextureNo;
+          clipContext._bufferIndex = renderTextureIndex;
         } else if (layoutCount == 2) {
           for (let i = 0; i < layoutCount; i++) {
             let xpos: number = i % 2;
@@ -472,14 +482,14 @@ export abstract class CubismClippingManager<
             const cc: T_ClippingContext = this._clippingContextListForMask.at(
               curClipIndex++
             );
-            cc._layoutChannelNo = channelNo;
+            cc._layoutChannelIndex = channelIndex;
 
             // UVを2つに分解して使う
             cc._layoutBounds.x = xpos * 0.5;
             cc._layoutBounds.y = 0.0;
             cc._layoutBounds.width = 0.5;
             cc._layoutBounds.height = 1.0;
-            cc._bufferIndex = renderTextureNo;
+            cc._bufferIndex = renderTextureIndex;
           }
         } else if (layoutCount <= 4) {
           // 4分割して使う
@@ -492,13 +502,13 @@ export abstract class CubismClippingManager<
             ypos = ~~ypos;
 
             const cc = this._clippingContextListForMask.at(curClipIndex++);
-            cc._layoutChannelNo = channelNo;
+            cc._layoutChannelIndex = channelIndex;
 
             cc._layoutBounds.x = xpos * 0.5;
             cc._layoutBounds.y = ypos * 0.5;
             cc._layoutBounds.width = 0.5;
             cc._layoutBounds.height = 0.5;
-            cc._bufferIndex = renderTextureNo;
+            cc._bufferIndex = renderTextureIndex;
           }
         } else if (layoutCount <= layoutCountMaxValue) {
           // 9分割して使う
@@ -513,13 +523,13 @@ export abstract class CubismClippingManager<
             const cc: T_ClippingContext = this._clippingContextListForMask.at(
               curClipIndex++
             );
-            cc._layoutChannelNo = channelNo;
+            cc._layoutChannelIndex = channelIndex;
 
             cc._layoutBounds.x = xpos / 3.0;
             cc._layoutBounds.y = ypos / 3.0;
             cc._layoutBounds.width = 1.0 / 3.0;
             cc._layoutBounds.height = 1.0 / 3.0;
-            cc._bufferIndex = renderTextureNo;
+            cc._bufferIndex = renderTextureIndex;
           }
         } else {
           // マスクの制限枚数を超えた場合の処理
@@ -537,7 +547,7 @@ export abstract class CubismClippingManager<
               curClipIndex++
             );
 
-            cc._layoutChannelNo = 0;
+            cc._layoutChannelIndex = 0;
 
             cc._layoutBounds.x = 0.0;
             cc._layoutBounds.y = 0.0;

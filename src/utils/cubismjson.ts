@@ -467,7 +467,14 @@ export class CubismJson {
     begin: number,
     outEndPos: number[]
   ): string {
-    if (this._error) return null;
+    if (this._error) {
+      return null;
+    }
+
+    if (!string) {
+      this._error = 'string is null';
+      return null;
+    }
 
     let i = begin;
     let c: string, c2: string;
@@ -556,7 +563,15 @@ export class CubismJson {
     begin: number,
     outEndPos: number[]
   ): Value {
-    if (this._error) return null;
+    if (this._error) {
+      return null;
+    }
+
+    if (!buffer) {
+      this._error = 'buffer is null';
+      return null;
+    }
+
     const ret: JsonMap = new JsonMap();
 
     // Key: Value
@@ -671,7 +686,15 @@ export class CubismJson {
     begin: number,
     outEndPos: number[]
   ): Value {
-    if (this._error) return null;
+    if (this._error) {
+      return null;
+    }
+
+    if (!buffer) {
+      this._error = 'buffer is null';
+      return null;
+    }
+
     let ret: JsonArray = new JsonArray();
 
     // key : value

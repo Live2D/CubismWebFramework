@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.1-beta.4] - 2024-01-18
+
+### Changed
+
+* Change target to `es6`.
+
+### Fixed
+
+* Fix an issue where models with a specific number of masks could not be drawn correctly.
+* Fix to check for error when reading json.
+
+
 ## [5-r.1-beta.3] - 2023-11-30
 
 
@@ -218,6 +230,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.1-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.3...5-r.1-beta.4
 [5-r.1-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.2...5-r.1-beta.3
 [5-r.1-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.1...5-r.1-beta.2
 [5-r.1-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/4-r.7...5-r.1-beta.1
