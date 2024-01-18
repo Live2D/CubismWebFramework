@@ -256,6 +256,10 @@ export class CubismExpressionMotion extends ACubismMotion {
 
   protected parse(buffer: ArrayBuffer, size: number) {
     const json: CubismJson = CubismJson.create(buffer, size);
+    if (!json) {
+      return;
+    }
+
     const root: Value = json.getRoot();
 
     this.setFadeInTime(

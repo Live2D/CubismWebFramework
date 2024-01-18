@@ -77,6 +77,11 @@ export class CubismModelUserData {
       buffer,
       size
     );
+    if (!json) {
+      json.release();
+      json = void 0;
+      return;
+    }
 
     const typeOfArtMesh = CubismFramework.getIdManager().getId(ArtMesh);
     const nodeCount: number = json.getUserDataCount();

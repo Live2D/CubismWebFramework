@@ -354,7 +354,7 @@ export abstract class CubismClippingContext {
   public _isUsing: boolean; // 現在の描画状態でマスクの準備が必要ならtrue
   public readonly _clippingIdList: Int32Array; // クリッピングマスクのIDリスト
   public _clippingIdCount: number; // クリッピングマスクの数
-  public _layoutChannelNo: number; // RGBAのいずれのチャンネルにこのクリップを配置するか（0:R, 1:G, 2:B, 3:A）
+  public _layoutChannelIndex: number; // RGBAのいずれのチャンネルにこのクリップを配置するか（0:R, 1:G, 2:B, 3:A）
   public _layoutBounds: csmRect; // マスク用チャンネルのどの領域にマスクを入れるか（View座標-1~1, UVは0~1に直す）
   public _allClippedDrawRect: csmRect; // このクリッピングで、クリッピングされるすべての描画オブジェクトの囲み矩形（毎回更新）
   public _matrixForMask: CubismMatrix44; // マスクの位置計算結果を保持する行列

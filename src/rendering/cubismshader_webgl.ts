@@ -180,12 +180,12 @@ export class CubismShader_WebGL {
       );
 
       // 使用するカラーチャンネルを設定
-      const channelNo: number =
-        renderer.getClippingContextBufferForDraw()._layoutChannelNo;
+      const channelIndex: number =
+        renderer.getClippingContextBufferForDraw()._layoutChannelIndex;
       const colorChannel: CubismTextureColor = renderer
         .getClippingContextBufferForDraw()
         .getClippingManager()
-        .getChannelFlagAsColor(channelNo);
+        .getChannelFlagAsColor(channelIndex);
       this.gl.uniform4f(
         shaderSet.uniformChannelFlagLocation,
         colorChannel.R,
@@ -341,12 +341,12 @@ export class CubismShader_WebGL {
 
     // チャンネル
     const context = renderer.getClippingContextBufferForMask();
-    const channelNo: number =
-      renderer.getClippingContextBufferForMask()._layoutChannelNo;
+    const channelIndex: number =
+      renderer.getClippingContextBufferForMask()._layoutChannelIndex;
     const colorChannel: CubismTextureColor = renderer
       .getClippingContextBufferForMask()
       .getClippingManager()
-      .getChannelFlagAsColor(channelNo);
+      .getChannelFlagAsColor(channelIndex);
     this.gl.uniform4f(
       shaderSet.uniformChannelFlagLocation,
       colorChannel.R,
