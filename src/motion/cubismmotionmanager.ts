@@ -70,7 +70,7 @@ export class CubismMotionManager extends CubismMotionQueueManager {
 
     this._currentPriority = priority; // 再生中モーションの優先度を設定
 
-    return super.startMotion(motion, autoDelete, this._userTimeSeconds);
+    return super.startMotion(motion, autoDelete);
   }
 
   /**

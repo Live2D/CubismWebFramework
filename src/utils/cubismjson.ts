@@ -109,7 +109,7 @@ export abstract class Value {
    * @return マップのキーの一覧
    */
   public getKeys(): csmVector<string> {
-    return Value.s_dummyKeys;
+    return Value.dummyKeys;
   }
 
   /**
@@ -194,7 +194,7 @@ export abstract class Value {
     JsonBoolean.falseValue = new JsonBoolean(false);
     Value.errorValue = new JsonError('ERROR', true);
     Value.nullValue = new JsonNullvalue();
-    Value.s_dummyKeys = new csmVector<string>();
+    Value.dummyKeys = new csmVector<string>();
   }
 
   /**
@@ -205,12 +205,12 @@ export abstract class Value {
     JsonBoolean.falseValue = null;
     Value.errorValue = null;
     Value.nullValue = null;
-    Value.s_dummyKeys = null;
+    Value.dummyKeys = null;
   }
 
   protected _stringBuffer: string; // 文字列バッファ
 
-  private static s_dummyKeys: csmVector<string>; // ダミーキー
+  private static dummyKeys: csmVector<string>; // ダミーキー
 
   public static errorValue: Value; // 一時的な返り値として返すエラー。 CubismFramework::Disposeするまではdeleteしない
   public static nullValue: Value; // 一時的な返り値として返すNULL。   CubismFramework::Disposeするまではdeleteしない
@@ -439,6 +439,7 @@ export class CubismJson {
           return null;
         case '\n':
           this._lineCount++;
+        // falls through
         case ' ':
         case '\t':
         case '\r':
@@ -491,6 +492,7 @@ export class CubismJson {
           ret.append(string.slice(bufStart), i - bufStart); // 前の文字までを登録する
           return ret.s;
         }
+        // falls through
         case '//': {
           // エスケープの場合
           i++; // ２文字をセットで扱う
@@ -538,6 +540,7 @@ export class CubismJson {
             this._error = 'parse string/escape error';
           }
         }
+        // falls through
         default: {
           break;
         }
@@ -604,6 +607,7 @@ export class CubismJson {
             break;
           case '\n':
             this._lineCount++;
+          // falls through
           default:
             break; // スキップする文字
         }
@@ -627,9 +631,11 @@ export class CubismJson {
           case '}':
             this._error = "illegal '}' position";
             break;
+          // falls through
           case '\n':
             this._lineCount++;
           // case ' ': case '\t' : case '\r':
+          // falls through
           default:
             break; // スキップする文字
         }
@@ -662,6 +668,7 @@ export class CubismJson {
             return ret; // 正常終了
           case '\n':
             this._lineCount++;
+          // falls through
           default:
             break; // スキップ
         }
@@ -732,6 +739,7 @@ export class CubismJson {
           case '\n':
             ++this._lineCount;
           //case ' ': case '\t': case '\r':
+          // falls through
           default:
             break; // スキップ
         }

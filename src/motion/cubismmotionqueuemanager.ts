@@ -52,13 +52,13 @@ export class CubismMotionQueueManager {
    *
    * @param   motion          開始するモーション
    * @param   autoDelete      再生が終了したモーションのインスタンスを削除するなら true
-   * @param   userTimeSeconds デルタ時間の積算値[秒]
+   * @param   userTimeSeconds Deprecated: デルタ時間の積算値[秒] 関数内で参照していないため使用は非推奨。
    * @return                      開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
    */
   public startMotion(
     motion: ACubismMotion,
     autoDelete: boolean,
-    userTimeSeconds: number
+    userTimeSeconds?: number
   ): CubismMotionQueueEntryHandle {
     if (motion == null) {
       return InvalidMotionQueueEntryHandleValue;

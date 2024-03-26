@@ -87,7 +87,7 @@ function bezierEvaluateBinarySearch(
   points: CubismMotionPoint[],
   time: number
 ): number {
-  const x_error = 0.01;
+  const xError = 0.01;
 
   const x: number = time;
   let x1: number = points[0].time;
@@ -101,12 +101,12 @@ function bezierEvaluateBinarySearch(
   let i = 0;
 
   for (let var33 = true; i < 20; ++i) {
-    if (x < x1 + x_error) {
+    if (x < x1 + xError) {
       t = ta;
       break;
     }
 
-    if (x2 - x_error < x) {
+    if (x2 - xError < x) {
       t = tb;
       break;
     }
@@ -119,7 +119,7 @@ function bezierEvaluateBinarySearch(
     centerx = (ctrlx12 + ctrlx21) * 0.5;
     if (x < centerx) {
       tb = (ta + tb) * 0.5;
-      if (centerx - x_error < x) {
+      if (centerx - xError < x) {
         t = tb;
         break;
       }
@@ -128,7 +128,7 @@ function bezierEvaluateBinarySearch(
       cx2 = ctrlx12;
     } else {
       ta = (ta + tb) * 0.5;
-      if (x < centerx + x_error) {
+      if (x < centerx + xError) {
         t = ta;
         break;
       }
@@ -303,18 +303,18 @@ export class CubismMotion extends ACubismMotion {
     let eyeBlinkValue: number = Number.MAX_VALUE;
 
     //まばたき、リップシンクのうちモーションの適用を検出するためのビット（maxFlagCount個まで
-    const MaxTargetSize = 64;
+    const maxTargetSize = 64;
     let lipSyncFlags = 0;
     let eyeBlinkFlags = 0;
 
     //瞬き、リップシンクのターゲット数が上限を超えている場合
-    if (this._eyeBlinkParameterIds.getSize() > MaxTargetSize) {
+    if (this._eyeBlinkParameterIds.getSize() > maxTargetSize) {
       CubismLogDebug(
         'too many eye blink targets : {0}',
         this._eyeBlinkParameterIds.getSize()
       );
     }
-    if (this._lipSyncParameterIds.getSize() > MaxTargetSize) {
+    if (this._lipSyncParameterIds.getSize() > maxTargetSize) {
       CubismLogDebug(
         'too many lip sync targets : {0}',
         this._lipSyncParameterIds.getSize()
@@ -399,7 +399,7 @@ export class CubismMotion extends ACubismMotion {
       if (eyeBlinkValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._eyeBlinkParameterIds.getSize() && i < MaxTargetSize;
+          i < this._eyeBlinkParameterIds.getSize() && i < maxTargetSize;
           ++i
         ) {
           if (this._eyeBlinkParameterIds.at(i) == curves.at(c).id) {
@@ -413,7 +413,7 @@ export class CubismMotion extends ACubismMotion {
       if (lipSyncValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._lipSyncParameterIds.getSize() && i < MaxTargetSize;
+          i < this._lipSyncParameterIds.getSize() && i < maxTargetSize;
           ++i
         ) {
           if (this._lipSyncParameterIds.at(i) == curves.at(c).id) {
@@ -473,7 +473,7 @@ export class CubismMotion extends ACubismMotion {
       if (eyeBlinkValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._eyeBlinkParameterIds.getSize() && i < MaxTargetSize;
+          i < this._eyeBlinkParameterIds.getSize() && i < maxTargetSize;
           ++i
         ) {
           const sourceValue: number = model.getParameterValueById(
@@ -495,7 +495,7 @@ export class CubismMotion extends ACubismMotion {
       if (lipSyncValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._lipSyncParameterIds.getSize() && i < MaxTargetSize;
+          i < this._lipSyncParameterIds.getSize() && i < maxTargetSize;
           ++i
         ) {
           const sourceValue: number = model.getParameterValueById(

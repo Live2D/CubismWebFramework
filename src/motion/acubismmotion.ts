@@ -9,7 +9,7 @@ import { CubismMath } from '../math/cubismmath';
 import { CubismModel } from '../model/cubismmodel';
 import { csmString } from '../type/csmstring';
 import { csmVector } from '../type/csmvector';
-import { CSM_ASSERT } from '../utils/cubismdebug';
+import { CSM_ASSERT, CubismDebug } from '../utils/cubismdebug';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
 
 /** モーション再生終了コールバック関数定義 */
@@ -62,21 +62,7 @@ export abstract class ACubismMotion {
       return;
     }
 
-    if (!motionQueueEntry.isStarted()) {
-      motionQueueEntry.setIsStarted(true);
-      motionQueueEntry.setStartTime(userTimeSeconds - this._offsetSeconds); // モーションの開始時刻を記録
-      motionQueueEntry.setFadeInStartTime(userTimeSeconds); // フェードインの開始時刻
-
-      const duration: number = this.getDuration();
-
-      if (motionQueueEntry.getEndTime() < 0) {
-        // 開始していないうちに終了設定している場合がある。
-        motionQueueEntry.setEndTime(
-          duration <= 0 ? -1 : motionQueueEntry.getStartTime() + duration
-        );
-        // duration == -1 の場合はループする
-      }
-    }
+    this.setupMotionQueueEntry(motionQueueEntry, userTimeSeconds);
 
     const fadeWeight = this.updateFadeWeight(motionQueueEntry, userTimeSeconds);
 
@@ -99,6 +85,41 @@ export abstract class ACubismMotion {
   }
 
   /**
+   * @brief モデルの再生開始処理
+   *
+   * モーションの再生を開始するためのセットアップを行う。
+   *
+   * @param[in]   motionQueueEntry    CubismMotionQueueManagerで管理されているモーション
+   * @param[in]   userTimeSeconds     デルタ時間の積算値[秒]
+   */
+  public setupMotionQueueEntry(
+    motionQueueEntry: CubismMotionQueueEntry,
+    userTimeSeconds: number
+  ) {
+    if (motionQueueEntry == null || motionQueueEntry.isStarted()) {
+      return;
+    }
+
+    if (!motionQueueEntry.isAvailable()) {
+      return;
+    }
+
+    motionQueueEntry.setIsStarted(true);
+    motionQueueEntry.setStartTime(userTimeSeconds - this._offsetSeconds); // モーションの開始時刻を記録
+    motionQueueEntry.setFadeInStartTime(userTimeSeconds); // フェードインの開始時刻
+
+    const duration = this.getDuration();
+
+    if (motionQueueEntry.getEndTime() < 0.0) {
+      // 開始していないうちに終了設定している場合がある
+      motionQueueEntry.setEndTime(
+        duration <= 0.0 ? -1 : motionQueueEntry.getStartTime() + duration
+      );
+      // duration == -1 の場合はループする
+    }
+  }
+
+  /**
    * @brief モデルのウェイト更新
    *
    * モーションのウェイトを更新する。
@@ -110,6 +131,10 @@ export abstract class ACubismMotion {
     motionQueueEntry: CubismMotionQueueEntry,
     userTimeSeconds: number
   ): number {
+    if (motionQueueEntry == null) {
+      CubismDebug.print(LogLevel.LogLevel_Error, 'motionQueueEntry is null.');
+    }
+
     let fadeWeight: number = this._weight; // 現在の値と掛け合わせる割合
 
     //---- フェードイン・アウトの処理 ----
@@ -329,6 +354,7 @@ export abstract class ACubismMotion {
 // Namespace definition for compatibility.
 import * as $ from './acubismmotion';
 import { CubismIdHandle } from '../id/cubismid';
+import { LogLevel } from '../live2dcubismframework';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Live2DCubismFramework {
   export const ACubismMotion = $.ACubismMotion;

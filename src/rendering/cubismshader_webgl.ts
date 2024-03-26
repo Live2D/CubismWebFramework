@@ -78,10 +78,10 @@ export class CubismShader_WebGL {
     }
 
     // Blending
-    let SRC_COLOR: number;
-    let DST_COLOR: number;
-    let SRC_ALPHA: number;
-    let DST_ALPHA: number;
+    let srcColor: number;
+    let dstColor: number;
+    let srcAlpha: number;
+    let dstAlpha: number;
 
     // _shaderSets用のオフセット計算
     const masked: boolean = renderer.getClippingContextBufferForDraw() != null; // この描画オブジェクトはマスク対象か
@@ -95,30 +95,30 @@ export class CubismShader_WebGL {
         shaderSet = this._shaderSets.at(
           ShaderNames.ShaderNames_NormalPremultipliedAlpha + offset
         );
-        SRC_COLOR = this.gl.ONE;
-        DST_COLOR = this.gl.ONE_MINUS_SRC_ALPHA;
-        SRC_ALPHA = this.gl.ONE;
-        DST_ALPHA = this.gl.ONE_MINUS_SRC_ALPHA;
+        srcColor = this.gl.ONE;
+        dstColor = this.gl.ONE_MINUS_SRC_ALPHA;
+        srcAlpha = this.gl.ONE;
+        dstAlpha = this.gl.ONE_MINUS_SRC_ALPHA;
         break;
 
       case CubismBlendMode.CubismBlendMode_Additive:
         shaderSet = this._shaderSets.at(
           ShaderNames.ShaderNames_AddPremultipliedAlpha + offset
         );
-        SRC_COLOR = this.gl.ONE;
-        DST_COLOR = this.gl.ONE;
-        SRC_ALPHA = this.gl.ZERO;
-        DST_ALPHA = this.gl.ONE;
+        srcColor = this.gl.ONE;
+        dstColor = this.gl.ONE;
+        srcAlpha = this.gl.ZERO;
+        dstAlpha = this.gl.ONE;
         break;
 
       case CubismBlendMode.CubismBlendMode_Multiplicative:
         shaderSet = this._shaderSets.at(
           ShaderNames.ShaderNames_MultPremultipliedAlpha + offset
         );
-        SRC_COLOR = this.gl.DST_COLOR;
-        DST_COLOR = this.gl.ONE_MINUS_SRC_ALPHA;
-        SRC_ALPHA = this.gl.ZERO;
-        DST_ALPHA = this.gl.ONE;
+        srcColor = this.gl.DST_COLOR;
+        dstColor = this.gl.ONE_MINUS_SRC_ALPHA;
+        srcAlpha = this.gl.ZERO;
+        dstAlpha = this.gl.ONE;
         break;
     }
 
@@ -188,10 +188,10 @@ export class CubismShader_WebGL {
         .getChannelFlagAsColor(channelIndex);
       this.gl.uniform4f(
         shaderSet.uniformChannelFlagLocation,
-        colorChannel.R,
-        colorChannel.G,
-        colorChannel.B,
-        colorChannel.A
+        colorChannel.r,
+        colorChannel.g,
+        colorChannel.b,
+        colorChannel.a
       );
     }
 
@@ -221,26 +221,26 @@ export class CubismShader_WebGL {
 
     this.gl.uniform4f(
       shaderSet.uniformBaseColorLocation,
-      baseColor.R,
-      baseColor.G,
-      baseColor.B,
-      baseColor.A
+      baseColor.r,
+      baseColor.g,
+      baseColor.b,
+      baseColor.a
     );
 
     this.gl.uniform4f(
       shaderSet.uniformMultiplyColorLocation,
-      multiplyColor.R,
-      multiplyColor.G,
-      multiplyColor.B,
-      multiplyColor.A
+      multiplyColor.r,
+      multiplyColor.g,
+      multiplyColor.b,
+      multiplyColor.a
     );
 
     this.gl.uniform4f(
       shaderSet.uniformScreenColorLocation,
-      screenColor.R,
-      screenColor.G,
-      screenColor.B,
-      screenColor.A
+      screenColor.r,
+      screenColor.g,
+      screenColor.b,
+      screenColor.a
     );
 
     // IBOを作成し、データを転送
@@ -259,7 +259,7 @@ export class CubismShader_WebGL {
       this.gl.DYNAMIC_DRAW
     );
 
-    this.gl.blendFuncSeparate(SRC_COLOR, DST_COLOR, SRC_ALPHA, DST_ALPHA);
+    this.gl.blendFuncSeparate(srcColor, dstColor, srcAlpha, dstAlpha);
   }
 
   /**
@@ -280,12 +280,6 @@ export class CubismShader_WebGL {
     if (this._shaderSets.getSize() == 0) {
       this.generateShaders();
     }
-
-    // Blending
-    let SRC_COLOR: number;
-    let DST_COLOR: number;
-    let SRC_ALPHA: number;
-    let DST_ALPHA: number;
 
     const shaderSet: CubismShaderSet = this._shaderSets.at(
       ShaderNames.ShaderNames_SetupMask
@@ -349,10 +343,10 @@ export class CubismShader_WebGL {
       .getChannelFlagAsColor(channelIndex);
     this.gl.uniform4f(
       shaderSet.uniformChannelFlagLocation,
-      colorChannel.R,
-      colorChannel.G,
-      colorChannel.B,
-      colorChannel.A
+      colorChannel.r,
+      colorChannel.g,
+      colorChannel.b,
+      colorChannel.a
     );
 
     this.gl.uniformMatrix4fv(
@@ -377,24 +371,25 @@ export class CubismShader_WebGL {
 
     this.gl.uniform4f(
       shaderSet.uniformMultiplyColorLocation,
-      multiplyColor.R,
-      multiplyColor.G,
-      multiplyColor.B,
-      multiplyColor.A
+      multiplyColor.r,
+      multiplyColor.g,
+      multiplyColor.b,
+      multiplyColor.a
     );
 
     this.gl.uniform4f(
       shaderSet.uniformScreenColorLocation,
-      screenColor.R,
-      screenColor.G,
-      screenColor.B,
-      screenColor.A
+      screenColor.r,
+      screenColor.g,
+      screenColor.b,
+      screenColor.a
     );
 
-    SRC_COLOR = this.gl.ZERO;
-    DST_COLOR = this.gl.ONE_MINUS_SRC_COLOR;
-    SRC_ALPHA = this.gl.ZERO;
-    DST_ALPHA = this.gl.ONE_MINUS_SRC_ALPHA;
+    // Blending
+    const srcColor: number = this.gl.ZERO;
+    const dstColor: number = this.gl.ONE_MINUS_SRC_COLOR;
+    const srcAlpha: number = this.gl.ZERO;
+    const dstAlpha: number = this.gl.ONE_MINUS_SRC_ALPHA;
 
     // IBOを作成し、データを転送
     if (renderer._bufferData.index == null) {
@@ -412,7 +407,7 @@ export class CubismShader_WebGL {
       this.gl.DYNAMIC_DRAW
     );
 
-    this.gl.blendFuncSeparate(SRC_COLOR, DST_COLOR, SRC_ALPHA, DST_ALPHA);
+    this.gl.blendFuncSeparate(srcColor, dstColor, srcAlpha, dstAlpha);
   }
 
   /**

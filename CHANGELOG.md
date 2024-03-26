@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.1] - 2024-03-26
+
+### Added
+
+* Add function `mod()` to compute floating-point remainder in `CubismMath` class.
+
+### Changed
+
+* Change the weight value in `Expression` from `CubismExpressionMotion` to have it in the `CubismExpressionMotionManager`.
+* Reorganize the names of some functions and variables.
+  * This is a change that depends on fixing `eslintrc.yml`.
+* Change to output log if the argument `motionQueueEntry` is `null` in the `updateFadeWeight()` function of the `ACubismMotion` class.
+
+### Fixed
+
+* Fix `eslintrc.yml` to conform to the exact wording.
+
+### Deprecated
+
+* Deprecate the `_fadeWeight` variable and the `getFadeWeight()` function of the `CubismExpressionMotion` class.
+  * The `_fadeWeight` variable of the `CubismExpressionMotion` class can cause problems.
+  * Please use the `getFadeWeight()` function of the `CubismExpressionMotionManager` class with one argument from now on.
+* The `startMotion()` function of the `CubismMotionQueueManager` class with the unnecessary third argument `userTimeSeconds` is deprecated.
+  * Please use the `startMotion()` function with one arguments from now on.
+
+
 ## [5-r.1-beta.4] - 2024-01-18
 
 ### Changed
@@ -230,6 +256,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.4...5-r.1
 [5-r.1-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.3...5-r.1-beta.4
 [5-r.1-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.2...5-r.1-beta.3
 [5-r.1-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.1...5-r.1-beta.2

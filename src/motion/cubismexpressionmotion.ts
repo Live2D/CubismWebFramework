@@ -107,34 +107,26 @@ export class CubismExpressionMotion extends ACubismMotion {
    * @param[in]   motionQueueEntry             CubismMotionQueueManagerで管理されているモーション
    * @param[in]   expressionParameterValues    モデルに適用する各パラメータの値
    * @param[in]   expressionIndex              表情のインデックス
+   * @param[in]   fadeWeight                   表情のウェイト
    */
   public calculateExpressionParameters(
     model: CubismModel,
     userTimeSeconds: number,
     motionQueueEntry: CubismMotionQueueEntry,
     expressionParameterValues: csmVector<ExpressionParameterValue>,
-    expressionIndex: number
+    expressionIndex: number,
+    fadeWeight: number
   ) {
+    if (motionQueueEntry == null || expressionParameterValues == null) {
+      return;
+    }
+
     if (!motionQueueEntry.isAvailable()) {
       return;
     }
 
-    if (!motionQueueEntry.isStarted()) {
-      motionQueueEntry.setIsStarted(true);
-      motionQueueEntry.setStartTime(userTimeSeconds - this._offsetSeconds); // モーションの開始時刻を記録
-      motionQueueEntry.setFadeInStartTime(userTimeSeconds); // フェードインの開始時刻
-
-      const duration = this.getDuration();
-
-      if (motionQueueEntry.getEndTime() < 0.0) {
-        // 開始していないうちに終了設定している場合がある
-        motionQueueEntry.setEndTime(
-          duration <= 0.0 ? -1 : motionQueueEntry.getStartTime() + duration
-        );
-        // duration == -1 の場合はループする
-      }
-    }
-
+    // CubismExpressionMotion._fadeWeight は廃止予定です。
+    // 互換性のために処理は残りますが、実際には使用しておりません。
     this._fadeWeight = this.updateFadeWeight(motionQueueEntry, userTimeSeconds);
 
     // モデルに適用する値を計算
@@ -174,15 +166,18 @@ export class CubismExpressionMotion extends ACubismMotion {
         } else {
           expressionParameterValue.additiveValue = this.calculateValue(
             expressionParameterValue.additiveValue,
-            CubismExpressionMotion.DefaultAdditiveValue
+            CubismExpressionMotion.DefaultAdditiveValue,
+            fadeWeight
           );
           expressionParameterValue.multiplyValue = this.calculateValue(
             expressionParameterValue.multiplyValue,
-            CubismExpressionMotion.DefaultMultiplyValue
+            CubismExpressionMotion.DefaultMultiplyValue,
+            fadeWeight
           );
           expressionParameterValue.overwriteValue = this.calculateValue(
             expressionParameterValue.overwriteValue,
-            currentParameterValue
+            currentParameterValue,
+            fadeWeight
           );
         }
         continue;
@@ -220,14 +215,14 @@ export class CubismExpressionMotion extends ACubismMotion {
         expressionParameterValue.overwriteValue = newOverwriteValue;
       } else {
         expressionParameterValue.additiveValue =
-          expressionParameterValue.additiveValue * (1.0 - this._fadeWeight) +
-          newAdditiveValue * this._fadeWeight;
+          expressionParameterValue.additiveValue * (1.0 - fadeWeight) +
+          newAdditiveValue * fadeWeight;
         expressionParameterValue.multiplyValue =
-          expressionParameterValue.multiplyValue * (1.0 - this._fadeWeight) +
-          newMultiplyValue * this._fadeWeight;
+          expressionParameterValue.multiplyValue * (1.0 - fadeWeight) +
+          newMultiplyValue * fadeWeight;
         expressionParameterValue.overwriteValue =
-          expressionParameterValue.overwriteValue * (1.0 - this._fadeWeight) +
-          newOverwriteValue * this._fadeWeight;
+          expressionParameterValue.overwriteValue * (1.0 - fadeWeight) +
+          newOverwriteValue * fadeWeight;
       }
     }
   }
@@ -249,6 +244,10 @@ export class CubismExpressionMotion extends ACubismMotion {
    * 現在の表情のフェードのウェイト値を取得する
    *
    * @returns 表情のフェードのウェイト値
+   *
+   * @deprecated CubismExpressionMotion.fadeWeightが削除予定のため非推奨。
+   * CubismExpressionMotionManager.getFadeWeight(index: number): number を使用してください。
+   * @see CubismExpressionMotionManager#getFadeWeight(index: number)
    */
   public getFadeWeight() {
     return this._fadeWeight;
@@ -333,8 +332,12 @@ export class CubismExpressionMotion extends ACubismMotion {
    * @param weight ウェイト
    * @returns 計算結果
    */
-  public calculateValue(source: number, destination: number): number {
-    return source * (1.0 - this._fadeWeight) + destination * this._fadeWeight;
+  public calculateValue(
+    source: number,
+    destination: number,
+    fadeWeight: number
+  ): number {
+    return source * (1.0 - fadeWeight) + destination * fadeWeight;
   }
 
   /**
@@ -347,7 +350,13 @@ export class CubismExpressionMotion extends ACubismMotion {
   }
 
   private _parameters: csmVector<ExpressionParameter>; // 表情のパラメータ情報リスト
-  private _fadeWeight: number; // 表情の現在のウェイト
+
+  /**
+   * 表情の現在のウェイト
+   *
+   * @deprecated 不具合を引き起こす要因となるため非推奨。
+   */
+  private _fadeWeight: number;
 }
 
 /**

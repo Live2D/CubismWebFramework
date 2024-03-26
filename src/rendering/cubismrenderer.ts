@@ -109,10 +109,10 @@ export abstract class CubismRenderer {
       alpha = 1.0;
     }
 
-    this._modelColor.R = red;
-    this._modelColor.G = green;
-    this._modelColor.B = blue;
-    this._modelColor.A = alpha;
+    this._modelColor.r = red;
+    this._modelColor.g = green;
+    this._modelColor.b = blue;
+    this._modelColor.a = alpha;
   }
 
   /**
@@ -134,11 +134,11 @@ export abstract class CubismRenderer {
    */
   getModelColorWithOpacity(opacity: number): CubismTextureColor {
     const modelColorRGBA: CubismTextureColor = this.getModelColor();
-    modelColorRGBA.A *= opacity;
+    modelColorRGBA.a *= opacity;
     if (this.isPremultipliedAlpha()) {
-      modelColorRGBA.R *= modelColorRGBA.A;
-      modelColorRGBA.G *= modelColorRGBA.A;
-      modelColorRGBA.B *= modelColorRGBA.A;
+      modelColorRGBA.r *= modelColorRGBA.a;
+      modelColorRGBA.g *= modelColorRGBA.a;
+      modelColorRGBA.b *= modelColorRGBA.a;
     }
     return modelColorRGBA;
   }
@@ -282,16 +282,16 @@ export class CubismTextureColor {
    * コンストラクタ
    */
   constructor(r = 1.0, g = 1.0, b = 1.0, a = 1.0) {
-    this.R = r;
-    this.G = g;
-    this.B = b;
-    this.A = a;
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
   }
 
-  R: number; // 赤チャンネル
-  G: number; // 緑チャンネル
-  B: number; // 青チャンネル
-  A: number; // αチャンネル
+  r: number; // 赤チャンネル
+  g: number; // 緑チャンネル
+  b: number; // 青チャンネル
+  a: number; // αチャンネル
 }
 
 /**

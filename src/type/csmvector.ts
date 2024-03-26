@@ -60,7 +60,7 @@ export class csmVector<T> {
   public pushBack(value: T): void {
     if (this._size >= this._capacity) {
       this.prepareCapacity(
-        this._capacity == 0 ? csmVector.s_defaultSize : this._capacity * 2
+        this._capacity == 0 ? csmVector.DefaultSize : this._capacity * 2
       );
     }
 
@@ -261,7 +261,7 @@ export class csmVector<T> {
   _size: number; // コンテナの要素数
   _capacity: number; // コンテナのキャパシティ
 
-  static readonly s_defaultSize = 10; // コンテナ初期化のデフォルトサイズ
+  static readonly DefaultSize = 10; // コンテナ初期化のデフォルトサイズ
 }
 
 export class iterator<T> {

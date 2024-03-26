@@ -1,5 +1,5 @@
 import { CubismId, CubismIdHandle } from '../id/cubismid';
-import { csmDelete } from '../live2dcubismframework';
+import { LogLevel, csmDelete } from '../live2dcubismframework';
 import { CubismModel } from '../model/cubismmodel';
 import { csmVector, iterator } from '../type/csmvector';
 import { ACubismMotion } from './acubismmotion';
@@ -34,6 +34,7 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
     this._currentPriority = 0;
     this._reservePriority = 0;
     this._expressionParameterValues = new csmVector<ExpressionParameterValue>();
+    this._fadeWeights = new csmVector<number>();
   }
 
   /**
@@ -43,6 +44,11 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
     if (this._expressionParameterValues) {
       csmDelete(this._expressionParameterValues);
       this._expressionParameterValues = null;
+    }
+
+    if (this._fadeWeights) {
+      csmDelete(this._fadeWeights);
+      this._fadeWeights = null;
     }
   }
 
@@ -66,6 +72,16 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
    */
   public getReservePriority(): number {
     return this._reservePriority;
+  }
+
+  /**
+   * @brief 再生中のモーションのウェイトを取得する。
+   *
+   * @param[in]    index    表情のインデックス
+   * @returns               表情モーションのウェイト
+   */
+  public getFadeWeight(index: number): number {
+    return this._fadeWeights.at(index);
   }
 
   /**
@@ -99,7 +115,9 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
     }
     this._currentPriority = priority;
 
-    return this.startMotion(motion, autoDelete, this._userTimeSeconds);
+    this._fadeWeights.pushBack(0.0);
+
+    return this.startMotion(motion, autoDelete);
   }
 
   /**
@@ -182,12 +200,24 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
       }
 
       // ------ 値を計算する ------
+      expressionMotion.setupMotionQueueEntry(
+        motionQueueEntry,
+        this._userTimeSeconds
+      );
+      this._fadeWeights.set(
+        expressionIndex,
+        expressionMotion.updateFadeWeight(
+          motionQueueEntry,
+          this._userTimeSeconds
+        )
+      );
       expressionMotion.calculateExpressionParameters(
         model,
         this._userTimeSeconds,
         motionQueueEntry,
         this._expressionParameterValues,
-        expressionIndex
+        expressionIndex,
+        this._fadeWeights.at(expressionIndex)
       );
 
       expressionWeight +=
@@ -217,12 +247,16 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
       const expressionMotion = <CubismExpressionMotion>(
         motions.at(motions.getSize() - 1).getCubismMotion()
       );
-      if (expressionMotion.getFadeWeight() >= 1.0) {
+      const latestFadeWeight: number = this._fadeWeights.at(
+        this._fadeWeights.getSize() - 1
+      );
+      if (latestFadeWeight >= 1.0) {
         // 配列の最後の要素は削除しない
         for (let i = motions.getSize() - 2; i >= 0; --i) {
           const motionQueueEntry = motions.at(i);
           csmDelete(motionQueueEntry);
           motions.remove(i);
+          this._fadeWeights.remove(i);
         }
       }
     }
@@ -252,6 +286,7 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
   }
 
   private _expressionParameterValues: csmVector<ExpressionParameterValue>; ///< モデルに適用する各パラメータの値
+  private _fadeWeights: csmVector<number>; ///< 再生中の表情のウェイト
   private _currentPriority: number; ///< 現在再生中のモーションの優先度
   private _reservePriority: number; ///< 再生予定のモーションの優先度。再生中は0になる。モーションファイルを別スレッドで読み込むときの機能。
   private _startExpressionTime: number; ///< 表情の再生開始時刻
@@ -260,6 +295,7 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
 // Namespace definition for compatibility.
 import * as $ from './cubismexpressionmotionmanager';
 import { CubismMath } from '../math/cubismmath';
+import { CubismDebug, CubismLogError } from '../utils/cubismdebug';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Live2DCubismFramework {
   export const CubismExpressionMotionManager = $.CubismExpressionMotionManager;

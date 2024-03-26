@@ -210,7 +210,7 @@ export class CubismClippingManager_WebGL extends CubismClippingManager<CubismCli
           this._clippingContextListForMask.at(clipIndex);
         const allClipedDrawRect: csmRect = clipContext._allClippedDrawRect; // このマスクを使う、すべての描画オブジェクトの論理座標上の囲み矩形
         const layoutBoundsOnTex01: csmRect = clipContext._layoutBounds; // この中にマスクを収める
-        const MARGIN = 0.05; // モデル座標上の矩形を、適宜マージンを付けて使う
+        const margin = 0.05; // モデル座標上の矩形を、適宜マージンを付けて使う
         let scaleX = 0;
         let scaleY = 0;
 
@@ -232,8 +232,8 @@ export class CubismClippingManager_WebGL extends CubismClippingManager<CubismCli
 
         this._tmpBoundsOnModel.setRect(allClipedDrawRect);
         this._tmpBoundsOnModel.expand(
-          allClipedDrawRect.width * MARGIN,
-          allClipedDrawRect.height * MARGIN
+          allClipedDrawRect.width * margin,
+          allClipedDrawRect.height * margin
         );
         //########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
 
