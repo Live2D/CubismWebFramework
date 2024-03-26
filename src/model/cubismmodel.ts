@@ -25,11 +25,11 @@ export class DrawableColorData {
     color: CubismTextureColor = new CubismTextureColor()
   ) {
     this.isOverwritten = isOverwritten;
-    this.Color = color;
+    this.color = color;
   }
 
   public isOverwritten: boolean;
-  public Color: CubismTextureColor;
+  public color: CubismTextureColor;
 }
 /**
  * @brief テクスチャの色をRGBAで扱うための構造体
@@ -40,11 +40,11 @@ export class PartColorData {
     color: CubismTextureColor = new CubismTextureColor()
   ) {
     this.isOverwritten = isOverwritten;
-    this.Color = color;
+    this.color = color;
   }
 
   public isOverwritten: boolean;
-  public Color: CubismTextureColor;
+  public color: CubismTextureColor;
 }
 
 /**
@@ -147,7 +147,7 @@ export class CubismModel {
       this.getOverwriteFlagForModelMultiplyColors() ||
       this.getOverwriteFlagForDrawableMultiplyColors(index)
     ) {
-      return this._userMultiplyColors.at(index).Color;
+      return this._userMultiplyColors.at(index).color;
     }
 
     const color = this.getDrawableMultiplyColor(index);
@@ -165,7 +165,7 @@ export class CubismModel {
       this.getOverwriteFlagForModelScreenColors() ||
       this.getOverwriteFlagForDrawableScreenColors(index)
     ) {
-      return this._userScreenColors.at(index).Color;
+      return this._userScreenColors.at(index).color;
     }
 
     const color = this.getDrawableScreenColor(index);
@@ -181,7 +181,7 @@ export class CubismModel {
     index: number,
     color: CubismTextureColor
   ) {
-    this.setMultiplyColorByRGBA(index, color.R, color.G, color.B, color.A);
+    this.setMultiplyColorByRGBA(index, color.r, color.g, color.b, color.a);
   }
 
   /**
@@ -199,10 +199,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userMultiplyColors.at(index).Color.R = r;
-    this._userMultiplyColors.at(index).Color.G = g;
-    this._userMultiplyColors.at(index).Color.B = b;
-    this._userMultiplyColors.at(index).Color.A = a;
+    this._userMultiplyColors.at(index).color.r = r;
+    this._userMultiplyColors.at(index).color.g = g;
+    this._userMultiplyColors.at(index).color.b = b;
+    this._userMultiplyColors.at(index).color.a = a;
   }
 
   /**
@@ -214,7 +214,7 @@ export class CubismModel {
     index: number,
     color: CubismTextureColor
   ) {
-    this.setScreenColorByRGBA(index, color.R, color.G, color.B, color.A);
+    this.setScreenColorByRGBA(index, color.r, color.g, color.b, color.a);
   }
 
   /**
@@ -232,10 +232,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userScreenColors.at(index).Color.R = r;
-    this._userScreenColors.at(index).Color.G = g;
-    this._userScreenColors.at(index).Color.B = b;
-    this._userScreenColors.at(index).Color.A = a;
+    this._userScreenColors.at(index).color.r = r;
+    this._userScreenColors.at(index).color.g = g;
+    this._userScreenColors.at(index).color.b = b;
+    this._userScreenColors.at(index).color.a = a;
   }
   /**
    * partの乗算色を取得する
@@ -243,7 +243,7 @@ export class CubismModel {
    * @returns 指定したpartの乗算色
    */
   public getPartMultiplyColor(partIndex: number): CubismTextureColor {
-    return this._userPartMultiplyColors.at(partIndex).Color;
+    return this._userPartMultiplyColors.at(partIndex).color;
   }
 
   /**
@@ -252,7 +252,7 @@ export class CubismModel {
    * @returns 指定したpartのスクリーン色
    */
   public getPartScreenColor(partIndex: number): CubismTextureColor {
-    return this._userPartScreenColors.at(partIndex).Color;
+    return this._userPartScreenColors.at(partIndex).color;
   }
 
   /**
@@ -274,10 +274,10 @@ export class CubismModel {
     partColors: csmVector<PartColorData>,
     drawableColors: csmVector<DrawableColorData>
   ) {
-    partColors.at(partIndex).Color.R = r;
-    partColors.at(partIndex).Color.G = g;
-    partColors.at(partIndex).Color.B = b;
-    partColors.at(partIndex).Color.A = a;
+    partColors.at(partIndex).color.r = r;
+    partColors.at(partIndex).color.g = g;
+    partColors.at(partIndex).color.b = b;
+    partColors.at(partIndex).color.a = a;
 
     if (partColors.at(partIndex).isOverwritten) {
       for (
@@ -286,10 +286,10 @@ export class CubismModel {
         ++i
       ) {
         const drawableIndex = this._partChildDrawables.at(partIndex).at(i);
-        drawableColors.at(drawableIndex).Color.R = r;
-        drawableColors.at(drawableIndex).Color.G = g;
-        drawableColors.at(drawableIndex).Color.B = b;
-        drawableColors.at(drawableIndex).Color.A = a;
+        drawableColors.at(drawableIndex).color.r = r;
+        drawableColors.at(drawableIndex).color.g = g;
+        drawableColors.at(drawableIndex).color.b = b;
+        drawableColors.at(drawableIndex).color.a = a;
       }
     }
   }
@@ -305,10 +305,10 @@ export class CubismModel {
   ) {
     this.setPartMultiplyColorByRGBA(
       partIndex,
-      color.R,
-      color.G,
-      color.B,
-      color.A
+      color.r,
+      color.g,
+      color.b,
+      color.a
     );
   }
 
@@ -349,10 +349,10 @@ export class CubismModel {
   ) {
     this.setPartScreenColorByRGBA(
       partIndex,
-      color.R,
-      color.G,
-      color.B,
-      color.A
+      color.r,
+      color.g,
+      color.b,
+      color.a
     );
   }
 
@@ -505,14 +505,14 @@ export class CubismModel {
       drawableColors.at(drawableIndex).isOverwritten = value;
 
       if (value) {
-        drawableColors.at(drawableIndex).Color.R =
-          partColors.at(partIndex).Color.R;
-        drawableColors.at(drawableIndex).Color.G =
-          partColors.at(partIndex).Color.G;
-        drawableColors.at(drawableIndex).Color.B =
-          partColors.at(partIndex).Color.B;
-        drawableColors.at(drawableIndex).Color.A =
-          partColors.at(partIndex).Color.A;
+        drawableColors.at(drawableIndex).color.r =
+          partColors.at(partIndex).color.r;
+        drawableColors.at(drawableIndex).color.g =
+          partColors.at(partIndex).color.g;
+        drawableColors.at(drawableIndex).color.b =
+          partColors.at(partIndex).color.b;
+        drawableColors.at(drawableIndex).color.a =
+          partColors.at(partIndex).color.a;
       }
     }
   }
@@ -1179,10 +1179,10 @@ export class CubismModel {
     const multiplyColors: Float32Array = this._model.drawables.multiplyColors;
     const index = drawableIndex * 4;
     const multiplyColor: CubismTextureColor = new CubismTextureColor();
-    multiplyColor.R = multiplyColors[index];
-    multiplyColor.G = multiplyColors[index + 1];
-    multiplyColor.B = multiplyColors[index + 2];
-    multiplyColor.A = multiplyColors[index + 3];
+    multiplyColor.r = multiplyColors[index];
+    multiplyColor.g = multiplyColors[index + 1];
+    multiplyColor.b = multiplyColors[index + 2];
+    multiplyColor.a = multiplyColors[index + 3];
     return multiplyColor;
   }
 
@@ -1196,10 +1196,10 @@ export class CubismModel {
     const screenColors: Float32Array = this._model.drawables.screenColors;
     const index = drawableIndex * 4;
     const screenColor: CubismTextureColor = new CubismTextureColor();
-    screenColor.R = screenColors[index];
-    screenColor.G = screenColors[index + 1];
-    screenColor.B = screenColors[index + 2];
-    screenColor.A = screenColors[index + 3];
+    screenColor.r = screenColors[index];
+    screenColor.g = screenColors[index + 1];
+    screenColor.b = screenColors[index + 2];
+    screenColor.a = screenColors[index + 3];
     return screenColor;
   }
 

@@ -24,7 +24,7 @@ export class CubismId {
    * @note 指定したID文字列からCubismIdを取得する際は
    *       CubismIdManager().getId(id)を使用してください
    */
-  public static _createIdInternal(id: string | csmString) {
+  public static createIdInternal(id: string | csmString) {
     return new CubismId(id);
   }
 

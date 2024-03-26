@@ -320,6 +320,39 @@ export class CubismMath {
   }
 
   /**
+   * 浮動小数点の余りを求める。
+   *
+   * @param dividend 被除数（割られる値）
+   * @param divisor 除数（割る値）
+   * @returns 余り
+   */
+  static mod(dividend: number, divisor: number): number {
+    if (
+      !isFinite(dividend) ||
+      divisor === 0 ||
+      isNaN(dividend) ||
+      isNaN(divisor)
+    ) {
+      console.warn(
+        `divided: ${dividend}, divisor: ${divisor} mod() returns 'NaN'.`
+      );
+      return NaN;
+    }
+
+    // 絶対値に変換する。
+    const absDividend = Math.abs(dividend);
+    const absDivisor = Math.abs(divisor);
+
+    // 絶対値で割り算する。
+    let result =
+      absDividend - Math.floor(absDividend / absDivisor) * absDivisor;
+
+    // 符号を被除数のものに指定する。
+    result *= Math.sign(dividend);
+    return result;
+  }
+
+  /**
    * コンストラクタ
    */
   private constructor() {}

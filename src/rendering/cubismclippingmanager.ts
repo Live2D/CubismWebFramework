@@ -52,31 +52,31 @@ export abstract class CubismClippingManager<
     this._clippingContexttConstructor = clippingContextFactory;
 
     let tmp: CubismTextureColor = new CubismTextureColor();
-    tmp.R = 1.0;
-    tmp.G = 0.0;
-    tmp.B = 0.0;
-    tmp.A = 0.0;
+    tmp.r = 1.0;
+    tmp.g = 0.0;
+    tmp.b = 0.0;
+    tmp.a = 0.0;
     this._channelColors.pushBack(tmp);
 
     tmp = new CubismTextureColor();
-    tmp.R = 0.0;
-    tmp.G = 1.0;
-    tmp.B = 0.0;
-    tmp.A = 0.0;
+    tmp.r = 0.0;
+    tmp.g = 1.0;
+    tmp.b = 0.0;
+    tmp.a = 0.0;
     this._channelColors.pushBack(tmp);
 
     tmp = new CubismTextureColor();
-    tmp.R = 0.0;
-    tmp.G = 0.0;
-    tmp.B = 1.0;
-    tmp.A = 0.0;
+    tmp.r = 0.0;
+    tmp.g = 0.0;
+    tmp.b = 1.0;
+    tmp.a = 0.0;
     this._channelColors.pushBack(tmp);
 
     tmp = new CubismTextureColor();
-    tmp.R = 0.0;
-    tmp.G = 0.0;
-    tmp.B = 0.0;
-    tmp.A = 1.0;
+    tmp.r = 0.0;
+    tmp.g = 0.0;
+    tmp.b = 0.0;
+    tmp.a = 1.0;
     this._channelColors.pushBack(tmp);
   }
 
@@ -273,7 +273,7 @@ export abstract class CubismClippingManager<
           this._clippingContextListForMask.at(clipIndex);
         const allClippedDrawRect: csmRect = clipContext._allClippedDrawRect; //このマスクを使う、全ての描画オブジェクトの論理座標上の囲み矩形
         const layoutBoundsOnTex01 = clipContext._layoutBounds; //この中にマスクを収める
-        const MARGIN = 0.05;
+        const margin = 0.05;
         let scaleX = 0.0;
         let scaleY = 0.0;
         const ppu: number = model.getPixelsPerUnit();
@@ -287,7 +287,7 @@ export abstract class CubismClippingManager<
 
         this._tmpBoundsOnModel.setRect(allClippedDrawRect);
         if (this._tmpBoundsOnModel.width * ppu > physicalMaskWidth) {
-          this._tmpBoundsOnModel.expand(allClippedDrawRect.width * MARGIN, 0.0);
+          this._tmpBoundsOnModel.expand(allClippedDrawRect.width * margin, 0.0);
           scaleX = layoutBoundsOnTex01.width / this._tmpBoundsOnModel.width;
         } else {
           scaleX = ppu / physicalMaskWidth;
@@ -296,7 +296,7 @@ export abstract class CubismClippingManager<
         if (this._tmpBoundsOnModel.height * ppu > physicalMaskHeight) {
           this._tmpBoundsOnModel.expand(
             0.0,
-            allClippedDrawRect.height * MARGIN
+            allClippedDrawRect.height * margin
           );
           scaleY = layoutBoundsOnTex01.height / this._tmpBoundsOnModel.height;
         } else {

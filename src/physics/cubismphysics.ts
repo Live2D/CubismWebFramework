@@ -277,15 +277,13 @@ export class CubismPhysics {
     let currentOutputs: CubismPhysicsOutput[];
     let currentParticles: CubismPhysicsParticle[];
 
-    let parameterValues: Float32Array;
-    let parameterMaximumValues: Float32Array;
-    let parameterMinimumValues: Float32Array;
-    let parameterDefaultValues: Float32Array;
-
-    parameterValues = model.getModel().parameters.values;
-    parameterMaximumValues = model.getModel().parameters.maximumValues;
-    parameterMinimumValues = model.getModel().parameters.minimumValues;
-    parameterDefaultValues = model.getModel().parameters.defaultValues;
+    const parameterValues: Float32Array = model.getModel().parameters.values;
+    const parameterMaximumValues: Float32Array =
+      model.getModel().parameters.maximumValues;
+    const parameterMinimumValues: Float32Array =
+      model.getModel().parameters.minimumValues;
+    const parameterDefaultValues: Float32Array =
+      model.getModel().parameters.defaultValues;
 
     if ((this._parameterCaches?.length ?? 0) < model.getParameterCount()) {
       this._parameterCaches = new Float32Array(model.getParameterCount());
@@ -487,21 +485,19 @@ export class CubismPhysics {
       return;
     }
 
-    let parameterValues: Float32Array;
-    let parameterMaximumValues: Float32Array;
-    let parameterMinimumValues: Float32Array;
-    let parameterDefaultValues: Float32Array;
+    const parameterValues: Float32Array = model.getModel().parameters.values;
+    const parameterMaximumValues: Float32Array =
+      model.getModel().parameters.maximumValues;
+    const parameterMinimumValues: Float32Array =
+      model.getModel().parameters.minimumValues;
+    const parameterDefaultValues: Float32Array =
+      model.getModel().parameters.defaultValues;
 
     let physicsDeltaTime: number;
     this._currentRemainTime += deltaTimeSeconds;
     if (this._currentRemainTime > MaxDeltaTime) {
       this._currentRemainTime = 0.0;
     }
-
-    parameterValues = model.getModel().parameters.values;
-    parameterMaximumValues = model.getModel().parameters.maximumValues;
-    parameterMinimumValues = model.getModel().parameters.minimumValues;
-    parameterDefaultValues = model.getModel().parameters.defaultValues;
 
     if ((this._parameterCaches?.length ?? 0) < model.getParameterCount()) {
       this._parameterCaches = new Float32Array(model.getParameterCount());
@@ -697,13 +693,11 @@ export class CubismPhysics {
   public interpolate(model: CubismModel, weight: number): void {
     let currentOutputs: CubismPhysicsOutput[];
     let currentSetting: CubismPhysicsSubRig;
-    let parameterValues: Float32Array;
-    let parameterMaximumValues: Float32Array;
-    let parameterMinimumValues: Float32Array;
-
-    parameterValues = model.getModel().parameters.values;
-    parameterMaximumValues = model.getModel().parameters.maximumValues;
-    parameterMinimumValues = model.getModel().parameters.minimumValues;
+    const parameterValues: Float32Array = model.getModel().parameters.values;
+    const parameterMaximumValues: Float32Array =
+      model.getModel().parameters.maximumValues;
+    const parameterMinimumValues: Float32Array =
+      model.getModel().parameters.minimumValues;
 
     for (
       let settingIndex = 0;
@@ -1090,10 +1084,8 @@ function updateParticles(
   deltaTimeSeconds: number,
   airResistance: number
 ) {
-  let totalRadian: number;
   let delay: number;
   let radian: number;
-  let currentGravity: CubismVector2;
   let direction: CubismVector2 = new CubismVector2(0.0, 0.0);
   let velocity: CubismVector2 = new CubismVector2(0.0, 0.0);
   let force: CubismVector2 = new CubismVector2(0.0, 0.0);
@@ -1104,8 +1096,9 @@ function updateParticles(
     totalTranslation.y
   );
 
-  totalRadian = CubismMath.degreesToRadian(totalAngle);
-  currentGravity = CubismMath.radianToDirection(totalRadian);
+  const totalRadian: number = CubismMath.degreesToRadian(totalAngle);
+  const currentGravity: CubismVector2 =
+    CubismMath.radianToDirection(totalRadian);
   currentGravity.normalize();
 
   for (let i = 1; i < strandCount; ++i) {
@@ -1185,8 +1178,6 @@ function updateParticlesForStabilization(
   windDirection: CubismVector2,
   thresholdValue: number
 ) {
-  let totalRadian: number;
-  let currentGravity: CubismVector2;
   let force: CubismVector2 = new CubismVector2(0.0, 0.0);
 
   strand[0].position = new CubismVector2(
@@ -1194,8 +1185,9 @@ function updateParticlesForStabilization(
     totalTranslation.y
   );
 
-  totalRadian = CubismMath.degreesToRadian(totalAngle);
-  currentGravity = CubismMath.radianToDirection(totalRadian);
+  const totalRadian: number = CubismMath.degreesToRadian(totalAngle);
+  const currentGravity: CubismVector2 =
+    CubismMath.radianToDirection(totalRadian);
   currentGravity.normalize();
 
   for (let i = 1; i < strandCount; ++i) {
@@ -1241,11 +1233,11 @@ function updateOutputParameterValue(
   translation: number,
   output: CubismPhysicsOutput
 ): void {
-  let outputScale: number;
   let value: number;
-  let weight: number;
-
-  outputScale = output.getScale(output.translationScale, output.angleScale);
+  const outputScale: number = output.getScale(
+    output.translationScale,
+    output.angleScale
+  );
 
   value = translation * outputScale;
 
@@ -1263,7 +1255,7 @@ function updateOutputParameterValue(
     value = parameterValueMaximum;
   }
 
-  weight = output.weight / MaximumWeight;
+  const weight: number = output.weight / MaximumWeight;
 
   if (weight >= 1.0) {
     parameterValue[0] = value;

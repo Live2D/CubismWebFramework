@@ -30,13 +30,13 @@ For compatibility with previous versions of Cubism SDK, please refer to [here](h
 
 ### Node.js
 
-* 21.5.0
-* 20.11.0
+* 21.7.1
+* 20.11.1
 
 
 ### TypeScript
 
-5.3.3
+5.4.2
 
 
 ## Development environment construction
@@ -153,7 +153,7 @@ There are many ways to contribute to the project: logging bugs, submitting pull 
 
 ### Forking And Pull Requests
 
-We very much appreciate your pull requests, whether they bring fixes, improvements, or even new features. Note, however, that the wrapper is designed to be as lightweight and shallow as possible and should therefore only be subject to bug fixes and memory/performance improvements. To keep the main repository as clean as possible, create a personal fork and feature branches there as needed.
+We very much appreciate your pull requests, whether they bring fixes, improvements, or even new features. To keep the main repository as clean as possible, create a personal fork and feature branches there as needed.
 
 ### Bugs
 
