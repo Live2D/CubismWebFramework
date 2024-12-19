@@ -5,7 +5,7 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { CubismLogDebug } from '../utils/cubismdebug';
+import { CubismLogDebug, CubismLogWarning } from '../utils/cubismdebug';
 
 /**
  * Key-Valueのペアを定義するクラス
@@ -64,6 +64,20 @@ export class csmMap<_KeyT, _ValT> {
    * @param key 新たに追加するキー
    */
   public appendKey(key: _KeyT): void {
+    let findIndex = -1;
+    for (let i = 0; i < this._size; i++) {
+      if (this._keyValues[i].first == key) {
+        findIndex = i;
+        break;
+      }
+    }
+
+    // 同じkeyが既に作られている場合は何もしない
+    if (findIndex != -1) {
+      CubismLogWarning('The key `{0}` is already append.', key);
+      return;
+    }
+
     // 新しくKey/Valueのペアを作る
     this.prepareCapacity(this._size + 1, false); // 1つ以上入る隙間を作る
     // 新しいkey/valueのインデックスは_size

@@ -16,7 +16,11 @@ import {
   CubismLogDebug,
   CubismLogWarning
 } from '../utils/cubismdebug';
-import { ACubismMotion, FinishedMotionCallback } from './acubismmotion';
+import {
+  ACubismMotion,
+  BeganMotionCallback,
+  FinishedMotionCallback
+} from './acubismmotion';
 import {
   CubismMotionCurve,
   CubismMotionCurveTarget,
@@ -250,7 +254,8 @@ export class CubismMotion extends ACubismMotion {
   public static create(
     buffer: ArrayBuffer,
     size: number,
-    onFinishedMotionHandler?: FinishedMotionCallback
+    onFinishedMotionHandler?: FinishedMotionCallback,
+    onBeganMotionHandler?: BeganMotionCallback
   ): CubismMotion {
     const ret = new CubismMotion();
 
@@ -258,6 +263,7 @@ export class CubismMotion extends ACubismMotion {
     ret._sourceFrameRate = ret._motionData.fps;
     ret._loopDurationSeconds = ret._motionData.duration;
     ret._onFinishedMotion = onFinishedMotionHandler;
+    ret._onBeganMotion = onBeganMotionHandler;
 
     // NOTE: Editorではループありのモーション書き出しは非対応
     // ret->_loop = (ret->_motionData->Loop > 0);
@@ -711,6 +717,7 @@ export class CubismMotion extends ACubismMotion {
     this._eyeBlinkParameterIds = null;
     this._lipSyncParameterIds = null;
     this._modelOpacity = 1.0;
+    this._debugMode = false;
   }
 
   /**
@@ -736,6 +743,10 @@ export class CubismMotion extends ACubismMotion {
       json.release();
       json = void 0;
       return;
+    }
+
+    if (this._debugMode) {
+      json.hasConsistency();
     }
 
     this._motionData.duration = json.getMotionDuration();
@@ -1067,6 +1078,15 @@ export class CubismMotion extends ACubismMotion {
     return this._modelOpacity;
   }
 
+  /**
+   * デバッグ用フラグを設定する
+   *
+   * @param debugMode デバッグモードの有効・無効
+   */
+  public setDebugMode(debugMode: boolean): void {
+    this._debugMode = debugMode;
+  }
+
   public _sourceFrameRate: number; // ロードしたファイルのFPS。記述が無ければデフォルト値15fpsとなる
   public _loopDurationSeconds: number; // mtnファイルで定義される一連のモーションの長さ
   public _isLoop: boolean; // ループするか?
@@ -1083,6 +1103,8 @@ export class CubismMotion extends ACubismMotion {
   public _modelCurveIdOpacity: CubismIdHandle; // モデルが持つ不透明度用パラメータIDのハンドル。  モデルとモーションを対応付ける。
 
   public _modelOpacity: number; // モーションから取得した不透明度
+
+  private _debugMode: boolean; // デバッグモードかどうか
 }
 
 // Namespace definition for compatibility.

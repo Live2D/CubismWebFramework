@@ -34,7 +34,11 @@ export class CubismJsonExtension {
         const convValue = Number(obj[key]);
         map.put(key, new JsonFloat(convValue));
       } else if (obj[key] instanceof Array) {
-        map.put(key, CubismJsonExtension.parseJsonArray(obj[key]));
+        // HACK: Array 単体で変換できないので unknown に変更してから Value にしている
+        map.put(
+          key,
+          CubismJsonExtension.parseJsonArray(obj[key] as unknown as Value)
+        );
       } else if (obj[key] instanceof Object) {
         map.put(
           key,
@@ -65,7 +69,8 @@ export class CubismJsonExtension {
           const convValue = Number(obj[key]);
           arr.add(new JsonFloat(convValue));
         } else if (obj[key] instanceof Array) {
-          arr.add(this.parseJsonArray(obj[key]));
+          // HACK: Array 単体で変換できないので unknown に変更してから Value にしている
+          arr.add(this.parseJsonArray(obj[key] as unknown as Value));
         } else if (obj[key] instanceof Object) {
           arr.add(this.parseJsonObject(obj[key], new JsonMap()));
         } else if (obj[key] == null) {
@@ -75,7 +80,8 @@ export class CubismJsonExtension {
           arr.add(obj[key]);
         }
       } else if (obj[key] instanceof Array) {
-        arr.add(this.parseJsonArray(obj[key]));
+        // HACK: Array 単体で変換できないので unknown に変更してから Value にしている
+        arr.add(this.parseJsonArray(obj[key] as unknown as Value));
       } else if (obj[key] instanceof Object) {
         arr.add(this.parseJsonObject(obj[key], new JsonMap()));
       } else if (obj[key] == null) {
