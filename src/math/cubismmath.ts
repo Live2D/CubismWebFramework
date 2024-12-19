@@ -252,7 +252,7 @@ export class CubismMath {
     c: number,
     d: number
   ): number {
-    if (this.sqrt(a) < CubismMath.Epsilon) {
+    if (this.abs(a) < CubismMath.Epsilon) {
       return this.range(this.quadraticEquation(b, c, d), 0.0, 1.0);
     }
 

@@ -12,7 +12,7 @@ import { csmVector } from '../type/csmvector';
 import { CubismLogError } from '../utils/cubismdebug';
 import { CubismClippingManager } from './cubismclippingmanager';
 import { CubismClippingContext, CubismRenderer } from './cubismrenderer';
-import { CubismShader_WebGL } from './cubismshader_webgl';
+import { CubismShaderManager_WebGL } from './cubismshader_webgl';
 
 let s_viewport: number[];
 let s_fbo: WebGLFramebuffer;
@@ -857,17 +857,13 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     this.gl.frontFace(this.gl.CCW); // Cubism SDK OpenGLはマスク・アートメッシュ共にCCWが表面
 
     if (this.isGeneratingMask()) {
-      CubismShader_WebGL.getInstance().setupShaderProgramForMask(
-        this,
-        model,
-        index
-      );
+      CubismShaderManager_WebGL.getInstance()
+        .getShader(this.gl)
+        .setupShaderProgramForMask(this, model, index);
     } else {
-      CubismShader_WebGL.getInstance().setupShaderProgramForDraw(
-        this,
-        model,
-        index
-      );
+      CubismShaderManager_WebGL.getInstance()
+        .getShader(this.gl)
+        .setupShaderProgramForDraw(this, model, index);
     }
 
     {
@@ -899,7 +895,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    * WebGLの静的なシェーダープログラムを解放する
    */
   public static doStaticRelease(): void {
-    CubismShader_WebGL.deleteInstance();
+    CubismShaderManager_WebGL.deleteInstance();
   }
 
   /**
@@ -997,7 +993,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       this._clippingManager.setGL(gl);
     }
 
-    CubismShader_WebGL.getInstance().setGl(gl);
+    CubismShaderManager_WebGL.getInstance().setGlContext(gl);
     this._rendererProfile.setGl(gl);
 
     // 異方性フィルタリングが使用できるかチェック

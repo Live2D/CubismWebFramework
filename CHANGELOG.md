@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.2] - 2024-12-19
+
+### Added
+
+* Add the functionality to call a function when motion playback starts.
+* Add an API to `CubismMotionJson` for verifying the consistency of `motion3.json`. by [@pillowtrucker](https://github.com/Live2D/CubismNativeFramework/pull/57)
+  * This API is ported from `Cubism Native Framework`.
+
+### Changed
+
+* Change to create and manage a `CubismShader` for each `GLRenderingContext`.
+* Change the access level of the private members in `CubismModelSettingJson` class to protected.
+* Move JSON key strings set to the member variables of `CubismModelSettingJson` class.
+* Change `FrequestNode` to be exported as part of the module.
+* Change to permit to overwrite motion fade by the value specified in .model3.json on `CubismUserModel.loadMotion()`.
+* Change the value of pi used in the calculation of `CubismBreath.updateParameters()` to `Math.PI`.
+
+### Deprecated
+
+* Deprecate the following elements because a priority value is not actually used during expression motion playback:
+  * `CubismExpressionMotionManager._currentPriority`
+  * `CubismExpressionMotionManager._reservePriority`
+  * `CubismExpressionMotionManager.startMotionPriority()`
+  * `CubismExpressionMotionManager.getCurrentPriority()`
+  * `CubismExpressionMotionManager.getReservePriority()`
+  * `CubismExpressionMotionManager.setReservePriority()`
+
+  Please use the `CubismMotionQueueManager.startMotion()` instead of `CubismExpressionMotionManager.startMotionPriority()`.
+
+
+### Fixed
+
+* Fix an issue where already registered keys could be added on `csmMap.appendKey()`.
+* Fix a bug that caused an error when playing `CubismExpresionMotion` with `CubismMotionQueueManager.startMotion()`.
+* Fix an issue where `CubismMath.cardanoAlgorithmForBezier()` was using a different function than Cubism SDK for Native.
+* Fix a potential problem with division by 0 when a pose fade time is set to 0 seconds.
+* Fix an issue where `CubismPose._fadeTimeSeconds` does not become 0.
+
+
 ## [5-r.1] - 2024-03-26
 
 ### Added
@@ -256,6 +295,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1...5-r.2
 [5-r.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.4...5-r.1
 [5-r.1-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.3...5-r.1-beta.4
 [5-r.1-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.2...5-r.1-beta.3

@@ -56,7 +56,7 @@ export class CubismBreath {
   public updateParameters(model: CubismModel, deltaTimeSeconds: number): void {
     this._currentTime += deltaTimeSeconds;
 
-    const t: number = this._currentTime * 2.0 * 3.14159;
+    const t: number = this._currentTime * 2.0 * Math.PI;
 
     for (let i = 0; i < this._breathParameters.getSize(); ++i) {
       const data: BreathParameterData = this._breathParameters.at(i);

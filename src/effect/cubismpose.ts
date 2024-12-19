@@ -47,7 +47,7 @@ export class CubismPose {
         .getValueByString(FadeIn)
         .toFloat(DefaultFadeInSeconds);
 
-      if (ret._fadeTimeSeconds <= 0.0) {
+      if (ret._fadeTimeSeconds < 0.0) {
         ret._fadeTimeSeconds = DefaultFadeInSeconds;
       }
     }
@@ -243,6 +243,12 @@ export class CubismPose {
         }
 
         visiblePartIndex = i;
+        // ゼロ除算の回避
+        if (this._fadeTimeSeconds == 0) {
+          newOpacity = 1.0;
+          continue;
+        }
+
         newOpacity = model.getPartOpacityByIndex(partIndex);
 
         // 新しい不透明度を計算

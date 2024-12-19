@@ -7,47 +7,24 @@
 
 import { CubismMatrix44 } from '../math/cubismmatrix44';
 import { CubismModel } from '../model/cubismmodel';
+import { csmMap, iterator } from '../type/csmmap';
 import { csmRect } from '../type/csmrectf';
 import { csmVector } from '../type/csmvector';
 import { CubismLogError } from '../utils/cubismdebug';
 import { CubismBlendMode, CubismTextureColor } from './cubismrenderer';
 import { CubismRenderer_WebGL } from './cubismrenderer_webgl';
 
-let s_instance: CubismShader_WebGL;
+let s_instance: CubismShaderManager_WebGL; // インスタンス（シングルトン）
 const ShaderCount = 10; // シェーダーの数 = マスク生成用 + (通常用 + 加算 + 乗算) * (マスク無の乗算済アルファ対応版 + マスク有の乗算済アルファ対応版 + マスク有反転の乗算済アルファ対応版)
 
 /**
  * WebGL用のシェーダープログラムを生成・破棄するクラス
- * シングルトンなクラスであり、CubismShader_WebGL.getInstanceからアクセスする。
  */
 export class CubismShader_WebGL {
   /**
-   * インスタンスを取得する（シングルトン）
-   * @return インスタンス
+   * コンストラクタ
    */
-  public static getInstance(): CubismShader_WebGL {
-    if (s_instance == null) {
-      s_instance = new CubismShader_WebGL();
-
-      return s_instance;
-    }
-    return s_instance;
-  }
-
-  /**
-   * インスタンスを開放する（シングルトン）
-   */
-  public static deleteInstance(): void {
-    if (s_instance) {
-      s_instance.release();
-      s_instance = null;
-    }
-  }
-
-  /**
-   * privateなコンストラクタ
-   */
-  private constructor() {
+  public constructor() {
     this._shaderSets = new csmVector<CubismShaderSet>();
   }
 
@@ -1014,6 +991,81 @@ export class CubismShader_WebGL {
 }
 
 /**
+ * GLContextごとにCubismShader_WebGLを確保するためのクラス
+ * シングルトンなクラスであり、CubismShaderManager_WebGL.getInstanceからアクセスする。
+ */
+export class CubismShaderManager_WebGL {
+  /**
+   * インスタンスを取得する（シングルトン）
+   * @return インスタンス
+   */
+  public static getInstance(): CubismShaderManager_WebGL {
+    if (s_instance == null) {
+      s_instance = new CubismShaderManager_WebGL();
+    }
+    return s_instance;
+  }
+
+  /**
+   * インスタンスを開放する（シングルトン）
+   */
+  public static deleteInstance(): void {
+    if (s_instance) {
+      s_instance.release();
+      s_instance = null;
+    }
+  }
+
+  /**
+   * Privateなコンストラクタ
+   */
+  private constructor() {
+    this._shaderMap = new csmMap<WebGLRenderingContext, CubismShader_WebGL>();
+  }
+
+  /**
+   * デストラクタ相当の処理
+   */
+  public release(): void {
+    for (
+      const ite: iterator<WebGLRenderingContext, CubismShader_WebGL> =
+        this._shaderMap.begin();
+      ite.notEqual(this._shaderMap.end());
+      ite.preIncrement()
+    ) {
+      ite.ptr().second.release();
+    }
+    this._shaderMap.clear();
+  }
+
+  /**
+   * GLContextをキーにShaderを取得する
+   * @param gl
+   * @returns
+   */
+  public getShader(gl: WebGLRenderingContext): CubismShader_WebGL {
+    return this._shaderMap.getValue(gl);
+  }
+
+  /**
+   * GLContextを登録する
+   * @param gl
+   */
+  public setGlContext(gl: WebGLRenderingContext): void {
+    if (!this._shaderMap.isExist(gl)) {
+      const instance = new CubismShader_WebGL();
+      instance.setGl(gl);
+      this._shaderMap.setValue(gl, instance);
+    }
+  }
+
+  /**
+   * GLContextごとのShaderを保持する変数
+   */
+  private _shaderMap: csmMap<WebGLRenderingContext, CubismShader_WebGL>;
+}
+
+/**
  * CubismShader_WebGLのインナークラス
  */
 export class CubismShaderSet {
@@ -1183,6 +1235,8 @@ export namespace Live2DCubismFramework {
   export type CubismShaderSet = $.CubismShaderSet;
   export const CubismShader_WebGL = $.CubismShader_WebGL;
   export type CubismShader_WebGL = $.CubismShader_WebGL;
+  export const CubismShaderManager_WebGL = $.CubismShaderManager_WebGL;
+  export type CubismShaderManager_WebGL = $.CubismShaderManager_WebGL;
   export const ShaderNames = $.ShaderNames;
   export type ShaderNames = $.ShaderNames;
 }

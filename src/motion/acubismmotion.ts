@@ -12,6 +12,9 @@ import { csmVector } from '../type/csmvector';
 import { CSM_ASSERT, CubismDebug } from '../utils/cubismdebug';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
 
+/** モーション再生開始コールバック関数定義 */
+export type BeganMotionCallback = (self: ACubismMotion) => void;
+
 /** モーション再生終了コールバック関数定義 */
 export type FinishedMotionCallback = (self: ACubismMotion) => void;
 
@@ -116,6 +119,11 @@ export abstract class ACubismMotion {
         duration <= 0.0 ? -1 : motionQueueEntry.getStartTime() + duration
       );
       // duration == -1 の場合はループする
+    }
+
+    // 再生開始コールバック
+    if (motionQueueEntry._motion._onBeganMotion) {
+      motionQueueEntry._motion._onBeganMotion(motionQueueEntry._motion);
     }
   }
 
@@ -277,6 +285,28 @@ export abstract class ACubismMotion {
   ): void;
 
   /**
+   * モーション再生開始コールバックの登録
+   *
+   * モーション再生開始コールバックを登録する。
+   * 以下の状態の際には呼び出されない:
+   *   1. 再生中のモーションが「ループ」として設定されているとき
+   *   2. コールバックが登録されていない時
+   *
+   * @param onBeganMotionHandler モーション再生開始コールバック関数
+   */
+  public setBeganMotionHandler = (onBeganMotionHandler: BeganMotionCallback) =>
+    (this._onBeganMotion = onBeganMotionHandler);
+
+  /**
+   * モーション再生開始コールバックの取得
+   *
+   * モーション再生開始コールバックを取得する。
+   *
+   * @return 登録されているモーション再生開始コールバック関数
+   */
+  public getBeganMotionHandler = () => this._onBeganMotion;
+
+  /**
    * モーション再生終了コールバックの登録
    *
    * モーション再生終了コールバックを登録する。
@@ -347,6 +377,8 @@ export abstract class ACubismMotion {
 
   public _firedEventValues: csmVector<csmString>;
 
+  // モーション再生開始コールバック関数
+  public _onBeganMotion?: BeganMotionCallback;
   // モーション再生終了コールバック関数
   public _onFinishedMotion?: FinishedMotionCallback;
 }
@@ -359,5 +391,6 @@ import { LogLevel } from '../live2dcubismframework';
 export namespace Live2DCubismFramework {
   export const ACubismMotion = $.ACubismMotion;
   export type ACubismMotion = $.ACubismMotion;
+  export type BeganMotionCallback = $.BeganMotionCallback;
   export type FinishedMotionCallback = $.FinishedMotionCallback;
 }
