@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.3] - 2025-02-18
+
+### Added
+
+* Add new motion loop processing that seamlessly connects the start and end points of the loop.
+  * The `_isLoop` variable was moved from class `CubismMotion` to class `ACubismMotion`.
+  * Add the setter for `_isLoop`, `setLoop()`, to class `ACubismMotion`.
+  * Add the getter for `_isLoop`, `getLoop()`, to class `ACubismMotion`.
+  * The `_isLoopFadeIn` variable was moved from class `CubismMotion` to class `ACubismMotion`.
+  * Add the setter for `_isLoopFadeIn`, `setLoopFadeIn()`, to class `ACubismMotion`.
+  * Add the getter for `_isLoopFadeIn`, `getLoopFadeIn()`, to class `ACubismMotion`.
+  * Add a variable `_motionBehavior` for version control to the `CubismMotion` class.
+
+### Changed
+
+* Change ESLint version to `9.17.0`.
+  * With this update, we have added the eslint.confing.mjs required for FlatConfig.
+
+### Deprecated
+* Deprecate the following elements due to the change in the variable declaration location.
+  * `CubismMotion.setIsLoop()`
+  * `CubismMotion.isLoop()`
+  * `CubismMotion.setIsLoopFadeIn()`
+  * `CubismMotion.isLoopFadeIn()`
+
 ## [5-r.2] - 2024-12-19
 
 ### Added
@@ -295,6 +320,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.2...5-r.3
 [5-r.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1...5-r.2
 [5-r.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.4...5-r.1
 [5-r.1-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.3...5-r.1-beta.4
