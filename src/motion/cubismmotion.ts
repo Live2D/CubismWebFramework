@@ -204,7 +204,9 @@ function inverseSteppedEvaluate(
 function evaluateCurve(
   motionData: CubismMotionData,
   index: number,
-  time: number
+  time: number,
+  isCorrection: boolean,
+  endTime: number
 ): number {
   // Find segment to evaluate.
   const curve: CubismMotionCurve = motionData.curves.at(index);
@@ -229,12 +231,78 @@ function evaluateCurve(
   }
 
   if (target == -1) {
+    if (isCorrection && time < endTime) {
+      return correctEndPoint(
+        motionData,
+        totalSegmentCount - 1,
+        motionData.segments.at(curve.baseSegmentIndex).basePointIndex,
+        pointPosition,
+        time,
+        endTime
+      );
+    }
     return motionData.points.at(pointPosition).value;
   }
 
   const segment: CubismMotionSegment = motionData.segments.at(target);
 
   return segment.evaluate(motionData.points.get(segment.basePointIndex), time);
+}
+
+/**
+ * 終点から始点への補正処理
+ * @param motionData
+ * @param segmentIndex
+ * @param beginIndex
+ * @param endIndex
+ * @param time
+ * @param endTime
+ * @returns
+ */
+function correctEndPoint(
+  motionData: CubismMotionData,
+  segmentIndex: number,
+  beginIndex: number,
+  endIndex: number,
+  time: number,
+  endTime: number
+): number {
+  const motionPoint: CubismMotionPoint[] = [
+    new CubismMotionPoint(),
+    new CubismMotionPoint()
+  ];
+  {
+    const src = motionData.points.at(endIndex);
+    motionPoint[0].time = src.time;
+    motionPoint[0].value = src.value;
+  }
+  {
+    const src = motionData.points.at(beginIndex);
+    motionPoint[1].time = endTime;
+    motionPoint[1].value = src.value;
+  }
+
+  switch (
+    motionData.segments.at(segmentIndex).segmentType as CubismMotionSegmentType
+  ) {
+    case CubismMotionSegmentType.CubismMotionSegmentType_Linear:
+    case CubismMotionSegmentType.CubismMotionSegmentType_Bezier:
+    default:
+      return linearEvaluate(motionPoint, time);
+    case CubismMotionSegmentType.CubismMotionSegmentType_Stepped:
+      return steppedEvaluate(motionPoint, time);
+    case CubismMotionSegmentType.CubismMotionSegmentType_InverseStepped:
+      return inverseSteppedEvaluate(motionPoint, time);
+  }
+}
+
+/**
+ * Enumerator for version control of Motion Behavior.
+ * For details, see the SDK Manual.
+ */
+export enum MotionBehavior {
+  MotionBehavior_V1,
+  MotionBehavior_V2
 }
 
 /**
@@ -298,6 +366,14 @@ export class CubismMotion extends ACubismMotion {
         CubismFramework.getIdManager().getId(IdNameOpacity);
     }
 
+    if (this._motionBehavior === MotionBehavior.MotionBehavior_V2) {
+      if (this._previousLoopState !== this._isLoop) {
+        // 終了時間を計算する
+        this.adjustEndTime(motionQueueEntry);
+        this._previousLoopState = this._isLoop;
+      }
+    }
+
     let timeOffsetSeconds: number =
       userTimeSeconds - motionQueueEntry.getStartTime();
 
@@ -347,10 +423,16 @@ export class CubismMotion extends ACubismMotion {
 
     // 'Repeat' time as necessary.
     let time: number = timeOffsetSeconds;
+    let duration: number = this._motionData.duration;
+    const isCorrection: boolean =
+      this._motionBehavior === MotionBehavior.MotionBehavior_V2 && this._isLoop;
 
     if (this._isLoop) {
-      while (time > this._motionData.duration) {
-        time -= this._motionData.duration;
+      if (this._motionBehavior === MotionBehavior.MotionBehavior_V2) {
+        duration += 1.0 / this._motionData.fps;
+      }
+      while (time > duration) {
+        time -= duration;
       }
     }
 
@@ -365,7 +447,7 @@ export class CubismMotion extends ACubismMotion {
       ++c
     ) {
       // Evaluate curve and call handler.
-      value = evaluateCurve(this._motionData, c, time);
+      value = evaluateCurve(this._motionData, c, time, isCorrection, duration);
 
       if (curves.at(c).id == this._modelCurveIdEyeBlink) {
         eyeBlinkValue = value;
@@ -400,7 +482,7 @@ export class CubismMotion extends ACubismMotion {
         model.getParameterValueByIndex(parameterIndex);
 
       // Evaluate curve and apply value.
-      value = evaluateCurve(this._motionData, c, time);
+      value = evaluateCurve(this._motionData, c, time, isCorrection, duration);
 
       if (eyeBlinkValue != Number.MAX_VALUE) {
         for (
@@ -537,18 +619,14 @@ export class CubismMotion extends ACubismMotion {
       }
 
       // Evaluate curve and apply value.
-      value = evaluateCurve(this._motionData, c, time);
+      value = evaluateCurve(this._motionData, c, time, isCorrection, duration);
 
       model.setParameterValueByIndex(parameterIndex, value);
     }
 
-    if (timeOffsetSeconds >= this._motionData.duration) {
+    if (timeOffsetSeconds >= duration) {
       if (this._isLoop) {
-        motionQueueEntry.setStartTime(userTimeSeconds); // 最初の状態へ
-        if (this._isLoopFadeIn) {
-          // ループ内でループ用フェードインが有効の時は、フェードイン設定し直し
-          motionQueueEntry.setFadeInStartTime(userTimeSeconds);
-        }
+        this.updateForNextLoop(motionQueueEntry, userTimeSeconds, time);
       } else {
         if (this._onFinishedMotion) {
           this._onFinishedMotion(this);
@@ -565,6 +643,9 @@ export class CubismMotion extends ACubismMotion {
    * @param loop ループ情報
    */
   public setIsLoop(loop: boolean): void {
+    CubismLogWarning(
+      'setIsLoop() is a deprecated function. Please use setLoop().'
+    );
     this._isLoop = loop;
   }
 
@@ -574,6 +655,9 @@ export class CubismMotion extends ACubismMotion {
    * @return false ループしない
    */
   public isLoop(): boolean {
+    CubismLogWarning(
+      'isLoop() is a deprecated function. Please use getLoop().'
+    );
     return this._isLoop;
   }
 
@@ -582,6 +666,9 @@ export class CubismMotion extends ACubismMotion {
    * @param loopFadeIn  ループ時のフェードイン情報
    */
   public setIsLoopFadeIn(loopFadeIn: boolean): void {
+    CubismLogWarning(
+      'setIsLoopFadeIn() is a deprecated function. Please use setLoopFadeIn().'
+    );
     this._isLoopFadeIn = loopFadeIn;
   }
 
@@ -592,7 +679,28 @@ export class CubismMotion extends ACubismMotion {
    * @return  false   しない
    */
   public isLoopFadeIn(): boolean {
+    CubismLogWarning(
+      'isLoopFadeIn() is a deprecated function. Please use getLoopFadeIn().'
+    );
     return this._isLoopFadeIn;
+  }
+
+  /**
+   * Sets the version of the Motion Behavior.
+   *
+   * @param Specifies the version of the Motion Behavior.
+   */
+  public setMotionBehavior(motionBehavior: MotionBehavior) {
+    this._motionBehavior = motionBehavior;
+  }
+
+  /**
+   * Gets the version of the Motion Behavior.
+   *
+   * @return Returns the version of the Motion Behavior.
+   */
+  public getMotionBehavior(): MotionBehavior {
+    return this._motionBehavior;
   }
 
   /**
@@ -726,6 +834,41 @@ export class CubismMotion extends ACubismMotion {
   public release(): void {
     this._motionData = void 0;
     this._motionData = null;
+  }
+
+  /**
+   *
+   * @param motionQueueEntry
+   * @param userTimeSeconds
+   * @param time
+   */
+  public updateForNextLoop(
+    motionQueueEntry: CubismMotionQueueEntry,
+    userTimeSeconds: number,
+    time: number
+  ) {
+    switch (this._motionBehavior) {
+      case MotionBehavior.MotionBehavior_V2:
+      default:
+        motionQueueEntry.setStartTime(userTimeSeconds - time); // 最初の状態へ
+        if (this._isLoopFadeIn) {
+          // ループ中でループ用フェードインが有効のときは、フェードイン設定し直し
+          motionQueueEntry.setFadeInStartTime(userTimeSeconds - time);
+        }
+
+        if (this._onFinishedMotion !== null) {
+          this._onFinishedMotion(this);
+        }
+        break;
+      case MotionBehavior.MotionBehavior_V1:
+        // 旧ループ処理
+        motionQueueEntry.setStartTime(userTimeSeconds); // 最初の状態へ
+        if (this._isLoopFadeIn) {
+          // ループ中でループ用フェードインが有効のときは、フェードイン設定し直し
+          motionQueueEntry.setFadeInStartTime(userTimeSeconds);
+        }
+        break;
+    }
   }
 
   /**
@@ -1089,8 +1232,7 @@ export class CubismMotion extends ACubismMotion {
 
   public _sourceFrameRate: number; // ロードしたファイルのFPS。記述が無ければデフォルト値15fpsとなる
   public _loopDurationSeconds: number; // mtnファイルで定義される一連のモーションの長さ
-  public _isLoop: boolean; // ループするか?
-  public _isLoopFadeIn: boolean; // ループ時にフェードインが有効かどうかのフラグ。初期値では有効。
+  public _motionBehavior: MotionBehavior = MotionBehavior.MotionBehavior_V2;
   public _lastWeight: number; // 最後に設定された重み
 
   public _motionData: CubismMotionData; // 実際のモーションデータ本体

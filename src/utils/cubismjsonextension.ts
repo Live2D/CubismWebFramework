@@ -23,7 +23,7 @@ import {
  */
 export class CubismJsonExtension {
   static parseJsonObject(obj: Value, map: JsonMap) {
-    Object.keys(obj).forEach((key) => {
+    Object.keys(obj).forEach(key => {
       if (typeof obj[key] == 'boolean') {
         const convValue = Boolean(obj[key]);
         map.put(key, new JsonBoolean(convValue));
@@ -56,7 +56,7 @@ export class CubismJsonExtension {
 
   protected static parseJsonArray(obj: Value) {
     const arr = new JsonArray();
-    Object.keys(obj).forEach((key) => {
+    Object.keys(obj).forEach(key => {
       const convKey = Number(key);
       if (typeof convKey == 'number') {
         if (typeof obj[key] == 'boolean') {

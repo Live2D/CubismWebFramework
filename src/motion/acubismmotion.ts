@@ -40,6 +40,9 @@ export abstract class ACubismMotion {
     this._fadeOutSeconds = -1.0;
     this._weight = 1.0;
     this._offsetSeconds = 0.0; // 再生の開始時刻
+    this._isLoop = false; // ループするか
+    this._isLoopFadeIn = true; // ループ時にフェードインが有効かどうかのフラグ。初期値では有効。
+    this._previousLoopState = this._isLoop;
     this._firedEventValues = new csmVector<csmString>();
   }
 
@@ -111,14 +114,9 @@ export abstract class ACubismMotion {
     motionQueueEntry.setStartTime(userTimeSeconds - this._offsetSeconds); // モーションの開始時刻を記録
     motionQueueEntry.setFadeInStartTime(userTimeSeconds); // フェードインの開始時刻
 
-    const duration = this.getDuration();
-
     if (motionQueueEntry.getEndTime() < 0.0) {
       // 開始していないうちに終了設定している場合がある
-      motionQueueEntry.setEndTime(
-        duration <= 0.0 ? -1 : motionQueueEntry.getStartTime() + duration
-      );
-      // duration == -1 の場合はループする
+      this.adjustEndTime(motionQueueEntry);
     }
 
     // 再生開始コールバック
@@ -253,6 +251,41 @@ export abstract class ACubismMotion {
   }
 
   /**
+   * ループ情報の設定
+   * @param loop ループ情報
+   */
+  public setLoop(loop: boolean): void {
+    this._isLoop = loop;
+  }
+
+  /**
+   * ループ情報の取得
+   * @return true ループする
+   * @return false ループしない
+   */
+  public getLoop(): boolean {
+    return this._isLoop;
+  }
+
+  /**
+   * ループ時のフェードイン情報の設定
+   * @param loopFadeIn  ループ時のフェードイン情報
+   */
+  public setLoopFadeIn(loopFadeIn: boolean) {
+    this._isLoopFadeIn = loopFadeIn;
+  }
+
+  /**
+   * ループ時のフェードイン情報の取得
+   *
+   * @return  true    する
+   * @return  false   しない
+   */
+  public getLoopFadeIn(): boolean {
+    return this._isLoopFadeIn;
+  }
+
+  /**
    * モデルのパラメータ更新
    *
    * イベント発火のチェック。
@@ -370,11 +403,27 @@ export abstract class ACubismMotion {
     return 1.0;
   }
 
+  /**
+   * 終了時刻の調整
+   * @param motionQueueEntry CubismMotionQueueManagerで管理されているモーション
+   */
+  protected adjustEndTime(motionQueueEntry: CubismMotionQueueEntry) {
+    const duration = this.getDuration();
+
+    // duration == -1 の場合はループする
+    const endTime =
+      duration <= 0.0 ? -1 : motionQueueEntry.getStartTime() + duration;
+
+    motionQueueEntry.setEndTime(endTime);
+  }
+
   public _fadeInSeconds: number; // フェードインにかかる時間[秒]
   public _fadeOutSeconds: number; // フェードアウトにかかる時間[秒]
   public _weight: number; // モーションの重み
   public _offsetSeconds: number; // モーション再生の開始時間[秒]
-
+  public _isLoop: boolean; // ループが有効かのフラグ
+  public _isLoopFadeIn: boolean; // ループ時にフェードインが有効かどうかのフラグ
+  public _previousLoopState: boolean; // 前回の `_isLoop` の状態
   public _firedEventValues: csmVector<csmString>;
 
   // モーション再生開始コールバック関数
