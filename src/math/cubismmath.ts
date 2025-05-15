@@ -136,6 +136,15 @@ export class CubismMath {
     return left > right ? right : left;
   }
 
+  public static clamp(val: number, min: number, max: number): number {
+    if (val < min) {
+      return min;
+    } else if (max < val) {
+      return max;
+    }
+    return val;
+  }
+
   /**
    * 角度値をラジアン値に変換する
    *

@@ -6,7 +6,7 @@
  */
 
 import { CubismIdHandle } from '../id/cubismid';
-import { CubismFramework } from '../live2dcubismframework';
+import { csmDelete, CubismFramework } from '../live2dcubismframework';
 import { CubismMath } from '../math/cubismmath';
 import { CubismModel } from '../model/cubismmodel';
 import { csmString } from '../type/csmstring';
@@ -14,6 +14,7 @@ import { csmVector } from '../type/csmvector';
 import {
   CSM_ASSERT,
   CubismLogDebug,
+  CubismLogError,
   CubismLogWarning
 } from '../utils/cubismdebug';
 import {
@@ -317,21 +318,29 @@ export class CubismMotion extends ACubismMotion {
    * @param buffer motion3.jsonが読み込まれているバッファ
    * @param size バッファのサイズ
    * @param onFinishedMotionHandler モーション再生終了時に呼び出されるコールバック関数
+   * @param onBeganMotionHandler モーション再生開始時に呼び出されるコールバック関数
+   * @param shouldCheckMotionConsistency motion3.json整合性チェックするかどうか
    * @return 作成されたインスタンス
    */
   public static create(
     buffer: ArrayBuffer,
     size: number,
     onFinishedMotionHandler?: FinishedMotionCallback,
-    onBeganMotionHandler?: BeganMotionCallback
+    onBeganMotionHandler?: BeganMotionCallback,
+    shouldCheckMotionConsistency: boolean = false
   ): CubismMotion {
     const ret = new CubismMotion();
 
-    ret.parse(buffer, size);
-    ret._sourceFrameRate = ret._motionData.fps;
-    ret._loopDurationSeconds = ret._motionData.duration;
-    ret._onFinishedMotion = onFinishedMotionHandler;
-    ret._onBeganMotion = onBeganMotionHandler;
+    ret.parse(buffer, size, shouldCheckMotionConsistency);
+    if (ret._motionData) {
+      ret._sourceFrameRate = ret._motionData.fps;
+      ret._loopDurationSeconds = ret._motionData.duration;
+      ret._onFinishedMotion = onFinishedMotionHandler;
+      ret._onBeganMotion = onBeganMotionHandler;
+    } else {
+      csmDelete(ret);
+      return null;
+    }
 
     // NOTE: Editorではループありのモーション書き出しは非対応
     // ret->_loop = (ret->_motionData->Loop > 0);
@@ -510,6 +519,11 @@ export class CubismMotion extends ACubismMotion {
             break;
           }
         }
+      }
+
+      // Process "repeats only" for compatibility
+      if (model.isRepeat(parameterIndex)) {
+        value = model.getParameterRepeatValue(parameterIndex, value);
       }
 
       let v: number;
@@ -856,7 +870,7 @@ export class CubismMotion extends ACubismMotion {
           motionQueueEntry.setFadeInStartTime(userTimeSeconds - time);
         }
 
-        if (this._onFinishedMotion !== null) {
+        if (this._onFinishedMotion != null) {
           this._onFinishedMotion(this);
         }
         break;
@@ -876,10 +890,13 @@ export class CubismMotion extends ACubismMotion {
    *
    * @param motionJson  motion3.jsonが読み込まれているバッファ
    * @param size        バッファのサイズ
+   * @param shouldCheckMotionConsistency motion3.json整合性チェックするかどうか
    */
-  public parse(motionJson: ArrayBuffer, size: number): void {
-    this._motionData = new CubismMotionData();
-
+  public parse(
+    motionJson: ArrayBuffer,
+    size: number,
+    shouldCheckMotionConsistency: boolean = false
+  ): void {
     let json: CubismMotionJson = new CubismMotionJson(motionJson, size);
 
     if (!json) {
@@ -888,9 +905,16 @@ export class CubismMotion extends ACubismMotion {
       return;
     }
 
-    if (this._debugMode) {
-      json.hasConsistency();
+    if (shouldCheckMotionConsistency) {
+      const consistency = json.hasConsistency();
+      if (!consistency) {
+        json.release();
+        CubismLogError('Inconsistent motion3.json.');
+        return;
+      }
     }
+
+    this._motionData = new CubismMotionData();
 
     this._motionData.duration = json.getMotionDuration();
     this._motionData.loop = json.isMotionLoop();
