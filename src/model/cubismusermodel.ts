@@ -165,6 +165,7 @@ export class CubismUserModel {
    * @param modelSetting モデル設定
    * @param group モーショングループ名
    * @param index モーションインデックス
+   * @param shouldCheckMotionConsistency motion3.json整合性チェックするかどうか
    * @return モーションクラス
    */
   public loadMotion(
@@ -175,7 +176,8 @@ export class CubismUserModel {
     onBeganMotionHandler?: BeganMotionCallback,
     modelSetting?: ICubismModelSetting,
     group?: string,
-    index?: number
+    index?: number,
+    shouldCheckMotionConsistency: boolean = false
   ): CubismMotion {
     if (buffer == null || size == 0) {
       CubismLogError('Failed to loadMotion().');
@@ -186,7 +188,8 @@ export class CubismUserModel {
       buffer,
       size,
       onFinishedMotionHandler,
-      onBeganMotionHandler
+      onBeganMotionHandler,
+      shouldCheckMotionConsistency
     );
 
     if (motion == null) {
@@ -499,7 +502,8 @@ export class CubismUserModel {
   protected _accelerationX: number; // X軸方向の加速度
   protected _accelerationY: number; // Y軸方向の加速度
   protected _accelerationZ: number; // Z軸方向の加速度
-  protected _mocConsistency: boolean; // MOC3一貫性検証するかどうか
+  protected _mocConsistency: boolean; // MOC3整合性検証するかどうか
+  protected _motionConsistency: boolean; // motion3.json整合性検証するかどうか
   protected _debugMode: boolean; // デバッグモードかどうか
 
   private _renderer: CubismRenderer_WebGL; // レンダラ

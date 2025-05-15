@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.4] - 2025-05-15
+
+### Added
+
+* Add parameter repeat processing that connects the right and left ends of the parameter to create a loop, allowing the motion to repeat.
+  * Add the variable `_isOverriddenParameterRepeat` to the `CubismModel` class for managing parameter repeat flags at the model level.
+  * Add the variable `_userParameterRepeatDataList` to the `CubismModel` class for managing parameter repeat flags for each parameter.
+* Add a `getPartParentPartIndices()` function.
+* Add a flag to the arguments of the following methods to enable the function that verifies the consistency of `motion3.json`:
+  * `CubismUserModel.loadMotion()`
+  * `CubismMotion.create()`
+  * `CubismMotion.parse()`
+
+### Fixed
+
+* Fix an issue with detecting the end of playback when looping motion.
+
+
 ## [5-r.3] - 2025-02-18
 
 ### Added
@@ -77,6 +95,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+* Change an expression "overwrite" to "override" for multiply color, screen color, and culling to adapt the actual behavior.
 * Change the weight value in `Expression` from `CubismExpressionMotion` to have it in the `CubismExpressionMotionManager`.
 * Reorganize the names of some functions and variables.
   * This is a change that depends on fixing `eslintrc.yml`.
@@ -320,6 +339,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.3...5-r.4
 [5-r.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.2...5-r.3
 [5-r.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1...5-r.2
 [5-r.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.4...5-r.1
