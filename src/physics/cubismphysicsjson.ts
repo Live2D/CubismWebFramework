@@ -69,13 +69,6 @@ export class CubismPhysicsJson {
   }
 
   /**
-   * デストラクタ相当の処理
-   */
-  public release(): void {
-    CubismJson.delete(this._json);
-  }
-
-  /**
    * 重力の取得
    * @return 重力
    */

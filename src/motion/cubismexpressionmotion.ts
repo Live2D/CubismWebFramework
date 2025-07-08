@@ -318,8 +318,6 @@ export class CubismExpressionMotion extends ACubismMotion {
 
       this._parameters.pushBack(item);
     }
-
-    CubismJson.delete(json); // JSONデータは不要になったら削除する
   }
 
   /**

@@ -47,13 +47,6 @@ export class CubismMotionJson {
   }
 
   /**
-   * デストラクタ相当の処理
-   */
-  public release(): void {
-    CubismJson.delete(this._json);
-  }
-
-  /**
    * モーションの長さを取得する
    * @return モーションの長さ[秒]
    */

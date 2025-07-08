@@ -28,13 +28,6 @@ export class CubismModelUserDataJson {
   }
 
   /**
-   * デストラクタ相当の処理
-   */
-  public release(): void {
-    CubismJson.delete(this._json);
-  }
-
-  /**
    * ユーザーデータ個数の取得
    * @return ユーザーデータの個数
    */

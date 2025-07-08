@@ -256,21 +256,11 @@ export class CubismJson {
       json._parseCallback
     );
 
-    if (!succeeded) {
-      CubismJson.delete(json);
-      return null;
-    } else {
+    if (succeeded) {
       return json;
+    } else {
+      return null;
     }
-  }
-
-  /**
-   * パースしたJSONオブジェクトの解放処理
-   *
-   * @param instance CubismJsonクラスのインスタンス
-   */
-  public static delete(instance: CubismJson) {
-    instance = null;
   }
 
   /**
@@ -287,22 +277,7 @@ export class CubismJson {
    * @return 変換後の文字列
    */
   public static arrayBufferToString(buffer: ArrayBuffer): string {
-    const uint8Array: Uint8Array = new Uint8Array(buffer);
-    let str = '';
-
-    for (let i = 0, len: number = uint8Array.length; i < len; ++i) {
-      str += '%' + this.pad(uint8Array[i].toString(16));
-    }
-
-    str = decodeURIComponent(str);
-    return str;
-  }
-
-  /**
-   * エンコード、パディング
-   */
-  private static pad(n: string): string {
-    return n.length < 2 ? '0' + n : n;
+    return new TextDecoder('utf-8').decode(buffer);
   }
 
   /**
@@ -318,13 +293,13 @@ export class CubismJson {
     parseCallback?: parseJsonObject
   ): boolean {
     const endPos: number[] = new Array<number>(1); // 参照渡しにするため配列
-    const decodeBuffer: string = CubismJson.arrayBufferToString(buffer);
+    const decodedBuffer: string = CubismJson.arrayBufferToString(buffer);
 
     if (parseCallback == undefined) {
-      this._root = this.parseValue(decodeBuffer, size, 0, endPos);
+      this._root = this.parseValue(decodedBuffer, size, 0, endPos);
     } else {
       // TypeScript標準のJSONパーサを使う
-      this._root = parseCallback(JSON.parse(decodeBuffer), new JsonMap());
+      this._root = parseCallback(JSON.parse(decodedBuffer), new JsonMap());
     }
 
     if (this._error) {
@@ -1057,7 +1032,6 @@ export class JsonArray extends Value {
       let v: Value = ite.ptr();
 
       if (v && !v.isStatic()) {
-        v = void 0;
         v = null;
       }
     }
@@ -1165,7 +1139,6 @@ export class JsonMap extends Value {
       let v: Value = ite.ptr().second;
 
       if (v && !v.isStatic()) {
-        v = void 0;
         v = null;
       }
 

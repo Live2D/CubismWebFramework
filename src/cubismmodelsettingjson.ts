@@ -92,8 +92,6 @@ export class CubismModelSettingJson extends ICubismModelSetting {
    * デストラクタ相当の処理
    */
   public release(): void {
-    CubismJson.delete(this._json);
-
     this._jsonValue = null;
   }
 

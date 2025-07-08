@@ -78,7 +78,6 @@ export class CubismModelUserData {
       size
     );
     if (!json) {
-      json.release();
       json = void 0;
       return;
     }
@@ -101,7 +100,6 @@ export class CubismModelUserData {
       }
     }
 
-    json.release();
     json = void 0;
   }
 

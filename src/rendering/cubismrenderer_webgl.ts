@@ -629,7 +629,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
     // FrameBufferのサイズを変更するためにインスタンスを破棄・再作成する
     this._clippingManager.release();
-    this._clippingManager = void 0;
     this._clippingManager = null;
 
     this._clippingManager = new CubismClippingManager_WebGL();
@@ -689,7 +688,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   public release(): void {
     if (this._clippingManager) {
       this._clippingManager.release();
-      this._clippingManager = void 0;
       this._clippingManager = null;
     }
 

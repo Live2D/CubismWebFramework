@@ -96,8 +96,6 @@ export class CubismPose {
       ret._partGroupCounts.pushBack(groupCount);
     }
 
-    CubismJson.delete(json);
-
     return ret;
   }
 

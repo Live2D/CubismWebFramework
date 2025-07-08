@@ -846,7 +846,6 @@ export class CubismMotion extends ACubismMotion {
    * デストラクタ相当の処理
    */
   public release(): void {
-    this._motionData = void 0;
     this._motionData = null;
   }
 
@@ -900,7 +899,6 @@ export class CubismMotion extends ACubismMotion {
     let json: CubismMotionJson = new CubismMotionJson(motionJson, size);
 
     if (!json) {
-      json.release();
       json = void 0;
       return;
     }
@@ -908,7 +906,6 @@ export class CubismMotion extends ACubismMotion {
     if (shouldCheckMotionConsistency) {
       const consistency = json.hasConsistency();
       if (!consistency) {
-        json.release();
         CubismLogError('Inconsistent motion3.json.');
         return;
       }
@@ -1135,8 +1132,6 @@ export class CubismMotion extends ACubismMotion {
         json.getEventValue(userdatacount);
     }
 
-    json.release();
-    json = void 0;
     json = null;
   }
 

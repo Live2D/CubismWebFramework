@@ -257,8 +257,6 @@ export class CubismPhysics {
 
     this.initialize();
 
-    json.release();
-    json = void 0;
     json = null;
   }
 
@@ -787,7 +785,6 @@ export class CubismPhysics {
    * デストラクタ相当の処理
    */
   public release(): void {
-    this._physicsRig = void 0;
     this._physicsRig = null;
   }
 
