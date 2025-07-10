@@ -150,7 +150,6 @@ export class csmMap<_KeyT, _ValT> {
    * keyValueのポインタを全て解放する
    */
   public clear(): void {
-    this._keyValues = null;
     this._keyValues = [];
 
     this._size = 0;

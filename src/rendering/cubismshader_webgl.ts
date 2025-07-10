@@ -394,7 +394,6 @@ export class CubismShader_WebGL {
     for (let i = 0; i < this._shaderSets.getSize(); i++) {
       this.gl.deleteProgram(this._shaderSets.at(i).shaderProgram);
       this._shaderSets.at(i).shaderProgram = 0;
-      this._shaderSets.set(i, void 0);
       this._shaderSets.set(i, null);
     }
   }
