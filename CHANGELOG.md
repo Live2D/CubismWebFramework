@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.5-beta.1] - 2025-08-26
+
+### Added
+
+* Add `cubismrendertarget_webgl.ts`.
+  * Define a class `CubismRenderTarget_WebGL` that manages the frame buffer and color buffer.
+* Add support for Blend mode and Offscreen drawing.
+
+### Changed
+
+* Change the rendering context requirement in WebGL environments to `WebGL2RenderingContext`.
+  * In particular, when using the blend modes added in Cubism 5.3 and later, `WebGL2RenderingContext.blitFramebuffer()` is used.
+* Change the clipping mask processing uses class `CubismRenderTarget_WebGL`.
+* Change the API called to retrieve the drawable render order from `getDrawableRenderOrders()` to `getRenderOrders()` in CubismCore.
+  * See `CHANGELOG.md` in Core.
+
+
 ## [5-r.4] - 2025-05-15
 
 ### Added
@@ -339,6 +356,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.4...5-r.5-beta.1
 [5-r.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.3...5-r.4
 [5-r.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.2...5-r.3
 [5-r.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1...5-r.2

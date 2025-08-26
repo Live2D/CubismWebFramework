@@ -366,7 +366,7 @@ export abstract class ACubismMotion {
   /**
    * 透明度のカーブが存在するかどうかを確認する
    *
-   * @returns true  -> キーが存在する
+   * @return true  -> キーが存在する
    *          false -> キーが存在しない
    */
   public isExistModelOpacity(): boolean {
@@ -376,7 +376,7 @@ export abstract class ACubismMotion {
   /**
    * 透明度のカーブのインデックスを返す
    *
-   * @returns success:透明度のカーブのインデックス
+   * @return success:透明度のカーブのインデックス
    */
   public getModelOpacityIndex(): number {
     return -1;
@@ -386,7 +386,7 @@ export abstract class ACubismMotion {
    * 透明度のIdを返す
    *
    * @param index モーションカーブのインデックス
-   * @returns success:透明度のId
+   * @return success:透明度のId
    */
   public getModelOpacityId(index: number): CubismIdHandle {
     return null;
@@ -395,7 +395,7 @@ export abstract class ACubismMotion {
   /**
    * 指定時間の透明度の値を返す
    *
-   * @returns success:モーションの現在時間におけるOpacityの値
+   * @return success:モーションの現在時間におけるOpacityの値
    *
    * @note  更新後の値を取るにはUpdateParameters() の後に呼び出す。
    */

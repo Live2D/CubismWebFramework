@@ -20,7 +20,7 @@ export class CubismId {
    * 内部で使用するCubismIdクラス生成メソッド
    *
    * @param id ID文字列
-   * @returns CubismId
+   * @return CubismId
    * @note 指定したID文字列からCubismIdを取得する際は
    *       CubismIdManager().getId(id)を使用してください
    */

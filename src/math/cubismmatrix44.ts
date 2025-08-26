@@ -5,6 +5,8 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
+import { CubismMath } from './cubismmath';
+
 /**
  * 4x4の行列
  *
@@ -24,6 +26,7 @@ export class CubismMatrix44 {
    *
    * @param a 行列a
    * @param b 行列b
+   *
    * @return 乗算結果の行列
    */
   public static multiply(
@@ -85,6 +88,7 @@ export class CubismMatrix44 {
 
   /**
    * X軸の拡大率を取得
+   *
    * @return X軸の拡大率
    */
   public getScaleX(): number {
@@ -102,6 +106,7 @@ export class CubismMatrix44 {
 
   /**
    * X軸の移動量を取得
+   *
    * @return X軸の移動量
    */
   public getTranslateX(): number {
@@ -110,6 +115,7 @@ export class CubismMatrix44 {
 
   /**
    * Y軸の移動量を取得
+   *
    * @return Y軸の移動量
    */
   public getTranslateY(): number {
@@ -120,6 +126,7 @@ export class CubismMatrix44 {
    * X軸の値を現在の行列で計算
    *
    * @param src X軸の値
+   *
    * @return 現在の行列で計算されたX軸の値
    */
   public transformX(src: number): number {
@@ -130,6 +137,7 @@ export class CubismMatrix44 {
    * Y軸の値を現在の行列で計算
    *
    * @param src Y軸の値
+   *
    * @return 現在の行列で計算されたY軸の値
    */
   public transformY(src: number): number {
@@ -261,6 +269,71 @@ export class CubismMatrix44 {
    */
   public multiplyByMatrix(m: CubismMatrix44): void {
     CubismMatrix44.multiply(m.getArray(), this._tr, this._tr);
+  }
+
+  /**
+   * 現在の行列の逆行列を求める。
+   *
+   * @return 現在の行列で計算された逆行列の値を返す
+   */
+  public getInvert(): CubismMatrix44 {
+    const r00 = this._tr[0];
+    const r10 = this._tr[1];
+    const r20 = this._tr[2];
+    const r01 = this._tr[4];
+    const r11 = this._tr[5];
+    const r21 = this._tr[6];
+    const r02 = this._tr[8];
+    const r12 = this._tr[9];
+    const r22 = this._tr[10];
+
+    const tx = this._tr[12];
+    const ty = this._tr[13];
+    const tz = this._tr[14];
+
+    const det =
+      r00 * (r11 * r22 - r12 * r21) -
+      r01 * (r10 * r22 - r12 * r20) +
+      r02 * (r10 * r21 - r11 * r20);
+
+    const dst = new CubismMatrix44();
+
+    if (CubismMath.abs(det) < CubismMath.Epsilon) {
+      dst.loadIdentity();
+      return dst;
+    }
+
+    const invDet = 1.0 / det;
+
+    const inv00 = (r11 * r22 - r12 * r21) * invDet;
+    const inv01 = -(r01 * r22 - r02 * r21) * invDet;
+    const inv02 = (r01 * r12 - r02 * r11) * invDet;
+    const inv10 = -(r10 * r22 - r12 * r20) * invDet;
+    const inv11 = (r00 * r22 - r02 * r20) * invDet;
+    const inv12 = -(r00 * r12 - r02 * r10) * invDet;
+    const inv20 = (r10 * r21 - r11 * r20) * invDet;
+    const inv21 = -(r00 * r21 - r01 * r20) * invDet;
+    const inv22 = (r00 * r11 - r01 * r10) * invDet;
+
+    dst._tr[0] = inv00;
+    dst._tr[1] = inv10;
+    dst._tr[2] = inv20;
+    dst._tr[3] = 0.0;
+    dst._tr[4] = inv01;
+    dst._tr[5] = inv11;
+    dst._tr[6] = inv21;
+    dst._tr[7] = 0.0;
+    dst._tr[8] = inv02;
+    dst._tr[9] = inv12;
+    dst._tr[10] = inv22;
+    dst._tr[11] = 0.0;
+
+    dst._tr[12] = -(inv00 * tx + inv01 * ty + inv02 * tz);
+    dst._tr[13] = -(inv10 * tx + inv11 * ty + inv12 * tz);
+    dst._tr[14] = -(inv20 * tx + inv21 * ty + inv22 * tz);
+    dst._tr[15] = 1.0;
+
+    return dst;
   }
 
   /**

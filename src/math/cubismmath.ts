@@ -333,7 +333,7 @@ export class CubismMath {
    *
    * @param dividend 被除数（割られる値）
    * @param divisor 除数（割る値）
-   * @returns 余り
+   * @return 余り
    */
   static mod(dividend: number, divisor: number): number {
     if (

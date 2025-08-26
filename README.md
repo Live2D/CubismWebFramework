@@ -30,13 +30,13 @@ For compatibility with previous versions of Cubism SDK, please refer to [here](h
 
 ### Node.js
 
-* 24.0.1
-* 22.15.0
+* 24.6.0
+* 22.18.0
 
 
 ### TypeScript
 
-5.8.3
+5.9.2
 
 
 ## Development environment construction

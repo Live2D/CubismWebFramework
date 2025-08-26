@@ -5,114 +5,39 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { CubismModel } from '../model/cubismmodel';
+import {
+  CubismModel,
+  NoParentIndex,
+  NoOffscreenIndex
+} from '../model/cubismmodel';
 import { csmMap } from '../type/csmmap';
 import { csmRect } from '../type/csmrectf';
 import { csmVector } from '../type/csmvector';
 import { CubismLogError } from '../utils/cubismdebug';
 import { CubismClippingManager } from './cubismclippingmanager';
-import { CubismClippingContext, CubismRenderer } from './cubismrenderer';
+import {
+  CubismClippingContext,
+  CubismRenderer,
+  DrawableObjectType,
+  DrawableSortItem
+} from './cubismrenderer';
 import { CubismShaderManager_WebGL } from './cubismshader_webgl';
 
-let s_viewport: number[];
-let s_fbo: WebGLFramebuffer;
+const s_invalidValue = -1; // 無効な値を表す定数
+/*
+ * シェーダをコピーする際に衣装する頂点のインデックス
+ */
+const s_renderTargetIndexArray: Uint16Array = new Uint16Array([
+  0, 1, 2, 2, 1, 3
+]);
 
 /**
  * クリッピングマスクの処理を実行するクラス
  */
 export class CubismClippingManager_WebGL extends CubismClippingManager<CubismClippingContext_WebGL> {
   /**
-   * テンポラリのレンダーテクスチャのアドレスを取得する
-   * FrameBufferObjectが存在しない場合、新しく生成する
-   *
-   * @return レンダーテクスチャの配列
-   */
-  public getMaskRenderTexture(): csmVector<WebGLFramebuffer> {
-    // テンポラリのRenderTextureを取得する
-    if (this._maskTexture && this._maskTexture.textures != null) {
-      // 前回使ったものを返す
-      this._maskTexture.frameNo = this._currentFrameNo;
-    } else {
-      // FrameBufferObjectが存在しない場合、新しく生成する
-      if (this._maskRenderTextures != null) {
-        this._maskRenderTextures.clear();
-      }
-      this._maskRenderTextures = new csmVector<WebGLFramebuffer>();
-
-      // ColorBufferObjectが存在しない場合、新しく生成する
-      if (this._maskColorBuffers != null) {
-        this._maskColorBuffers.clear();
-      }
-      this._maskColorBuffers = new csmVector<WebGLTexture>();
-
-      // クリッピングバッファサイズを取得
-      const size: number = this._clippingMaskBufferSize;
-
-      for (let index = 0; index < this._renderTextureCount; index++) {
-        this._maskColorBuffers.pushBack(this.gl.createTexture()); // 直接代入
-        this.gl.bindTexture(
-          this.gl.TEXTURE_2D,
-          this._maskColorBuffers.at(index)
-        );
-        this.gl.texImage2D(
-          this.gl.TEXTURE_2D,
-          0,
-          this.gl.RGBA,
-          size,
-          size,
-          0,
-          this.gl.RGBA,
-          this.gl.UNSIGNED_BYTE,
-          null
-        );
-        this.gl.texParameteri(
-          this.gl.TEXTURE_2D,
-          this.gl.TEXTURE_WRAP_S,
-          this.gl.CLAMP_TO_EDGE
-        );
-        this.gl.texParameteri(
-          this.gl.TEXTURE_2D,
-          this.gl.TEXTURE_WRAP_T,
-          this.gl.CLAMP_TO_EDGE
-        );
-        this.gl.texParameteri(
-          this.gl.TEXTURE_2D,
-          this.gl.TEXTURE_MIN_FILTER,
-          this.gl.LINEAR
-        );
-        this.gl.texParameteri(
-          this.gl.TEXTURE_2D,
-          this.gl.TEXTURE_MAG_FILTER,
-          this.gl.LINEAR
-        );
-        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-
-        this._maskRenderTextures.pushBack(this.gl.createFramebuffer());
-        this.gl.bindFramebuffer(
-          this.gl.FRAMEBUFFER,
-          this._maskRenderTextures.at(index)
-        );
-        this.gl.framebufferTexture2D(
-          this.gl.FRAMEBUFFER,
-          this.gl.COLOR_ATTACHMENT0,
-          this.gl.TEXTURE_2D,
-          this._maskColorBuffers.at(index),
-          0
-        );
-      }
-      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, s_fbo);
-
-      this._maskTexture = new CubismRenderTextureResource(
-        this._currentFrameNo,
-        this._maskRenderTextures
-      );
-    }
-
-    return this._maskTexture.textures;
-  }
-
-  /**
    * WebGLレンダリングコンテキストを設定する
+   *
    * @param gl WebGLレンダリングコンテキスト
    */
   public setGL(gl: WebGLRenderingContext): void {
@@ -128,15 +53,20 @@ export class CubismClippingManager_WebGL extends CubismClippingManager<CubismCli
 
   /**
    * クリッピングコンテキストを作成する。モデル描画時に実行する。
+   *
    * @param model モデルのインスタンス
    * @param renderer レンダラのインスタンス
+   * @param lastFbo フレームバッファ
+   * @param lastViewport ビューポート
+   * @param drawObjectType 描画オブジェクトのタイプ
    */
   public setupClippingContext(
     model: CubismModel,
-    renderer: CubismRenderer_WebGL
+    renderer: CubismRenderer_WebGL,
+    lastFbo: WebGLFramebuffer,
+    lastViewport: number[],
+    drawObjectType: DrawableObjectType
   ): void {
-    this._currentFrameNo++;
-
     // 全てのクリッピングを用意する
     // 同じクリップ（複数の場合はまとめて一つのクリップ）を使う場合は1度だけ設定する
     let usingClipCount = 0;
@@ -150,233 +80,185 @@ export class CubismClippingManager_WebGL extends CubismClippingManager<CubismCli
         this._clippingContextListForMask.at(clipIndex);
 
       // このクリップを利用する描画オブジェクト群全体を囲む矩形を計算
-      this.calcClippedDrawTotalBounds(model, cc);
+      switch (drawObjectType) {
+        case DrawableObjectType.DrawableObjectType_Drawable:
+        default:
+          this.calcClippedDrawableTotalBounds(model, cc);
+          break;
+        case DrawableObjectType.DrawableObjectType_Offscreen:
+          this.calcClippedOffscreenTotalBounds(model, cc);
+          break;
+      }
 
       if (cc._isUsing) {
         usingClipCount++; // 使用中としてカウント
       }
     }
 
-    // マスク作成処理
-    if (usingClipCount > 0) {
-      // 生成したFrameBufferと同じサイズでビューポートを設定
-      this.gl.viewport(
-        0,
-        0,
-        this._clippingMaskBufferSize,
-        this._clippingMaskBufferSize
-      );
+    if (usingClipCount <= 0) {
+      return;
+    }
 
-      // 後の計算のためにインデックスの最初をセット
-      this._currentMaskRenderTexture = this.getMaskRenderTexture().at(0);
+    // 生成したFrameBufferと同じサイズでビューポートを設定
+    this.gl.viewport(
+      0,
+      0,
+      this._clippingMaskBufferSize,
+      this._clippingMaskBufferSize
+    );
 
-      renderer.preDraw(); // バッファをクリアする
+    // 後の計算のためにインデックスの最初をセット
+    switch (drawObjectType) {
+      case DrawableObjectType.DrawableObjectType_Drawable:
+      default:
+        this._currentMaskBuffer = renderer.getDrawableMaskBuffer(0);
+        break;
+      case DrawableObjectType.DrawableObjectType_Offscreen:
+        this._currentMaskBuffer = renderer.getOffscreenMaskBuffer(0);
+        break;
+    }
 
-      this.setupLayoutBounds(usingClipCount);
+    // ---------- マスク描画処理 ----------
+    this._currentMaskBuffer.beginDraw(lastFbo);
 
-      // ---------- マスク描画処理 ----------
-      // マスク用RenderTextureをactiveにセット
-      this.gl.bindFramebuffer(
-        this.gl.FRAMEBUFFER,
-        this._currentMaskRenderTexture
-      );
+    renderer.preDraw(); // バッファをクリアする
 
-      // サイズがレンダーテクスチャの枚数と合わない場合は合わせる
-      if (this._clearedFrameBufferFlags.getSize() != this._renderTextureCount) {
-        this._clearedFrameBufferFlags.clear();
-        this._clearedFrameBufferFlags = new csmVector<boolean>(
-          this._renderTextureCount
-        );
-      }
+    this.setupLayoutBounds(usingClipCount);
 
-      // マスクのクリアフラグを毎フレーム開始時に初期化
-      for (
-        let index = 0;
-        index < this._clearedFrameBufferFlags.getSize();
-        index++
-      ) {
-        this._clearedFrameBufferFlags.set(index, false);
-      }
-
-      // 実際にマスクを生成する
-      // 全てのマスクをどのようにレイアウトして描くかを決定し、ClipContext, ClippedDrawContextに記憶する
-      for (
-        let clipIndex = 0;
-        clipIndex < this._clippingContextListForMask.getSize();
-        clipIndex++
-      ) {
-        // --- 実際に1つのマスクを描く ---
-        const clipContext: CubismClippingContext_WebGL =
-          this._clippingContextListForMask.at(clipIndex);
-        const allClipedDrawRect: csmRect = clipContext._allClippedDrawRect; // このマスクを使う、すべての描画オブジェクトの論理座標上の囲み矩形
-        const layoutBoundsOnTex01: csmRect = clipContext._layoutBounds; // この中にマスクを収める
-        const margin = 0.05; // モデル座標上の矩形を、適宜マージンを付けて使う
-        let scaleX = 0;
-        let scaleY = 0;
-
-        // clipContextに設定したレンダーテクスチャをインデックスで取得
-        const clipContextRenderTexture = this.getMaskRenderTexture().at(
-          clipContext._bufferIndex
-        );
-
-        // 現在のレンダーテクスチャがclipContextのものと異なる場合
-        if (this._currentMaskRenderTexture != clipContextRenderTexture) {
-          this._currentMaskRenderTexture = clipContextRenderTexture;
-          renderer.preDraw(); // バッファをクリアする
-          // マスク用RenderTextureをactiveにセット
-          this.gl.bindFramebuffer(
-            this.gl.FRAMEBUFFER,
-            this._currentMaskRenderTexture
-          );
-        }
-
-        this._tmpBoundsOnModel.setRect(allClipedDrawRect);
-        this._tmpBoundsOnModel.expand(
-          allClipedDrawRect.width * margin,
-          allClipedDrawRect.height * margin
-        );
-        //########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
-
-        // シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
-        // movePeriod' = movePeriod * scaleX + offX		  [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
-        scaleX = layoutBoundsOnTex01.width / this._tmpBoundsOnModel.width;
-        scaleY = layoutBoundsOnTex01.height / this._tmpBoundsOnModel.height;
-
-        // マスク生成時に使う行列を求める
-        {
-          // シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
-          this._tmpMatrix.loadIdentity();
-          {
-            // layout0..1 を -1..1に変換
-            this._tmpMatrix.translateRelative(-1.0, -1.0);
-            this._tmpMatrix.scaleRelative(2.0, 2.0);
-          }
-          {
-            // view to layout0..1
-            this._tmpMatrix.translateRelative(
-              layoutBoundsOnTex01.x,
-              layoutBoundsOnTex01.y
-            );
-            this._tmpMatrix.scaleRelative(scaleX, scaleY); // new = [translate][scale]
-            this._tmpMatrix.translateRelative(
-              -this._tmpBoundsOnModel.x,
-              -this._tmpBoundsOnModel.y
-            );
-            // new = [translate][scale][translate]
-          }
-          // tmpMatrixForMaskが計算結果
-          this._tmpMatrixForMask.setMatrix(this._tmpMatrix.getArray());
-        }
-
-        //--------- draw時の mask 参照用行列を計算
-        {
-          // シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
-          this._tmpMatrix.loadIdentity();
-          {
-            this._tmpMatrix.translateRelative(
-              layoutBoundsOnTex01.x,
-              layoutBoundsOnTex01.y
-            );
-            this._tmpMatrix.scaleRelative(scaleX, scaleY); // new = [translate][scale]
-            this._tmpMatrix.translateRelative(
-              -this._tmpBoundsOnModel.x,
-              -this._tmpBoundsOnModel.y
-            );
-            // new = [translate][scale][translate]
-          }
-          this._tmpMatrixForDraw.setMatrix(this._tmpMatrix.getArray());
-        }
-        clipContext._matrixForMask.setMatrix(this._tmpMatrixForMask.getArray());
-        clipContext._matrixForDraw.setMatrix(this._tmpMatrixForDraw.getArray());
-
-        const clipDrawCount: number = clipContext._clippingIdCount;
-        for (let i = 0; i < clipDrawCount; i++) {
-          const clipDrawIndex: number = clipContext._clippingIdList[i];
-
-          // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
-          if (
-            !model.getDrawableDynamicFlagVertexPositionsDidChange(clipDrawIndex)
-          ) {
-            continue;
-          }
-
-          renderer.setIsCulling(
-            model.getDrawableCulling(clipDrawIndex) != false
-          );
-
-          // マスクがクリアされていないなら処理する
-          if (!this._clearedFrameBufferFlags.at(clipContext._bufferIndex)) {
-            // マスクをクリアする
-            // (仮仕様) 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダーCd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
-            this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this._clearedFrameBufferFlags.set(clipContext._bufferIndex, true);
-          }
-
-          // 今回専用の変換を適用して描く
-          // チャンネルも切り替える必要がある(A,R,G,B)
-          renderer.setClippingContextBufferForMask(clipContext);
-
-          renderer.drawMeshWebGL(model, clipDrawIndex);
-        }
-      }
-
-      // --- 後処理 ---
-      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, s_fbo); // 描画対象を戻す
-      renderer.setClippingContextBufferForMask(null);
-
-      this.gl.viewport(
-        s_viewport[0],
-        s_viewport[1],
-        s_viewport[2],
-        s_viewport[3]
+    // サイズがレンダーテクスチャの枚数と合わない場合は合わせる
+    if (this._clearedMaskBufferFlags.getSize() != this._renderTextureCount) {
+      this._clearedMaskBufferFlags.clear();
+      this._clearedMaskBufferFlags = new csmVector<boolean>(
+        this._renderTextureCount
       );
     }
-  }
 
-  /**
-   * カラーバッファを取得する
-   * @return カラーバッファ
-   */
-  public getColorBuffer(): csmVector<WebGLTexture> {
-    return this._maskColorBuffers;
+    // マスクのクリアフラグを毎フレーム開始時に初期化
+    for (
+      let index = 0;
+      index < this._clearedMaskBufferFlags.getSize();
+      index++
+    ) {
+      this._clearedMaskBufferFlags.set(index, false);
+    }
+
+    // 実際にマスクを生成する
+    // 全てのマスクをどのようにレイアウトして描くかを決定し、ClipContext, ClippedDrawContextに記憶する
+    for (
+      let clipIndex = 0;
+      clipIndex < this._clippingContextListForMask.getSize();
+      clipIndex++
+    ) {
+      // --- 実際に1つのマスクを描く ---
+      const clipContext: CubismClippingContext_WebGL =
+        this._clippingContextListForMask.at(clipIndex);
+      const allClipedDrawRect: csmRect = clipContext._allClippedDrawRect; // このマスクを使う、すべての描画オブジェクトの論理座標上の囲み矩形
+      const layoutBoundsOnTex01: csmRect = clipContext._layoutBounds; // この中にマスクを収める
+      const margin = 0.05; // モデル座標上の矩形を、適宜マージンを付けて使う
+      let scaleX = 0;
+      let scaleY = 0;
+
+      // clipContextに設定したレンダーテクスチャをインデックスで取得
+      let maskBuffer: CubismRenderTarget_WebGL;
+      switch (drawObjectType) {
+        case DrawableObjectType.DrawableObjectType_Drawable:
+        default:
+          maskBuffer = renderer.getDrawableMaskBuffer(clipContext._bufferIndex);
+          break;
+        case DrawableObjectType.DrawableObjectType_Offscreen:
+          maskBuffer = renderer.getOffscreenMaskBuffer(
+            clipContext._bufferIndex
+          );
+          break;
+      }
+
+      // 現在のレンダーテクスチャがclipContextのものと異なる場合
+      if (this._currentMaskBuffer != maskBuffer) {
+        this._currentMaskBuffer.endDraw(); // 前のレンダーテクスチャの描画を終了
+        this._currentMaskBuffer = maskBuffer;
+        this._currentMaskBuffer.beginDraw(lastFbo); // 新しいレンダーテクスチャの描画を開始
+
+        renderer.preDraw(); // バッファをクリアする
+      }
+
+      this._tmpBoundsOnModel.setRect(allClipedDrawRect);
+      this._tmpBoundsOnModel.expand(
+        allClipedDrawRect.width * margin,
+        allClipedDrawRect.height * margin
+      );
+      //########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
+
+      // シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
+      // movePeriod' = movePeriod * scaleX + offX		  [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
+      scaleX = layoutBoundsOnTex01.width / this._tmpBoundsOnModel.width;
+      scaleY = layoutBoundsOnTex01.height / this._tmpBoundsOnModel.height;
+
+      //--------- draw時の mask 参照用行列を計算---------
+      this.createMatrixForMask(false, layoutBoundsOnTex01, scaleX, scaleY);
+
+      clipContext._matrixForMask.setMatrix(this._tmpMatrixForMask.getArray());
+      clipContext._matrixForDraw.setMatrix(this._tmpMatrixForDraw.getArray());
+
+      if (drawObjectType == DrawableObjectType.DrawableObjectType_Offscreen) {
+        // clipContext * mvp^-1
+        const invertMvp = renderer.getMvpMatrix().getInvert();
+        clipContext._matrixForDraw.multiplyByMatrix(invertMvp);
+      }
+
+      const clipDrawCount: number = clipContext._clippingIdCount;
+      for (let i = 0; i < clipDrawCount; i++) {
+        const clipDrawIndex: number = clipContext._clippingIdList[i];
+
+        // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
+        if (
+          !model.getDrawableDynamicFlagVertexPositionsDidChange(clipDrawIndex)
+        ) {
+          continue;
+        }
+
+        renderer.setIsCulling(model.getDrawableCulling(clipDrawIndex) != false);
+
+        // マスクがクリアされていないなら処理する
+        if (!this._clearedMaskBufferFlags.at(clipContext._bufferIndex)) {
+          // マスクをクリアする
+          // (仮仕様) 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダーCd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
+          this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
+          this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+          this._clearedMaskBufferFlags.set(clipContext._bufferIndex, true);
+        }
+
+        // 今回専用の変換を適用して描く
+        // チャンネルも切り替える必要がある(A,R,G,B)
+        renderer.setClippingContextBufferForMask(clipContext);
+
+        renderer.drawMeshWebGL(model, clipDrawIndex);
+      }
+    }
+
+    // --- 後処理 ---
+    this._currentMaskBuffer.endDraw(); // マスクの描画を終了
+    renderer.setClippingContextBufferForMask(null);
+
+    this.gl.viewport(
+      lastViewport[0],
+      lastViewport[1],
+      lastViewport[2],
+      lastViewport[3]
+    );
   }
 
   /**
    * マスクの合計数をカウント
-   * @returns
+   *
+   * @return マスクの合計数を返す
    */
   public getClippingMaskCount(): number {
     return this._clippingContextListForMask.getSize();
   }
 
-  public _currentMaskRenderTexture: WebGLFramebuffer; // マスク用レンダーテクスチャのアドレス
-  public _maskRenderTextures: csmVector<WebGLFramebuffer>; // レンダーテクスチャのリスト
-  public _maskColorBuffers: csmVector<WebGLTexture>; // マスク用カラーバッファーのアドレスのリスト
-  public _currentFrameNo: number; // マスクテクスチャに与えるフレーム番号
-
-  public _maskTexture: CubismRenderTextureResource; // マスク用のテクスチャリソースのリスト
+  _currentMaskBuffer: CubismRenderTarget_WebGL; // マスク用オフスクリーンサーフェス
 
   gl: WebGLRenderingContext; // WebGLレンダリングコンテキスト
-}
-
-/**
- * レンダーテクスチャのリソースを定義する構造体
- * クリッピングマスクで使用する
- */
-export class CubismRenderTextureResource {
-  /**
-   * 引数付きコンストラクタ
-   * @param frameNo レンダラーのフレーム番号
-   * @param texture テクスチャのアドレス
-   */
-  public constructor(frameNo: number, texture: csmVector<WebGLFramebuffer>) {
-    this.frameNo = frameNo;
-    this.textures = texture;
-  }
-
-  public frameNo: number; // レンダラのフレーム番号
-  public textures: csmVector<WebGLFramebuffer>; // テクスチャのアドレス
 }
 
 /**
@@ -385,6 +267,10 @@ export class CubismRenderTextureResource {
 export class CubismClippingContext_WebGL extends CubismClippingContext {
   /**
    * 引数付きコンストラクタ
+   *
+   * @param manager マスクを管理しているマネージャのインスタンス
+   * @param clippingDrawableIndices クリップしているDrawableのインデックスリスト
+   * @param clipCount クリップしているDrawableの個数
    */
   public constructor(
     manager: CubismClippingManager_WebGL,
@@ -397,12 +283,18 @@ export class CubismClippingContext_WebGL extends CubismClippingContext {
 
   /**
    * このマスクを管理するマネージャのインスタンスを取得する
+   *
    * @return クリッピングマネージャのインスタンス
    */
   public getClippingManager(): CubismClippingManager_WebGL {
     return this._owner;
   }
 
+  /**
+   * WebGLレンダリングコンテキストを設定する
+   *
+   * @param gl WebGLレンダリングコンテキスト
+   */
   public setGl(gl: WebGLRenderingContext): void {
     this._owner.setGL(gl);
   }
@@ -410,12 +302,27 @@ export class CubismClippingContext_WebGL extends CubismClippingContext {
   private _owner: CubismClippingManager_WebGL; // このマスクを管理しているマネージャのインスタンス
 }
 
+/**
+ * Cubismモデルを描画する直前のWebGLのステートを保持・復帰させるクラス
+ */
 export class CubismRendererProfile_WebGL {
+  /**
+   * WebGLの有効・無効をセットする
+   *
+   * @param index 有効・無効にする機能
+   * @param enabled trueなら有効にする
+   */
   private setGlEnable(index: GLenum, enabled: GLboolean): void {
     if (enabled) this.gl.enable(index);
     else this.gl.disable(index);
   }
 
+  /**
+   * WebGLのVertex Attribute Array機能の有効・無効をセットする
+   *
+   * @param   index   有効・無効にする機能
+   * @param   enabled trueなら有効にする
+   */
   private setGlEnableVertexAttribArray(
     index: GLuint,
     enabled: GLboolean
@@ -424,6 +331,9 @@ export class CubismRendererProfile_WebGL {
     else this.gl.disableVertexAttribArray(index);
   }
 
+  /**
+   * WebGLのステートを保持する
+   */
   public save(): void {
     if (this.gl == null) {
       CubismLogError(
@@ -483,12 +393,11 @@ export class CubismRendererProfile_WebGL {
     this._lastBlending[1] = this.gl.getParameter(this.gl.BLEND_DST_RGB);
     this._lastBlending[2] = this.gl.getParameter(this.gl.BLEND_SRC_ALPHA);
     this._lastBlending[3] = this.gl.getParameter(this.gl.BLEND_DST_ALPHA);
-
-    // モデル描画直前のFBOとビューポートを保存
-    this._lastFBO = this.gl.getParameter(this.gl.FRAMEBUFFER_BINDING);
-    this._lastViewport = this.gl.getParameter(this.gl.VIEWPORT);
   }
 
+  /**
+   * 保持したWebGLのステートを復帰させる
+   */
   public restore(): void {
     if (this.gl == null) {
       CubismLogError(
@@ -540,15 +449,22 @@ export class CubismRendererProfile_WebGL {
     );
   }
 
+  /**
+   * WebGLレンダリングコンテキストを設定する
+   *
+   * @param gl WebGLレンダリングコンテキスト
+   */
   public setGl(gl: WebGLRenderingContext): void {
     this.gl = gl;
   }
 
+  /**
+   * コンストラクタ
+   */
   constructor() {
     this._lastVertexAttribArrayEnabled = new Array<GLboolean>(4);
     this._lastColorMask = new Array<GLboolean>(4);
     this._lastBlending = new Array<GLint>(4);
-    this._lastViewport = new Array<GLint>(4);
   }
 
   private _lastArrayBufferBinding: GLint; ///< モデル描画直前の頂点バッファ
@@ -566,8 +482,6 @@ export class CubismRendererProfile_WebGL {
   private _lastFrontFace: GLint; ///< モデル描画直前のGL_CULL_FACEパラメータ
   private _lastColorMask: GLboolean[]; ///< モデル描画直前のGL_COLOR_WRITEMASKパラメータ
   private _lastBlending: GLint[]; ///< モデル描画直前のカラーブレンディングパラメータ
-  private _lastFBO: GLint; ///< モデル描画直前のフレームバッファ
-  private _lastViewport: GLint[]; ///< モデル描画直前のビューポート
 
   gl: WebGLRenderingContext;
 }
@@ -579,24 +493,96 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   /**
    * レンダラの初期化処理を実行する
    * 引数に渡したモデルからレンダラの初期化処理に必要な情報を取り出すことができる
+   * NOTE: WebGLコンテキストが初期化されていない可能性があるため、ここではWebGLコンテキストを使う初期化は行わない。
    *
    * @param model モデルのインスタンス
    * @param maskBufferCount バッファの生成数
    */
   public initialize(model: CubismModel, maskBufferCount = 1): void {
     if (model.isUsingMasking()) {
-      this._clippingManager = new CubismClippingManager_WebGL(); // クリッピングマスク・バッファ前処理方式を初期化
-      this._clippingManager.initialize(model, maskBufferCount);
+      this._drawableClippingManager = new CubismClippingManager_WebGL(); // クリッピングマスク・バッファ前処理方式を初期化
+      this._drawableClippingManager.initializeForDrawable(
+        model,
+        maskBufferCount
+      );
     }
 
-    this._sortedDrawableIndexList.resize(model.getDrawableCount(), 0);
+    if (model.isUsingMaskingForOffscreen()) {
+      this._offscreenClippingManager = new CubismClippingManager_WebGL(); //クリッピングマスク・バッファ前処理方式を初期化
+      this._offscreenClippingManager.initializeForOffscreen(
+        model,
+        maskBufferCount
+      );
+    }
+
+    // IndexList と TypeListのサイズをモデルの描画オブジェクト数に合わせる
+    this._sortedObjectsIndexList.resize(
+      model.getDrawableCount() +
+        (model.getOffscreenCount ? model.getOffscreenCount() : 0),
+      0
+    );
+    this._sortedObjectsTypeList.resize(
+      model.getDrawableCount() +
+        (model.getOffscreenCount ? model.getOffscreenCount() : 0),
+      0
+    );
 
     super.initialize(model); // 親クラスの処理を呼ぶ
   }
 
   /**
+   * オフスクリーンの親を探して設定する
+   *
+   * @param model モデルのインスタンス
+   * @param offscreenCount オフスクリーンの数
+   */
+  private setupParentOffscreens(
+    model: CubismModel,
+    offscreenCount: number
+  ): void {
+    let parentOffscreen: CubismRenderTarget_WebGL | null;
+    for (
+      let offscreenIndex = 0;
+      offscreenIndex < offscreenCount;
+      ++offscreenIndex
+    ) {
+      parentOffscreen = null;
+      const ownerIndex = model.getOffscreenOwnerIndices()[offscreenIndex];
+      let parentIndex = model.getPartParentPartIndices()[ownerIndex];
+
+      // 親のオフスクリーンを探す
+      while (parentIndex != NoParentIndex) {
+        for (let i = 0; i < offscreenCount; ++i) {
+          const ownerIndex =
+            model.getOffscreenOwnerIndices()[
+              this._offscreenList.at(i).getOffscreenIndex()
+            ];
+          if (ownerIndex != parentIndex) {
+            continue; //オフスクリーンの所有者がパーツではない場合はスキップ
+          }
+
+          parentOffscreen = this._offscreenList.at(i);
+          break;
+        }
+
+        if (parentOffscreen != null) {
+          break; // 親のオフスクリーンが見つかった場合はループを抜ける
+        }
+
+        parentIndex = model.getPartParentPartIndices()[parentIndex];
+      }
+
+      // 親のオフスクリーンを設定
+      this._offscreenList
+        .at(offscreenIndex)
+        .setParentPartOffscreen(parentOffscreen);
+    }
+  }
+
+  /**
    * WebGLテクスチャのバインド処理
    * CubismRendererにテクスチャを設定し、CubismRenderer内でその画像を参照するためのIndex値を戻り値とする
+   *
    * @param modelTextureNo セットするモデルテクスチャの番号
    * @param glTextureNo WebGLテクスチャの番号
    */
@@ -606,6 +592,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
   /**
    * WebGLにバインドされたテクスチャのリストを取得する
+   *
    * @return テクスチャのリスト
    */
   public getBindedTextures(): csmMap<number, WebGLTexture> {
@@ -615,6 +602,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   /**
    * クリッピングマスクバッファのサイズを設定する
    * マスク用のFrameBufferを破棄、再作成する為処理コストは高い
+   *
    * @param size クリッピングマスクバッファのサイズ
    */
   public setClippingMaskBufferSize(size: number) {
@@ -625,18 +613,18 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
     // インスタンス破棄前にレンダーテクスチャの数を保存
     const renderTextureCount: number =
-      this._clippingManager.getRenderTextureCount();
+      this._drawableClippingManager.getRenderTextureCount();
 
     // FrameBufferのサイズを変更するためにインスタンスを破棄・再作成する
-    this._clippingManager.release();
-    this._clippingManager = void 0;
-    this._clippingManager = null;
+    this._drawableClippingManager.release();
+    this._drawableClippingManager = void 0;
+    this._drawableClippingManager = null;
 
-    this._clippingManager = new CubismClippingManager_WebGL();
+    this._drawableClippingManager = new CubismClippingManager_WebGL();
 
-    this._clippingManager.setClippingMaskBufferSize(size);
+    this._drawableClippingManager.setClippingMaskBufferSize(size);
 
-    this._clippingManager.initialize(
+    this._drawableClippingManager.initializeForDrawable(
       this.getModel(),
       renderTextureCount // インスタンス破棄前に保存したレンダーテクスチャの数
     );
@@ -644,12 +632,22 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
   /**
    * クリッピングマスクバッファのサイズを取得する
+   *
    * @return クリッピングマスクバッファのサイズ
    */
   public getClippingMaskBufferSize(): number {
     return this._model.isUsingMasking()
-      ? this._clippingManager.getClippingMaskBufferSize()
-      : -1;
+      ? this._drawableClippingManager.getClippingMaskBufferSize()
+      : s_invalidValue;
+  }
+
+  /**
+   * ブレンドモード用のフレームバッファを取得する
+   *
+   * @return ブレンドモード用のフレームバッファ
+   */
+  public getModelRenderTarget(index: number): CubismRenderTarget_WebGL {
+    return this._modelRenderTargets.at(index);
   }
 
   /**
@@ -658,26 +656,34 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    */
   public getRenderTextureCount(): number {
     return this._model.isUsingMasking()
-      ? this._clippingManager.getRenderTextureCount()
-      : -1;
+      ? this._drawableClippingManager.getRenderTextureCount()
+      : s_invalidValue;
   }
 
   /**
    * コンストラクタ
    */
-  public constructor() {
-    super();
+  public constructor(width: number, height: number) {
+    super(width, height);
     this._clippingContextBufferForMask = null;
     this._clippingContextBufferForDraw = null;
     this._rendererProfile = new CubismRendererProfile_WebGL();
-    this.firstDraw = true;
+    this._firstDraw = true;
     this._textures = new csmMap<number, number>();
-    this._sortedDrawableIndexList = new csmVector<number>();
+    this._sortedObjectsIndexList = new csmVector<number>();
+    this._sortedObjectsTypeList = new csmVector<number>();
     this._bufferData = {
       vertex: (WebGLBuffer = null),
       uv: (WebGLBuffer = null),
       index: (WebGLBuffer = null)
     };
+    this._modelRenderTargets = new csmVector<CubismRenderTarget_WebGL>();
+    this._drawableMasks = new csmVector<CubismRenderTarget_WebGL>();
+    this._currentFbo = null;
+    this._drawableClippingManager = null;
+    this._offscreenClippingManager = null;
+    this._offscreenMasks = new csmVector<CubismRenderTarget_WebGL>();
+    this._offscreenList = new csmVector<CubismRenderTarget_WebGL>();
 
     // テクスチャ対応マップの容量を確保しておく
     this._textures.prepareCapacity(32, true);
@@ -687,10 +693,10 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    * デストラクタ相当の処理
    */
   public release(): void {
-    if (this._clippingManager) {
-      this._clippingManager.release();
-      this._clippingManager = void 0;
-      this._clippingManager = null;
+    if (this._drawableClippingManager) {
+      this._drawableClippingManager.release();
+      this._drawableClippingManager = void 0;
+      this._drawableClippingManager = null;
     }
 
     if (this.gl == null) {
@@ -705,6 +711,63 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     this._bufferData = null;
 
     this._textures = null;
+
+    for (let i = 0; i < this._modelRenderTargets.getSize(); i++) {
+      if (
+        this._modelRenderTargets.at(i) != null &&
+        this._modelRenderTargets.at(i).isValid()
+      ) {
+        this._modelRenderTargets.at(i).destroyRenderTarget();
+      }
+    }
+    this._modelRenderTargets.clear();
+    this._modelRenderTargets = null;
+
+    for (let i = 0; i < this._drawableMasks.getSize(); i++) {
+      if (
+        this._drawableMasks.at(i) != null &&
+        this._drawableMasks.at(i).isValid()
+      ) {
+        this._drawableMasks.at(i).destroyRenderTarget();
+      }
+    }
+    this._drawableMasks.clear();
+    this._drawableMasks = null;
+
+    for (let i = 0; i < this._offscreenMasks.getSize(); i++) {
+      if (
+        this._offscreenMasks.at(i) != null &&
+        this._offscreenMasks.at(i).isValid()
+      ) {
+        this._offscreenMasks.at(i).destroyRenderTarget();
+      }
+    }
+    this._offscreenMasks.clear();
+    this._offscreenMasks = null;
+
+    for (let i = 0; i < this._offscreenList.getSize(); i++) {
+      if (
+        this._offscreenList.at(i) != null &&
+        this._offscreenList.at(i).isValid()
+      ) {
+        this._offscreenList.at(i).destroyRenderTarget();
+      }
+    }
+    this._offscreenList.clear();
+    this._offscreenList = null;
+
+    this._offscreenClippingManager = null;
+    this._drawableClippingManager = null;
+    this._clippingContextBufferForMask = null;
+    this._clippingContextBufferForDraw = null;
+
+    this._rendererProfile = null;
+    this._sortedObjectsIndexList = null;
+    this._sortedObjectsTypeList = null;
+    this._currentFbo = null;
+    this._model = null;
+    this.gl = null;
+    this._firstDraw = true;
   }
 
   /**
@@ -718,131 +781,298 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       return;
     }
 
-    //------------ クリッピングマスク・バッファ前処理方式の場合 ------------
-    if (this._clippingManager != null) {
+    if (
+      CubismShaderManager_WebGL.getInstance()
+        .getShader(this.gl)
+        ._shaderSets.getSize() == 0 ||
+      (this._model.isBlendModeEnabled() &&
+        !CubismShaderManager_WebGL.getInstance().getShader(this.gl)
+          ._isShaderLoaded)
+    ) {
+      CubismShaderManager_WebGL.getInstance()
+        .getShader(this.gl)
+        .generateShaders();
+      return; // シェーダがロードされていない場合は描画しない
+    }
+
+    const lastFbo = this.gl.getParameter(
+      this.gl.FRAMEBUFFER_BINDING
+    ) as WebGLFramebuffer;
+    const lastViewport = this.gl.getParameter(this.gl.VIEWPORT) as number[];
+
+    this.beforeDrawModelRenderTarget();
+
+    // //------------ クリッピングマスク・バッファ前処理方式の場合 ------------
+    if (this._drawableClippingManager != null) {
       this.preDraw();
+      for (
+        let i = 0;
+        i < this._drawableClippingManager.getRenderTextureCount();
+        ++i
+      ) {
+        if (
+          this._drawableMasks.at(i).getBufferWidth() !=
+            this._drawableClippingManager.getClippingMaskBufferSize() ||
+          this._drawableMasks.at(i).getBufferHeight() !=
+            this._drawableClippingManager.getClippingMaskBufferSize()
+        ) {
+          // クリッピングマスクのサイズが変更された場合は、オフスクリーンサーフェスを再作成する
+          this._drawableMasks
+            .at(i)
+            .createOffscreenRenderTarget(
+              this.gl,
+              this._drawableClippingManager.getClippingMaskBufferSize(),
+              this._drawableClippingManager.getClippingMaskBufferSize(),
+              lastFbo
+            );
+        }
+      }
 
       if (this.isUsingHighPrecisionMask()) {
-        this._clippingManager.setupMatrixForHighPrecision(
+        this._drawableClippingManager.setupMatrixForHighPrecision(
           this.getModel(),
           false
         );
       } else {
-        this._clippingManager.setupClippingContext(this.getModel(), this);
+        this._drawableClippingManager.setupClippingContext(
+          this.getModel(),
+          this,
+          lastFbo,
+          lastViewport,
+          DrawableObjectType.DrawableObjectType_Drawable
+        );
+      }
+    }
+
+    if (this._offscreenClippingManager != null) {
+      this.preDraw();
+
+      // サイズが違う場合はここで作成しなおし
+      for (
+        let i = 0;
+        i < this._offscreenClippingManager.getRenderTextureCount();
+        ++i
+      ) {
+        if (
+          this._offscreenMasks.at(i).getBufferWidth() !=
+            this._offscreenClippingManager.getClippingMaskBufferSize() ||
+          this._offscreenMasks.at(i).getBufferHeight() !=
+            this._offscreenClippingManager.getClippingMaskBufferSize()
+        ) {
+          this._offscreenMasks
+            .at(i)
+            .createOffscreenRenderTarget(
+              this.gl,
+              this._offscreenClippingManager.getClippingMaskBufferSize(),
+              this._offscreenClippingManager.getClippingMaskBufferSize(),
+              lastFbo
+            );
+        }
+      }
+
+      if (this.isUsingHighPrecisionMask()) {
+        this._offscreenClippingManager.setupMatrixForOffscreenHighPrecision(
+          this.getModel(),
+          false,
+          this.getMvpMatrix()
+        );
+      } else {
+        this._offscreenClippingManager.setupClippingContext(
+          this.getModel(),
+          this,
+          lastFbo,
+          lastViewport,
+          DrawableObjectType.DrawableObjectType_Offscreen
+        );
       }
     }
 
     // 上記クリッピング処理内でも一度PreDrawを呼ぶので注意!!
     this.preDraw();
 
-    const drawableCount: number = this.getModel().getDrawableCount();
-    const renderOrder: Int32Array = this.getModel().getDrawableRenderOrders();
+    this.drawObjectLoop(lastFbo);
+
+    this.afterDrawModelRenderTarget();
+  }
+
+  /**
+   * 描画オブジェクトのループ処理を行う。
+   *
+   * @param lastFbo 前回のフレームバッファ
+   */
+  public drawObjectLoop(lastFbo: WebGLFramebuffer): void {
+    const model = this.getModel();
+    const drawableCount = model.getDrawableCount();
+    const offscreenCount = model.getOffscreenCount();
+    const totalCount = drawableCount + offscreenCount;
+    const renderOrder = model.getRenderOrders();
+
+    this._currentOffscreen = null; // 現在のオフスクリーンを初期化
+    this._currentFbo = lastFbo;
+    this._modelRootFbo = lastFbo;
 
     // インデックスを描画順でソート
-    for (let i = 0; i < drawableCount; ++i) {
-      const order: number = renderOrder[i];
-      this._sortedDrawableIndexList.set(order, i);
+    for (let i = 0; i < totalCount; ++i) {
+      const order = renderOrder[i];
+
+      if (i < drawableCount) {
+        this._sortedObjectsIndexList.set(order, i);
+        this._sortedObjectsTypeList.set(
+          order,
+          DrawableObjectType.DrawableObjectType_Drawable
+        );
+      } else if (i < totalCount) {
+        this._sortedObjectsIndexList.set(order, i - drawableCount);
+        this._sortedObjectsTypeList.set(
+          order,
+          DrawableObjectType.DrawableObjectType_Offscreen
+        );
+      }
     }
 
     // 描画
-    for (let i = 0; i < drawableCount; ++i) {
-      const drawableIndex: number = this._sortedDrawableIndexList.at(i);
+    for (let i = 0; i < totalCount; ++i) {
+      const objectIndex = this._sortedObjectsIndexList.at(i);
+      const objectType = this._sortedObjectsTypeList.at(i);
 
-      // Drawableが表示状態でなければ処理をパスする
-      if (!this.getModel().getDrawableDynamicFlagIsVisible(drawableIndex)) {
-        continue;
-      }
+      this.renderObject(objectIndex, objectType);
+    }
 
-      const clipContext =
-        this._clippingManager != null
-          ? this._clippingManager
-              .getClippingContextListForDraw()
-              .at(drawableIndex)
-          : null;
+    while (this._currentOffscreen != null) {
+      // オフスクリーンが残っている場合は親オフスクリーンへの伝搬を行う
+      this.submitDrawToParentOffscreen(
+        this._currentOffscreen.getOffscreenIndex(),
+        DrawableObjectType.DrawableObjectType_Offscreen
+      );
+    }
+  }
 
-      if (clipContext != null && this.isUsingHighPrecisionMask()) {
-        // 描くことになっていた
-        if (clipContext._isUsing) {
-          // 生成したFrameBufferと同じサイズでビューポートを設定
-          this.gl.viewport(
-            0,
-            0,
-            this._clippingManager.getClippingMaskBufferSize(),
-            this._clippingManager.getClippingMaskBufferSize()
-          );
-
-          this.preDraw(); // バッファをクリアする
-
-          // ---------- マスク描画処理 ----------
-          // マスク用RenderTextureをactiveにセット
-          this.gl.bindFramebuffer(
-            this.gl.FRAMEBUFFER,
-            clipContext
-              .getClippingManager()
-              .getMaskRenderTexture()
-              .at(clipContext._bufferIndex)
-          );
-
-          // マスクをクリアする
-          // (仮仕様) 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダーCd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
-          this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
-          this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        }
-
-        {
-          const clipDrawCount: number = clipContext._clippingIdCount;
-
-          for (let index = 0; index < clipDrawCount; index++) {
-            const clipDrawIndex: number = clipContext._clippingIdList[index];
-
-            // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
-            if (
-              !this._model.getDrawableDynamicFlagVertexPositionsDidChange(
-                clipDrawIndex
-              )
-            ) {
-              continue;
-            }
-
-            this.setIsCulling(
-              this._model.getDrawableCulling(clipDrawIndex) != false
-            );
-
-            // 今回専用の変換を適用して描く
-            // チャンネルも切り替える必要がある(A,R,G,B)
-            this.setClippingContextBufferForMask(clipContext);
-
-            this.drawMeshWebGL(this._model, clipDrawIndex);
-          }
-        }
-
-        {
-          // --- 後処理 ---
-          this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, s_fbo); // 描画対象を戻す
-          this.setClippingContextBufferForMask(null);
-
-          this.gl.viewport(
-            s_viewport[0],
-            s_viewport[1],
-            s_viewport[2],
-            s_viewport[3]
-          );
-
-          this.preDraw(); // バッファをクリアする
-        }
-      }
-
-      // クリッピングマスクをセットする
-      this.setClippingContextBufferForDraw(clipContext);
-
-      this.setIsCulling(this.getModel().getDrawableCulling(drawableIndex));
-
-      this.drawMeshWebGL(this._model, drawableIndex);
+  /**
+   * 描画オブジェクトを描画する。
+   *
+   * @param objectIndex 描画対象のオブジェクトのインデックス
+   * @param objectType 描画対象のオブジェクトのタイプ
+   * @param lastFbo 前回のフレームバッファ
+   * @param lastViewport 前回のビューポート
+   */
+  protected renderObject(
+    objectIndex: number,
+    objectType: DrawableObjectType
+  ): void {
+    switch (objectType) {
+      case DrawableObjectType.DrawableObjectType_Drawable:
+        this.drawDrawable(objectIndex, this._modelRootFbo);
+        break;
+      case DrawableObjectType.DrawableObjectType_Offscreen:
+        this.addOffscreen(objectIndex);
+        break;
+      default:
+        CubismLogError('Unknown object type: ' + objectType);
+        break;
     }
   }
 
   /**
    * 描画オブジェクト（アートメッシュ）を描画する。
+   *
+   * @param model 描画対象のモデル
+   * @param index 描画対象のメッシュのインデックス
+   */
+  public drawDrawable(drawableIndex: number, rootFbo: WebGLFramebuffer): void {
+    // Drawableが表示状態でなければ処理をパスする
+    if (!this.getModel().getDrawableDynamicFlagIsVisible(drawableIndex)) {
+      return;
+    }
+
+    this.submitDrawToParentOffscreen(
+      drawableIndex,
+      DrawableObjectType.DrawableObjectType_Drawable
+    );
+
+    const clipContext =
+      this._drawableClippingManager != null
+        ? this._drawableClippingManager
+            .getClippingContextListForDraw()
+            .at(drawableIndex)
+        : null;
+
+    if (clipContext != null && this.isUsingHighPrecisionMask()) {
+      // 描くことになっていた
+      if (clipContext._isUsing) {
+        // 生成したFrameBufferと同じサイズでビューポートを設定
+        this.gl.viewport(
+          0,
+          0,
+          this._drawableClippingManager.getClippingMaskBufferSize(),
+          this._drawableClippingManager.getClippingMaskBufferSize()
+        );
+
+        this.preDraw(); // バッファをクリアする
+
+        // ---------- マスク描画処理 ----------
+        // マスク用RenderTextureをactiveにセット
+        this.getDrawableMaskBuffer(clipContext._bufferIndex).beginDraw(
+          this._currentFbo
+        );
+
+        // マスクをクリアする
+        // (仮仕様) 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダーCd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
+        this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+      }
+
+      {
+        const clipDrawCount: number = clipContext._clippingIdCount;
+
+        for (let index = 0; index < clipDrawCount; index++) {
+          const clipDrawIndex: number = clipContext._clippingIdList[index];
+
+          // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
+          if (
+            !this._model.getDrawableDynamicFlagVertexPositionsDidChange(
+              clipDrawIndex
+            )
+          ) {
+            continue;
+          }
+
+          this.setIsCulling(
+            this._model.getDrawableCulling(clipDrawIndex) != false
+          );
+
+          // 今回専用の変換を適用して描く
+          // チャンネルも切り替える必要がある(A,R,G,B)
+          this.setClippingContextBufferForMask(clipContext);
+
+          this.drawMeshWebGL(this._model, clipDrawIndex);
+        }
+
+        // --- 後処理 ---
+        this.getDrawableMaskBuffer(clipContext._bufferIndex).endDraw();
+        this.setClippingContextBufferForMask(null);
+
+        this.gl.viewport(
+          0,
+          0,
+          this._modelRenderTargetWidth,
+          this._modelRenderTargetHeight
+        );
+
+        this.preDraw(); // バッファをクリアする
+      }
+    }
+
+    // クリッピングマスクをセットする
+    this.setClippingContextBufferForDrawable(clipContext);
+
+    this.setIsCulling(this.getModel().getDrawableCulling(drawableIndex));
+
+    this.drawMeshWebGL(this._model, drawableIndex);
+  }
+
+  /**
+   * 描画オブジェクト（アートメッシュ）を描画する。
+   *
    * @param model 描画対象のモデル
    * @param index 描画対象のメッシュのインデックス
    */
@@ -863,7 +1093,17 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     } else {
       CubismShaderManager_WebGL.getInstance()
         .getShader(this.gl)
-        .setupShaderProgramForDraw(this, model, index);
+        .setupShaderProgramForDrawable(this, model, index);
+    }
+
+    if (
+      !this._model.isBlendModeEnabled() &&
+      !CubismShaderManager_WebGL.getInstance().getShader(this.gl)
+        ._isShaderLoaded
+    ) {
+      // シェーダーがロードされていない場合は描画を行わない
+      // NOTE: Cubism 5.2 以前のモデル描画時にのみ、マスク無しのモデルが描画されてしまうためここで早期リターン
+      return;
     }
 
     {
@@ -878,16 +1118,392 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
     // 後処理
     this.gl.useProgram(null);
-    this.setClippingContextBufferForDraw(null);
+    this.setClippingContextBufferForDrawable(null);
     this.setClippingContextBufferForMask(null);
   }
 
+  /**
+   * オフスクリーンを親のオフスクリーンにコピーする。
+   *
+   * @param objectIndex オブジェクトのインデックス
+   * @param objectType  オブジェクトの種類
+   */
+  submitDrawToParentOffscreen(
+    objectIndex: number,
+    objectType: DrawableObjectType
+  ): void {
+    if (this._currentOffscreen == null || objectIndex == s_invalidValue) {
+      return;
+    }
+
+    const currentOwnerIndex =
+      this.getModel().getOffscreenOwnerIndices()[
+        this._currentOffscreen.getOffscreenIndex()
+      ];
+
+    // オーナーが不明な場合は処理を終了
+    if (currentOwnerIndex == s_invalidValue) {
+      return;
+    }
+
+    let targetParentIndex = NoParentIndex;
+
+    switch (objectType) {
+      case DrawableObjectType.DrawableObjectType_Drawable:
+        targetParentIndex =
+          this.getModel().getDrawableParentPartIndex(objectIndex);
+        break;
+      case DrawableObjectType.DrawableObjectType_Offscreen:
+        targetParentIndex =
+          this.getModel().getPartParentPartIndices()[
+            this.getModel().getOffscreenOwnerIndices()[objectIndex]
+          ];
+        break;
+      default:
+        // 不明なタイプだった場合は処理を終了
+        return;
+    }
+    while (targetParentIndex != NoParentIndex) {
+      // オブジェクトの親が現在のオーナーと同じ場合は処理を終了
+      if (targetParentIndex == currentOwnerIndex) {
+        return;
+      }
+
+      targetParentIndex =
+        this.getModel().getPartParentPartIndices()[targetParentIndex];
+    }
+
+    // 描画
+    this.drawOffscreen(this._currentOffscreen);
+
+    // さらに親のオフスクリーンに伝搬可能なら伝搬する
+    this.submitDrawToParentOffscreen(objectIndex, objectType);
+  }
+
+  /**
+   * 描画オブジェクト（オフスクリーン）を追加する。
+   *
+   * @param offscreenIndex オフスクリーンのインデックス
+   */
+  public addOffscreen(offscreenIndex: number): void {
+    // 以前のオフスクリーンレンダリングターゲットを親に伝搬する処理を追加する
+    if (
+      this._currentOffscreen != null &&
+      this._currentOffscreen.getOffscreenIndex() != offscreenIndex
+    ) {
+      let isParent = false;
+      const ownerIndex =
+        this.getModel().getOffscreenOwnerIndices()[offscreenIndex];
+      let parentIndex = this.getModel().getPartParentPartIndices()[ownerIndex];
+
+      const currentOffscreenIndex = this._currentOffscreen.getOffscreenIndex();
+      const currentOffscreenOwnerIndex =
+        this.getModel().getOffscreenOwnerIndices()[currentOffscreenIndex];
+      while (parentIndex != NoParentIndex) {
+        if (parentIndex == currentOffscreenOwnerIndex) {
+          isParent = true;
+          break;
+        }
+        parentIndex = this.getModel().getPartParentPartIndices()[parentIndex];
+      }
+
+      if (!isParent) {
+        // 現在のオフスクリーンレンダリングターゲットがあるなら、親に伝搬する
+        this.submitDrawToParentOffscreen(
+          offscreenIndex,
+          DrawableObjectType.DrawableObjectType_Offscreen
+        );
+      }
+    }
+
+    const offscreen = this._offscreenList.at(offscreenIndex);
+
+    // サイズが異なるなら新しいオフスクリーンレンダリングターゲットを作成
+    if (
+      offscreen.getBufferWidth() != this._modelRenderTargetWidth ||
+      offscreen.getBufferHeight() != this._modelRenderTargetHeight
+    ) {
+      offscreen.createOffscreenRenderTarget(
+        this.gl,
+        this._modelRenderTargetWidth,
+        this._modelRenderTargetHeight,
+        this._currentFbo
+      );
+    }
+
+    // 以前のオフスクリーンレンダリングターゲットを取得
+    const oldOffscreen = offscreen.getParentPartOffscreen();
+    offscreen.setOldOffscreen(oldOffscreen);
+
+    let oldFBO: WebGLFramebuffer = null;
+    if (oldOffscreen != null) {
+      oldFBO = oldOffscreen.getRenderTexture();
+    }
+
+    if (oldFBO == null) {
+      oldFBO = this._modelRootFbo; // ルートのFBOを使用
+    }
+
+    // 別バッファに描画を開始
+    offscreen.beginDraw(oldFBO);
+    this.gl.viewport(
+      0,
+      0,
+      this._modelRenderTargetWidth,
+      this._modelRenderTargetHeight
+    );
+    offscreen.clear(0.0, 0.0, 0.0, 0.0);
+
+    // 現在のオフスクリーンレンダリングターゲットを設定
+    this._currentOffscreen = offscreen;
+    this._currentFbo = offscreen.getRenderTexture();
+  }
+
+  /**
+   * オフスクリーン描画を行う。
+   *
+   * @param offscreen オフスクリーンレンダリングターゲット
+   */
+  public drawOffscreen(offscreen: CubismRenderTarget_WebGL): void {
+    const offscreenIndex = offscreen.getOffscreenIndex();
+
+    // クリッピングマスク
+    const clipContext =
+      this._offscreenClippingManager != null
+        ? this._offscreenClippingManager
+            .getClippingContextListForOffscreen()
+            .at(offscreenIndex)
+        : null;
+
+    if (clipContext != null && this.isUsingHighPrecisionMask()) {
+      // マスクを書く必要がある
+      if (clipContext._isUsing) {
+        // 書くことになっていた
+        // 生成したRenderTargetと同じサイズでビューポートを設定
+        this.gl.viewport(
+          0,
+          0,
+          this._offscreenClippingManager.getClippingMaskBufferSize(),
+          this._offscreenClippingManager.getClippingMaskBufferSize()
+        );
+
+        this.preDraw(); // バッファをクリアする
+
+        // ---------- マスク描画処理 ----------
+        // マスク用RenderTextureをactiveにセット
+        this.getOffscreenMaskBuffer(clipContext._bufferIndex).beginDraw(
+          this._currentFbo
+        );
+
+        // マスクをクリアする
+        // 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダで Cd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
+        this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+      }
+
+      {
+        const clipDrawCount = clipContext._clippingIdCount;
+        for (let index = 0; index < clipDrawCount; index++) {
+          const clipDrawIndex = clipContext._clippingIdList[index];
+
+          // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
+          if (
+            !this.getModel().getDrawableDynamicFlagVertexPositionsDidChange(
+              clipDrawIndex
+            )
+          ) {
+            continue;
+          }
+
+          this.setIsCulling(
+            this.getModel().getDrawableCulling(clipDrawIndex) != false
+          );
+
+          // 今回専用の変換を適用して描く
+          // チャンネルも切り替える必要がある(A,R,G,B)
+          this.setClippingContextBufferForMask(clipContext);
+
+          this.drawMeshWebGL(this.getModel(), clipDrawIndex);
+        }
+      }
+
+      {
+        // --- 後処理 ---
+        this.getOffscreenMaskBuffer(clipContext._bufferIndex).endDraw();
+        this.setClippingContextBufferForMask(null);
+        this.gl.viewport(
+          0,
+          0,
+          this._modelRenderTargetWidth,
+          this._modelRenderTargetHeight
+        );
+
+        this.preDraw(); // バッファをクリアする
+      }
+    }
+
+    // クリッピングマスクをセットする
+    this.setClippingContextBufferForOffscreen(clipContext);
+
+    this.setIsCulling(this._model.getOffscreenCulling(offscreenIndex) != false);
+
+    this.drawOffscreenWebGL(this.getModel(), offscreen);
+  }
+
+  /**
+   * オフスクリーン描画のWebGL実装
+   *
+   * @param model モデル
+   * @param index オフスクリーンインデックス
+   */
+  public drawOffscreenWebGL(
+    model: Readonly<CubismModel>,
+    offscreen: CubismRenderTarget_WebGL
+  ): void {
+    // 裏面描画の有効・無効
+    if (this.isCulling()) {
+      this.gl.enable(this.gl.CULL_FACE);
+    } else {
+      this.gl.disable(this.gl.CULL_FACE);
+    }
+
+    this.gl.frontFace(this.gl.CCW); // Cubism SDK OpenGLはマスク・アートメッシュ共にCCWが表面
+
+    CubismShaderManager_WebGL.getInstance()
+      .getShader(this.gl)
+      .setupShaderProgramForOffscreen(this, model, offscreen);
+
+    offscreen.endDraw();
+    this._currentOffscreen = this._currentOffscreen.getOldOffscreen();
+    this._currentFbo = offscreen.getOldFBO();
+    if (this._currentFbo == null) {
+      this._currentOffscreen = this._modelRenderTargets.at(0);
+      this._currentFbo = this._modelRenderTargets.at(0).getRenderTexture();
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._currentFbo);
+    }
+
+    // ポリゴンメッシュを描画する
+    {
+      // インデックスバッファの作成とバインド
+      const indexBuffer = this.gl.createBuffer();
+      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      this.gl.bufferData(
+        this.gl.ELEMENT_ARRAY_BUFFER,
+        s_renderTargetIndexArray,
+        this.gl.STATIC_DRAW
+      );
+
+      // 描画
+      this.gl.drawElements(
+        this.gl.TRIANGLES,
+        s_renderTargetIndexArray.length,
+        this.gl.UNSIGNED_SHORT,
+        0
+      );
+      this.gl.deleteBuffer(indexBuffer);
+    }
+
+    // 後処理
+    this.gl.useProgram(null);
+    this.setClippingContextBufferForMask(null);
+    this.setClippingContextBufferForOffscreen(null);
+  }
+
+  /**
+   * モデル描画直前のレンダラのステートを保持する
+   */
   protected saveProfile(): void {
     this._rendererProfile.save();
   }
 
+  /**
+   * モデル描画直前のレンダラのステートを復帰させる
+   */
   protected restoreProfile(): void {
     this._rendererProfile.restore();
+  }
+
+  /**
+   * モデル描画直前のオフスクリーン設定を行う
+   */
+  public beforeDrawModelRenderTarget(): void {
+    if (this._modelRenderTargets.getSize() == 0) {
+      return;
+    }
+
+    // オフスクリーンのバッファのサイズが違う場合は作り直し
+    for (let i = 0; i < this._modelRenderTargets.getSize(); ++i) {
+      if (
+        this._modelRenderTargets.at(i).getBufferWidth() !=
+          this._modelRenderTargetWidth ||
+        this._modelRenderTargets.at(i).getBufferHeight() !=
+          this._modelRenderTargetHeight
+      ) {
+        this._modelRenderTargets
+          .at(i)
+          .createOffscreenRenderTarget(
+            this.gl,
+            this._modelRenderTargetWidth,
+            this._modelRenderTargetHeight,
+            this._currentFbo
+          );
+      }
+    }
+
+    // 別バッファに描画を開始
+    this._modelRenderTargets.at(0).beginDraw();
+    this._modelRenderTargets.at(0).clear(0.0, 0.0, 0.0, 0.0);
+  }
+
+  /**
+   * モデル描画後のオフスクリーン設定を行う
+   */
+  public afterDrawModelRenderTarget(): void {
+    if (this._modelRenderTargets.getSize() == 0) {
+      return;
+    }
+
+    // 元のバッファに描画する
+    this._modelRenderTargets.at(0).endDraw();
+
+    CubismShaderManager_WebGL.getInstance()
+      .getShader(this.gl)
+      .setupShaderProgramForOffscreenRenderTarget(this);
+
+    if (
+      CubismShaderManager_WebGL.getInstance().getShader(this.gl)._isShaderLoaded
+    ) {
+      // インデックスバッファの作成とバインド
+      const indexBuffer = this.gl.createBuffer();
+      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      this.gl.bufferData(
+        this.gl.ELEMENT_ARRAY_BUFFER,
+        s_renderTargetIndexArray,
+        this.gl.STATIC_DRAW
+      );
+
+      // 描画
+      this.gl.drawElements(
+        this.gl.TRIANGLES,
+        s_renderTargetIndexArray.length,
+        this.gl.UNSIGNED_SHORT,
+        0
+      );
+      this.gl.deleteBuffer(indexBuffer);
+    }
+
+    this.gl.useProgram(null);
+  }
+
+  /**
+   * オフスクリーンのクリッピングマスクのバッファを取得する
+   *
+   * @param index オフスクリーンのクリッピングマスクのバッファのインデックス
+   *
+   * @return オフスクリーンのクリッピングマスクのバッファへのポインタ
+   */
+  getOffscreenMaskBuffer(index: number): CubismRenderTarget_WebGL {
+    return this._offscreenMasks.at(index);
   }
 
   /**
@@ -900,12 +1516,21 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
   /**
    * レンダーステートを設定する
+   *
    * @param fbo アプリケーション側で指定しているフレームバッファ
    * @param viewport ビューポート
    */
   public setRenderState(fbo: WebGLFramebuffer, viewport: number[]): void {
-    s_fbo = fbo;
-    s_viewport = viewport;
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fbo);
+    this.gl.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+    if (
+      this._modelRenderTargetWidth != viewport[2] ||
+      this._modelRenderTargetHeight != viewport[3]
+    ) {
+      this._modelRenderTargetWidth = viewport[2];
+      this._modelRenderTargetHeight = viewport[3];
+    }
   }
 
   /**
@@ -913,8 +1538,8 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    * モデルを描画する前にクリッピングマスクに必要な処理を実装している
    */
   public preDraw(): void {
-    if (this.firstDraw) {
-      this.firstDraw = false;
+    if (this._firstDraw) {
+      this._firstDraw = false;
     }
 
     this.gl.disable(this.gl.SCISSOR_TEST);
@@ -944,6 +1569,17 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   }
 
   /**
+   * Drawableのマスク用のオフスクリーンサーフェースを取得する
+   *
+   * @param index オフスクリーンサーフェースのインデックス
+   *
+   * @return マスク用のオフスクリーンサーフェース
+   */
+  public getDrawableMaskBuffer(index: number): CubismRenderTarget_WebGL {
+    return this._drawableMasks.at(index);
+  }
+
+  /**
    * マスクテクスチャに描画するクリッピングコンテキストをセットする
    */
   public setClippingContextBufferForMask(clip: CubismClippingContext_WebGL) {
@@ -952,6 +1588,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
   /**
    * マスクテクスチャに描画するクリッピングコンテキストを取得する
+   *
    * @return マスクテクスチャに描画するクリッピングコンテキスト
    */
   public getClippingContextBufferForMask(): CubismClippingContext_WebGL {
@@ -959,25 +1596,49 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   }
 
   /**
-   * 画面上に描画するクリッピングコンテキストをセットする
+   * Drawableの画面上に描画するクリッピングコンテキストをセットする
+   *
+   * @param clip drawableで画面上に描画するクリッピングコンテキスト
    */
-  public setClippingContextBufferForDraw(
+  public setClippingContextBufferForDrawable(
     clip: CubismClippingContext_WebGL
   ): void {
     this._clippingContextBufferForDraw = clip;
   }
 
   /**
-   * 画面上に描画するクリッピングコンテキストを取得する
-   * @return 画面上に描画するクリッピングコンテキスト
+   * Drawableの画面上に描画するクリッピングコンテキストを取得する
+   *
+   * @return Drawableの画面上に描画するクリッピングコンテキスト
    */
-  public getClippingContextBufferForDraw(): CubismClippingContext_WebGL {
+  public getClippingContextBufferForDrawable(): CubismClippingContext_WebGL {
     return this._clippingContextBufferForDraw;
   }
 
   /**
+   * offscreenで画面上に描画するクリッピングコンテキストをセットする。
+   *
+   * @param clip offscreenで画面上に描画するクリッピングコンテキスト
+   */
+  public setClippingContextBufferForOffscreen(
+    clip: CubismClippingContext_WebGL
+  ): void {
+    this._clippingContextBufferForOffscreen = clip;
+  }
+
+  /**
+   * offscreenで画面上に描画するクリッピングコンテキストを取得する。
+   *
+   * @return offscreenで画面上に描画するクリッピングコンテキスト
+   */
+  public getClippingContextBufferForOffscreen(): CubismClippingContext_WebGL {
+    return this._clippingContextBufferForOffscreen;
+  }
+
+  /**
    * マスク生成時かを判定する
-   * @returns 判定値
+   *
+   * @return 判定値
    */
   public isGeneratingMask() {
     return this.getClippingContextBufferForMask() != null;
@@ -986,11 +1647,15 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   /**
    * glの設定
    */
-  public startUp(gl: WebGLRenderingContext): void {
+  public startUp(gl: WebGLRenderingContext | WebGL2RenderingContext): void {
     this.gl = gl;
 
-    if (this._clippingManager) {
-      this._clippingManager.setGL(gl);
+    if (this._drawableClippingManager) {
+      this._drawableClippingManager.setGL(gl);
+    }
+
+    if (this._offscreenClippingManager) {
+      this._offscreenClippingManager.setGL(gl);
     }
 
     CubismShaderManager_WebGL.getInstance().setGlContext(gl);
@@ -1001,22 +1666,121 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       this.gl.getExtension('EXT_texture_filter_anisotropic') ||
       this.gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic') ||
       this.gl.getExtension('MOZ_EXT_texture_filter_anisotropic');
+
+    if (this._model.isUsingMasking()) {
+      this._drawableMasks.clear();
+      for (
+        let i = 0;
+        i < this._drawableClippingManager.getRenderTextureCount();
+        ++i
+      ) {
+        const renderTarget = new CubismRenderTarget_WebGL();
+        renderTarget.createOffscreenRenderTarget(
+          this.gl,
+          this._drawableClippingManager.getClippingMaskBufferSize(),
+          this._drawableClippingManager.getClippingMaskBufferSize(),
+          this._currentFbo
+        );
+        this._drawableMasks.pushBack(renderTarget);
+      }
+    }
+
+    if (this._model.isBlendModeEnabled()) {
+      // オフスクリーンの作成
+      this._modelRenderTargets.clear();
+
+      // TextureBarrierの代替用にオフスクリーンを2つ作成する
+      const createSize = 3;
+      for (let i = 0; i < createSize; ++i) {
+        const offscreenRenderTarget: CubismRenderTarget_WebGL =
+          new CubismRenderTarget_WebGL();
+        offscreenRenderTarget.createOffscreenRenderTarget(
+          this.gl,
+          this._modelRenderTargetWidth,
+          this._modelRenderTargetHeight,
+          this._currentFbo
+        );
+        this._modelRenderTargets.pushBack(offscreenRenderTarget);
+      }
+
+      if (this._model.isUsingMaskingForOffscreen()) {
+        this._offscreenMasks.clear();
+        for (
+          let i = 0;
+          i < this._offscreenClippingManager.getRenderTextureCount();
+          ++i
+        ) {
+          const offscreenMask = new CubismRenderTarget_WebGL();
+          offscreenMask.createOffscreenRenderTarget(
+            this.gl,
+            this._offscreenClippingManager.getClippingMaskBufferSize(),
+            this._offscreenClippingManager.getClippingMaskBufferSize(),
+            this._currentFbo
+          );
+          this._offscreenMasks.pushBack(offscreenMask);
+        }
+      }
+
+      const offscreenCount = this._model.getOffscreenCount();
+      // オフスクリーンの数が0の場合は何もしない
+      if (offscreenCount > 0) {
+        this._offscreenList = new csmVector<CubismRenderTarget_WebGL>(
+          offscreenCount
+        );
+        for (
+          let offscreenIndex = 0;
+          offscreenIndex < offscreenCount;
+          ++offscreenIndex
+        ) {
+          const offscreenRenderTarget = new CubismRenderTarget_WebGL();
+          offscreenRenderTarget.createOffscreenRenderTarget(
+            this.gl,
+            this._modelRenderTargetWidth,
+            this._modelRenderTargetHeight,
+            this._currentFbo
+          );
+          offscreenRenderTarget.setOffscreenIndex(offscreenIndex);
+          this._offscreenList.pushBack(offscreenRenderTarget);
+        }
+
+        // 全てのオフスクリーンを登録し終わってから行う
+        this.setupParentOffscreens(this._model, offscreenCount);
+      }
+    }
+
+    // 描画対象を初期状態に戻す
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this._currentFbo);
   }
 
   _textures: csmMap<number, WebGLTexture>; // モデルが参照するテクスチャとレンダラでバインドしているテクスチャとのマップ
-  _sortedDrawableIndexList: csmVector<number>; // 描画オブジェクトのインデックスを描画順に並べたリスト
-  _clippingManager: CubismClippingManager_WebGL; // クリッピングマスク管理オブジェクト
+  _sortedObjectsIndexList: csmVector<number>; // 描画オブジェクトのインデックスを描画順に並べたリスト
+  _sortedObjectsTypeList: csmVector<number>; // 描画オブジェクトのオブジェクトタイプを描画順に並べたリスト
+  _rendererProfile: CubismRendererProfile_WebGL;
+  _drawableClippingManager: CubismClippingManager_WebGL; // クリッピングマスク管理オブジェクト
   _clippingContextBufferForMask: CubismClippingContext_WebGL; // マスクテクスチャに描画するためのクリッピングコンテキスト
   _clippingContextBufferForDraw: CubismClippingContext_WebGL; // 画面上描画するためのクリッピングコンテキスト
-  _rendererProfile: CubismRendererProfile_WebGL;
-  firstDraw: boolean;
+  _clippingContextBufferForOffscreen: CubismClippingContext_WebGL; // オフスクリーン描画用のクリッピングコンテキスト
+  _offscreenClippingManager: CubismClippingManager_WebGL; // オフスクリーン描画用のクリッピングマスク管理オブジェクト
+
+  _modelRenderTargets: csmVector<CubismRenderTarget_WebGL>; ///< モデル全体を描画する先のフレームバッファ
+
+  _drawableMasks: csmVector<CubismRenderTarget_WebGL>; // マスク用のオフスクリーンサーフェースのリスト
+  _offscreenMasks: csmVector<CubismRenderTarget_WebGL>; ///< オフスクリーン機能マスク描画用のフレームバッファ
+
+  _offscreenList: csmVector<CubismRenderTarget_WebGL>; ///< モデルのオフスクリーン
+  _currentFbo: WebGLFramebuffer; ///< 現在のフレームバッファオブジェクト
+  _currentOffscreen: CubismRenderTarget_WebGL | null; // 現在のオフスクリーン
+
+  _modelRootFbo: WebGLFramebuffer; // モデルのルートフレームバッファ
+  _firstDraw: boolean; // エイリアス内で最初のオフスクリーン描画かどうか
+
   _bufferData: {
     vertex: WebGLBuffer;
     uv: WebGLBuffer;
     index: WebGLBuffer;
   }; // 頂点バッファデータ
   _extension: any; // 拡張機能
-  gl: WebGLRenderingContext; // webglコンテキスト
+  gl: WebGLRenderingContext | WebGL2RenderingContext; // webglコンテキスト
 }
 
 /**
@@ -1028,14 +1792,14 @@ CubismRenderer.staticRelease = (): void => {
 
 // Namespace definition for compatibility.
 import * as $ from './cubismrenderer_webgl';
+import { CubismRenderTarget_WebGL as CubismRenderTarget_WebGL } from './cubismrendertarget_webgl';
+import { mergeSortByIterator } from '../type/cubismvectorsort';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Live2DCubismFramework {
   export const CubismClippingContext = $.CubismClippingContext_WebGL;
   export type CubismClippingContext = $.CubismClippingContext_WebGL;
   export const CubismClippingManager_WebGL = $.CubismClippingManager_WebGL;
   export type CubismClippingManager_WebGL = $.CubismClippingManager_WebGL;
-  export const CubismRenderTextureResource = $.CubismRenderTextureResource;
-  export type CubismRenderTextureResource = $.CubismRenderTextureResource;
   export const CubismRenderer_WebGL = $.CubismRenderer_WebGL;
   export type CubismRenderer_WebGL = $.CubismRenderer_WebGL;
 }
