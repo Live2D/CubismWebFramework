@@ -5,10 +5,12 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
+import { CubismMath } from '../math/cubismmath';
 import { CubismMatrix44 } from '../math/cubismmatrix44';
 import { CubismModel } from '../model/cubismmodel';
 import { csmRect } from '../type/csmrectf';
 import { ICubismClippingManager } from './cubismclippingmanager';
+import { CubismLogInfo } from '../utils/cubismdebug';
 
 /**
  * モデル描画を処理するレンダラ
@@ -35,10 +37,19 @@ export abstract class CubismRenderer {
   /**
    * レンダラの初期化処理を実行する
    * 引数に渡したモデルからレンダラの初期化処理に必要な情報を取り出すことができる
+   *
    * @param model モデルのインスタンス
    */
   public initialize(model: CubismModel): void {
     this._model = model;
+
+    // ブレンドモード使用時は必ず高精細にする
+    if (model.isBlendModeEnabled()) {
+      this.useHighPrecisionMask(true);
+      CubismLogInfo(
+        'This model uses a high-resolution mask because it operates in blend mode.'
+      );
+    }
   }
 
   /**
@@ -47,16 +58,19 @@ export abstract class CubismRenderer {
   public drawModel(): void {
     if (this.getModel() == null) return;
 
-    this.saveProfile();
+    // NOTE: WebGL最適化のため、デフォルトではコメントアウト
+    //this.saveProfile();
 
     this.doDrawModel();
 
-    this.restoreProfile();
+    // NOTE: WebGL最適化のため、デフォルトではコメントアウト
+    //this.restoreProfile();
   }
 
   /**
    * Model-View-Projection 行列をセットする
    * 配列は複製されるので、元の配列は外で破棄して良い
+   *
    * @param matrix44 Model-View-Projection 行列
    */
   public setMvpMatrix(matrix44: CubismMatrix44): void {
@@ -65,6 +79,7 @@ export abstract class CubismRenderer {
 
   /**
    * Model-View-Projection 行列を取得する
+   *
    * @return Model-View-Projection 行列
    */
   public getMvpMatrix(): CubismMatrix44 {
@@ -74,6 +89,7 @@ export abstract class CubismRenderer {
   /**
    * モデルの色をセットする
    * 各色0.0~1.0の間で指定する（1.0が標準の状態）
+   *
    * @param red 赤チャンネルの値
    * @param green 緑チャンネルの値
    * @param blue 青チャンネルの値
@@ -85,34 +101,10 @@ export abstract class CubismRenderer {
     blue: number,
     alpha: number
   ): void {
-    if (red < 0.0) {
-      red = 0.0;
-    } else if (red > 1.0) {
-      red = 1.0;
-    }
-
-    if (green < 0.0) {
-      green = 0.0;
-    } else if (green > 1.0) {
-      green = 1.0;
-    }
-
-    if (blue < 0.0) {
-      blue = 0.0;
-    } else if (blue > 1.0) {
-      blue = 1.0;
-    }
-
-    if (alpha < 0.0) {
-      alpha = 0.0;
-    } else if (alpha > 1.0) {
-      alpha = 1.0;
-    }
-
-    this._modelColor.r = red;
-    this._modelColor.g = green;
-    this._modelColor.b = blue;
-    this._modelColor.a = alpha;
+    this._modelColor.r = CubismMath.clamp(red, 0.0, 1.0);
+    this._modelColor.g = CubismMath.clamp(green, 0.0, 1.0);
+    this._modelColor.b = CubismMath.clamp(blue, 0.0, 1.0);
+    this._modelColor.a = CubismMath.clamp(alpha, 0.0, 1.0);
   }
 
   /**
@@ -154,7 +146,7 @@ export abstract class CubismRenderer {
   /**
    * 乗算済みαの有効・無効を取得する
    * @return true 乗算済みのα有効
-   * @return false 乗算済みのα無効
+   *         false 乗算済みのα無効
    */
   public isPremultipliedAlpha(): boolean {
     return this._isPremultipliedAlpha;
@@ -170,8 +162,9 @@ export abstract class CubismRenderer {
 
   /**
    * カリング（片面描画）の有効・無効を取得する。
+   *
    * @return true カリング有効
-   * @return false カリング無効
+   *         false カリング無効
    */
   public isCulling(): boolean {
     return this._isCulling;
@@ -180,6 +173,7 @@ export abstract class CubismRenderer {
   /**
    * テクスチャの異方性フィルタリングのパラメータをセットする
    * パラメータ値の影響度はレンダラの実装に依存する
+   *
    * @param n パラメータの値
    */
   public setAnisotropy(n: number): void {
@@ -188,6 +182,7 @@ export abstract class CubismRenderer {
 
   /**
    * テクスチャの異方性フィルタリングのパラメータをセットする
+   *
    * @return 異方性フィルタリングのパラメータ
    */
   public getAnisotropy(): number {
@@ -196,6 +191,7 @@ export abstract class CubismRenderer {
 
   /**
    * レンダリングするモデルを取得する
+   *
    * @return レンダリングするモデル
    */
   public getModel(): CubismModel {
@@ -208,6 +204,7 @@ export abstract class CubismRenderer {
    * 高速だが、マスク個数の上限が36に限定され、質も荒くなる
    * trueの場合、パーツ描画の前にその都度必要なマスクを描き直す
    * レンダリング品質は高いが描画処理負荷は増す
+   *
    * @param high 高精細マスクに切り替えるか？
    */
   public useHighPrecisionMask(high: boolean): void {
@@ -216,17 +213,31 @@ export abstract class CubismRenderer {
 
   /**
    * マスクの描画方式を取得する
+   *
    * @return true 高精細方式
-   * @return false デフォルト
+   *         false デフォルト
    */
   public isUsingHighPrecisionMask(): boolean {
     return this._useHighPrecisionMask;
   }
 
   /**
+   * モデルを描画したバッファのサイズを設定
+   *
+   * @param[in]   width  -> モデルを描画したバッファの幅
+   * @param[in]   height -> モデルを描画したバッファの高さ
+   */
+  public setRenderTargetSize(width: number, height: number): void {
+    this._modelRenderTargetWidth = width;
+    this._modelRenderTargetHeight = height;
+  }
+
+  /**
    * コンストラクタ
    */
-  protected constructor() {
+  protected constructor(width: number, height: number) {
+    this._modelRenderTargetWidth = width;
+    this._modelRenderTargetHeight = height;
     this._isCulling = false;
     this._isPremultipliedAlpha = false;
     this._anisotropy = 0.0;
@@ -238,6 +249,16 @@ export abstract class CubismRenderer {
     this._mvpMatrix4x4 = new CubismMatrix44();
     this._mvpMatrix4x4.loadIdentity();
   }
+
+  /**
+   * モデル描画直前のオフスクリーン設定を行う
+   */
+  public abstract beforeDrawModelRenderTarget(): void;
+
+  /**
+   * モデル描画直後のオフスクリーン設定を行う
+   */
+  public abstract afterDrawModelRenderTarget(): void;
 
   /**
    * モデル描画の実装
@@ -266,12 +287,23 @@ export abstract class CubismRenderer {
   protected _anisotropy: any; // テクスチャの異方性フィルタリングのパラメータ
   protected _model: CubismModel; // レンダリング対象のモデル
   protected _useHighPrecisionMask: boolean; // falseの場合、マスクを纏めて描画する trueの場合、マスクはパーツ描画ごとに書き直す
+
+  protected _modelRenderTargetWidth: number;
+  protected _modelRenderTargetHeight: number;
 }
 
 export enum CubismBlendMode {
   CubismBlendMode_Normal = 0, // 通常
   CubismBlendMode_Additive = 1, // 加算
   CubismBlendMode_Multiplicative = 2 // 乗算
+}
+
+/**
+ * オブジェクトのタイプ
+ */
+export enum DrawableObjectType {
+  DrawableObjectType_Drawable = 0,
+  DrawableObjectType_Offscreen = 1
 }
 
 /**
@@ -295,6 +327,31 @@ export class CubismTextureColor {
 }
 
 /**
+ * エイリアスの描画対象のソート結果を管理するためのクラス
+ */
+export class DrawableSortItem {
+  /**
+   * コンストラクタ
+   * @param objectIndex オブジェクトのインデックス
+   * @param objectType オブジェクトのタイプ
+   * @param renderOrder 描画順
+   */
+  constructor(
+    objectIndex: number,
+    objectType: DrawableObjectType,
+    renderOrder: number
+  ) {
+    this.objectIndex = objectIndex;
+    this.objectType = objectType;
+    this.renderOrder = renderOrder;
+  }
+
+  objectIndex: number;
+  objectType: DrawableObjectType;
+  renderOrder: number;
+}
+
+/**
  * クリッピングマスクのコンテキスト
  */
 export abstract class CubismClippingContext {
@@ -312,11 +369,13 @@ export abstract class CubismClippingContext {
     this._layoutBounds = new csmRect();
 
     this._clippedDrawableIndexList = [];
+    this._clippedOffscreenIndexList = [];
 
     this._matrixForMask = new CubismMatrix44();
     this._matrixForDraw = new CubismMatrix44();
 
     this._bufferIndex = 0;
+    this._layoutChannelIndex = 0;
   }
 
   /**
@@ -340,6 +399,9 @@ export abstract class CubismClippingContext {
     if (this._clippedDrawableIndexList != null) {
       this._clippedDrawableIndexList = null;
     }
+    if (this._clippedOffscreenIndexList != null) {
+      this._clippedOffscreenIndexList = null;
+    }
   }
 
   /**
@@ -351,6 +413,15 @@ export abstract class CubismClippingContext {
     this._clippedDrawableIndexList.push(drawableIndex);
   }
 
+  /**
+   * このマスクにクリップされるオフスクリーンオブジェクトを追加する
+   *
+   * @param offscreenIndex クリッピング対象に追加するオフスクリーンオブジェクトのインデックス
+   */
+  public addClippedOffscreen(offscreenIndex: number) {
+    this._clippedOffscreenIndexList.push(offscreenIndex);
+  }
+
   public _isUsing: boolean; // 現在の描画状態でマスクの準備が必要ならtrue
   public readonly _clippingIdList: Int32Array; // クリッピングマスクのIDリスト
   public _clippingIdCount: number; // クリッピングマスクの数
@@ -360,6 +431,7 @@ export abstract class CubismClippingContext {
   public _matrixForMask: CubismMatrix44; // マスクの位置計算結果を保持する行列
   public _matrixForDraw: CubismMatrix44; // 描画オブジェクトの位置計算結果を保持する行列
   public _clippedDrawableIndexList: number[]; // このマスクにクリップされる描画オブジェクトのリスト
+  public _clippedOffscreenIndexList: number[]; // このマスクにクリップされるオフスクリーンオブジェクトのリスト
   public _bufferIndex: number; // このマスクが割り当てられるレンダーテクスチャ（フレームバッファ）やカラーバッファのインデックス
 }
 

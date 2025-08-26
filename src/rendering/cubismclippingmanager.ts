@@ -43,11 +43,13 @@ export abstract class CubismClippingManager<
     this._clippingMaskBufferSize = 256;
     this._clippingContextListForMask = new csmVector<T_ClippingContext>();
     this._clippingContextListForDraw = new csmVector<T_ClippingContext>();
+    this._clippingContextListForOffscreen = new csmVector<T_ClippingContext>();
     this._channelColors = new csmVector<CubismTextureColor>();
     this._tmpBoundsOnModel = new csmRect();
     this._tmpMatrix = new CubismMatrix44();
     this._tmpMatrixForMask = new CubismMatrix44();
     this._tmpMatrixForDraw = new CubismMatrix44();
+    this._clearedMaskBufferFlags = new csmVector<boolean>();
 
     this._clippingContexttConstructor = clippingContextFactory;
 
@@ -105,10 +107,10 @@ export abstract class CubismClippingManager<
 
     this._channelColors = null;
 
-    if (this._clearedFrameBufferFlags != null) {
-      this._clearedFrameBufferFlags.clear();
+    if (this._clearedMaskBufferFlags != null) {
+      this._clearedMaskBufferFlags.clear();
     }
-    this._clearedFrameBufferFlags = null;
+    this._clearedMaskBufferFlags = null;
   }
 
   /**
@@ -117,7 +119,10 @@ export abstract class CubismClippingManager<
    * @param model モデルのインスタンス
    * @param renderTextureCount バッファの生成数
    */
-  public initialize(model: CubismModel, renderTextureCount: number): void {
+  public initializeForDrawable(
+    model: CubismModel,
+    renderTextureCount: number
+  ): void {
     // レンダーテクスチャの合計枚数の設定
     // 1以上の整数でない場合はそれぞれ警告を出す
     if (renderTextureCount % 1 != 0) {
@@ -135,7 +140,7 @@ export abstract class CubismClippingManager<
     // 負の値が使われている場合は強制的に1枚と設定する
     this._renderTextureCount = renderTextureCount < 1 ? 1 : renderTextureCount;
 
-    this._clearedFrameBufferFlags = new csmVector<boolean>(
+    this._clearedMaskBufferFlags = new csmVector<boolean>(
       this._renderTextureCount
     );
 
@@ -167,6 +172,53 @@ export abstract class CubismClippingManager<
       clippingContext.addClippedDrawable(i);
 
       this._clippingContextListForDraw.pushBack(clippingContext);
+    }
+  }
+
+  /**
+   * オフスクリーン用の初期化処理
+   *
+   * @param model モデルのインスタンス
+   * @param maskBufferCount オフスクリーン用のマスクバッファの数
+   */
+  public initializeForOffscreen(
+    model: CubismModel,
+    maskBufferCount: number
+  ): void {
+    this._renderTextureCount = maskBufferCount;
+
+    // レンダーテクスチャのクリアフラグの設定
+    for (let i = 0; i < this._renderTextureCount; ++i) {
+      this._clearedMaskBufferFlags.pushBack(false);
+    }
+
+    //クリッピングマスクを使う描画オブジェクトを全て登録する
+    //クリッピングマスクは、通常数個程度に限定して使うものとする
+    for (let i = 0; i < model.getOffscreenCount(); ++i) {
+      if (model.getOffscreenMaskCounts()[i] <= 0) {
+        //クリッピングマスクが使用されていないオフスクリーン（多くの場合使用しない）
+        this._clippingContextListForOffscreen.pushBack(null);
+        continue;
+      }
+
+      // 既にあるClipContextと同じかチェックする
+      let cc = this.findSameClip(
+        model.getOffscreenMasks()[i],
+        model.getOffscreenMaskCounts()[i]
+      );
+      if (cc == null) {
+        // 同一のマスクが存在していない場合は生成する
+        cc = new this._clippingContexttConstructor(
+          this,
+          model.getOffscreenMasks()[i],
+          model.getOffscreenMaskCounts()[i]
+        );
+        this._clippingContextListForMask.pushBack(cc);
+      }
+
+      cc.addClippedOffscreen(i);
+
+      this._clippingContextListForOffscreen.pushBack(cc);
     }
   }
 
@@ -237,7 +289,7 @@ export abstract class CubismClippingManager<
         this._clippingContextListForMask.at(clipIndex);
 
       // このクリップを利用する描画オブジェクト群全体を囲む矩形を計算
-      this.calcClippedDrawTotalBounds(model, cc);
+      this.calcClippedDrawableTotalBounds(model, cc);
 
       if (cc._isUsing) {
         usingClipCount++; // 使用中としてカウント
@@ -249,15 +301,15 @@ export abstract class CubismClippingManager<
       this.setupLayoutBounds(0);
 
       // サイズがレンダーテクスチャの枚数と合わない場合は合わせる
-      if (this._clearedFrameBufferFlags.getSize() != this._renderTextureCount) {
-        this._clearedFrameBufferFlags.clear();
+      if (this._clearedMaskBufferFlags.getSize() != this._renderTextureCount) {
+        this._clearedMaskBufferFlags.clear();
         for (let i = 0; i < this._renderTextureCount; i++) {
-          this._clearedFrameBufferFlags.pushBack(false);
+          this._clearedMaskBufferFlags.pushBack(false);
         }
       } else {
         // マスクのクリアフラグを毎フレーム開始時に初期化
         for (let i = 0; i < this._renderTextureCount; i++) {
-          this._clearedFrameBufferFlags.set(i, false);
+          this._clearedMaskBufferFlags.set(i, false);
         }
       }
 
@@ -314,6 +366,258 @@ export abstract class CubismClippingManager<
         clipContext._matrixForMask.setMatrix(this._tmpMatrixForMask.getArray());
         clipContext._matrixForDraw.setMatrix(this._tmpMatrixForDraw.getArray());
       }
+    }
+  }
+
+  /**
+   * オフスクリーンの高精細マスク処理用の行列を計算する
+   *
+   * @param model モデルのインスタンス
+   * @param isRightHanded 処理が右手系であるか
+   * @param mvp モデルビュー投影行列
+   */
+  public setupMatrixForOffscreenHighPrecision(
+    model: CubismModel,
+    isRightHanded: boolean,
+    mvp: CubismMatrix44
+  ): void {
+    // 全てのクリッピングを用意する
+    // 同じクリップ（複数の場合はまとめて１つのクリップ）を使う場合は１度だけ設定する
+    let usingClipCount = 0;
+    for (
+      let clipIndex = 0;
+      clipIndex < this._clippingContextListForMask.getSize();
+      clipIndex++
+    ) {
+      // １つのクリッピングマスクに関して
+      const cc: T_ClippingContext =
+        this._clippingContextListForMask.at(clipIndex);
+
+      // このクリップを利用する描画オブジェクト群全体を囲む矩形を計算
+      this.calcClippedOffscreenTotalBounds(model, cc);
+
+      if (cc._isUsing) {
+        usingClipCount++; //使用中としてカウント
+      }
+    }
+
+    if (usingClipCount <= 0) {
+      return;
+    }
+    // マスク行列作成処理
+    this.setupLayoutBounds(0);
+
+    // サイズがレンダーテクスチャの枚数と合わない場合は合わせる
+    if (this._clearedMaskBufferFlags.getSize() != this._renderTextureCount) {
+      this._clearedMaskBufferFlags.clear();
+
+      for (let i = 0; i < this._renderTextureCount; ++i) {
+        this._clearedMaskBufferFlags.pushBack(false);
+      }
+    } else {
+      // マスクのクリアフラグを毎フレーム開始時に初期化
+      for (let i = 0; i < this._renderTextureCount; ++i) {
+        this._clearedMaskBufferFlags.set(i, false);
+      }
+    }
+
+    // 実際にマスクを生成する
+    // 全てのマスクをどの様にレイアウトして描くかを決定し、ClipContext , ClippedDrawContext に記憶する
+    for (
+      let clipIndex = 0;
+      clipIndex < this._clippingContextListForMask.getSize();
+      clipIndex++
+    ) {
+      // --- 実際に１つのマスクを描く ---
+      const clipContext = this._clippingContextListForMask.at(clipIndex);
+      const allClippedDrawRect = clipContext._allClippedDrawRect; //このマスクを使う、全ての描画オブジェクトの論理座標上の囲み矩形
+      const layoutBoundsOnTex01 = clipContext._layoutBounds; //この中にマスクを収める
+      const margin = 0.05;
+      let scaleX = 0.0;
+      let scaleY = 0.0;
+      const ppu = model.getPixelsPerUnit();
+      const maskPixel = clipContext
+        .getClippingManager()
+        .getClippingMaskBufferSize();
+      const physicalMaskWidth = layoutBoundsOnTex01.width * maskPixel;
+      const physicalMaskHeight = layoutBoundsOnTex01.height * maskPixel;
+
+      this._tmpBoundsOnModel.setRect(allClippedDrawRect);
+      if (this._tmpBoundsOnModel.width * ppu > physicalMaskWidth) {
+        this._tmpBoundsOnModel.expand(allClippedDrawRect.width * margin, 0.0);
+        scaleX = layoutBoundsOnTex01.width / this._tmpBoundsOnModel.width;
+      } else {
+        scaleX = ppu / physicalMaskWidth;
+      }
+
+      if (this._tmpBoundsOnModel.height * ppu > physicalMaskHeight) {
+        this._tmpBoundsOnModel.expand(0.0, allClippedDrawRect.height * margin);
+        scaleY = layoutBoundsOnTex01.height / this._tmpBoundsOnModel.height;
+      } else {
+        scaleY = ppu / physicalMaskHeight;
+      }
+
+      // マスク生成時に使う行列を求める
+      this.createMatrixForMask(
+        isRightHanded,
+        layoutBoundsOnTex01,
+        scaleX,
+        scaleY
+      );
+
+      clipContext._matrixForMask.setMatrix(this._tmpMatrixForMask.getArray());
+      clipContext._matrixForDraw.setMatrix(this._tmpMatrixForDraw.getArray());
+
+      // clipContext * mvp^-1
+      const invertMvp = mvp.getInvert();
+      clipContext._matrixForDraw.multiplyByMatrix(invertMvp);
+    }
+  }
+
+  /**
+   * マスクを使う描画オブジェクトの全体の矩形を計算する。
+   *
+   * @param model モデルのインスタンス
+   * @param clippingContext クリッピングコンテキスト
+   */
+  public calcClippedOffscreenTotalBounds(
+    model: CubismModel,
+    clippingContext: T_ClippingContext
+  ): void {
+    // 被クリッピングマスク（マスクされる描画オブジェクト）の全体の矩形
+    let clippedDrawTotalMinX = Number.MAX_VALUE,
+      clippedDrawTotalMinY = Number.MAX_VALUE;
+    let clippedDrawTotalMaxX = -Number.MAX_VALUE,
+      clippedDrawTotalMaxY = -Number.MAX_VALUE;
+
+    // このマスクが実際に必要か判定する
+    // このクリッピングを利用する「描画オブジェクト」がひとつでも使用可能であればマスクを生成する必要がある
+    const clippedOffscreenCount =
+      clippingContext._clippedOffscreenIndexList.length;
+
+    const clippedOffscreenChildDrawableIndexList = new csmVector<number>();
+    for (
+      let clippedOffscreenIndex = 0;
+      clippedOffscreenIndex < clippedOffscreenCount;
+      clippedOffscreenIndex++
+    ) {
+      // マスクを使用する描画オブジェクトの描画される矩形を求める
+      const offscreenIndex =
+        clippingContext._clippedOffscreenIndexList[clippedOffscreenIndex];
+
+      this.getOffscreenChildDrawableIndexList(
+        model,
+        offscreenIndex,
+        clippedOffscreenChildDrawableIndexList
+      );
+    }
+
+    const childDrawableCount = clippedOffscreenChildDrawableIndexList.getSize();
+    for (
+      let childDrawableIndex = 0;
+      childDrawableIndex < childDrawableCount;
+      childDrawableIndex++
+    ) {
+      const drawableVertexCount = model.getDrawableVertexCount(
+        clippedOffscreenChildDrawableIndexList.at(childDrawableIndex)
+      );
+      const drawableVertexes = model.getDrawableVertices(
+        clippedOffscreenChildDrawableIndexList.at(childDrawableIndex)
+      );
+
+      let minX = Number.MAX_VALUE,
+        minY = Number.MAX_VALUE;
+      let maxX = -Number.MAX_VALUE,
+        maxY = -Number.MAX_VALUE;
+
+      const loop = drawableVertexCount * Constant.vertexStep;
+      for (
+        let pi = Constant.vertexOffset;
+        pi < loop;
+        pi += Constant.vertexStep
+      ) {
+        const x = drawableVertexes[pi];
+        const y = drawableVertexes[pi + 1];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+
+      if (minX == Number.MAX_VALUE) continue; //有効な点がひとつも取れなかったのでスキップする
+
+      // 全体の矩形に反映
+      if (minX < clippedDrawTotalMinX) clippedDrawTotalMinX = minX;
+      if (minY < clippedDrawTotalMinY) clippedDrawTotalMinY = minY;
+      if (maxX > clippedDrawTotalMaxX) clippedDrawTotalMaxX = maxX;
+      if (maxY > clippedDrawTotalMaxY) clippedDrawTotalMaxY = maxY;
+    }
+
+    if (clippedDrawTotalMinX == Number.MAX_VALUE) {
+      clippingContext._allClippedDrawRect.x = 0.0;
+      clippingContext._allClippedDrawRect.y = 0.0;
+      clippingContext._allClippedDrawRect.width = 0.0;
+      clippingContext._allClippedDrawRect.height = 0.0;
+      clippingContext._isUsing = false;
+    } else {
+      clippingContext._isUsing = true;
+      const w = clippedDrawTotalMaxX - clippedDrawTotalMinX;
+      const h = clippedDrawTotalMaxY - clippedDrawTotalMinY;
+      clippingContext._allClippedDrawRect.x = clippedDrawTotalMinX;
+      clippingContext._allClippedDrawRect.y = clippedDrawTotalMinY;
+      clippingContext._allClippedDrawRect.width = w;
+      clippingContext._allClippedDrawRect.height = h;
+    }
+  }
+
+  /**
+   * マスクを使う描画オブジェクトの全体の矩形を計算する。
+   *
+   * @param model モデルのインスタンス
+   * @param offscreenIndex オフスクリーンのインデックス
+   * @param childDrawableIndexList オフスクリーンの子Drawableのインデックスリスト
+   */
+  public getOffscreenChildDrawableIndexList(
+    model: CubismModel,
+    offscreenIndex: number,
+    childDrawableIndexList: csmVector<number>
+  ): void {
+    // 親オブジェクトを取得
+    const ownerIndex = model.getOffscreenOwnerIndices()[offscreenIndex];
+
+    // パーツのみ
+    this.getPartChildDrawableIndexList(
+      model,
+      ownerIndex,
+      childDrawableIndexList
+    );
+  }
+
+  /**
+   * パーツの子Drawableのインデックスリストを取得する。
+   *
+   * @param model モデルのインスタンス
+   * @param partIndex パーツのインデックス
+   * @param childDrawableIndexList パーツの子Drawableのインデックスリスト
+   */
+  public getPartChildDrawableIndexList(
+    model: CubismModel,
+    partIndex: number,
+    childDrawableIndexList: csmVector<number>
+  ): void {
+    const childDrawObjects = model
+      .getPartsHierarchy()
+      .at(partIndex).childDrawObjects;
+    for (let i = 0; i < childDrawObjects.drawableIndices.getSize(); ++i) {
+      childDrawableIndexList.pushBack(childDrawObjects.drawableIndices.at(i));
+    }
+
+    for (let i = 0; i < childDrawObjects.offscreenIndices.getSize(); ++i) {
+      this.getOffscreenChildDrawableIndexList(
+        model,
+        childDrawObjects.offscreenIndices.at(i),
+        childDrawableIndexList
+      );
     }
   }
 
@@ -565,7 +869,7 @@ export abstract class CubismClippingManager<
    * @param model モデルのインスタンス
    * @param clippingContext クリッピングマスクのコンテキスト
    */
-  public calcClippedDrawTotalBounds(
+  public calcClippedDrawableTotalBounds(
     model: CubismModel,
     clippingContext: T_ClippingContext
   ): void {
@@ -667,6 +971,10 @@ export abstract class CubismClippingManager<
     return this._clippingContextListForDraw;
   }
 
+  public getClippingContextListForOffscreen(): csmVector<T_ClippingContext> {
+    return this._clippingContextListForOffscreen;
+  }
+
   /**
    * クリッピングマスクバッファのサイズを取得する
    * @return クリッピングマスクバッファのサイズ
@@ -699,11 +1007,12 @@ export abstract class CubismClippingManager<
     this._clippingMaskBufferSize = size;
   }
 
-  protected _clearedFrameBufferFlags: csmVector<boolean>; //マスクのクリアフラグの配列
+  protected _clearedMaskBufferFlags: csmVector<boolean>; //マスクのクリアフラグの配列
 
   protected _channelColors: csmVector<CubismTextureColor>;
   protected _clippingContextListForMask: csmVector<T_ClippingContext>; // マスク用クリッピングコンテキストのリスト
   protected _clippingContextListForDraw: csmVector<T_ClippingContext>; // 描画用クリッピングコンテキストのリスト
+  protected _clippingContextListForOffscreen: csmVector<T_ClippingContext>; // オフスクリーン用クリッピングコンテキストのリスト
   protected _clippingMaskBufferSize: number; // クリッピングマスクのバッファサイズ（初期値:256）
   protected _renderTextureCount: number; // 生成するレンダーテクスチャの枚数
 

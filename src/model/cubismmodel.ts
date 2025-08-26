@@ -16,6 +16,54 @@ import { csmMap } from '../type/csmmap';
 import { csmVector } from '../type/csmvector';
 import { CSM_ASSERT, CubismLogWarning } from '../utils/cubismdebug';
 
+export const NoParentIndex = -1; // 親が取得できない場合の値を表す定数
+export const NoOffscreenIndex = -1; // オフスクリーンが取得できない場合の値を表す定数
+/**
+ * カラーブレンドのタイプ
+ */
+export enum CubismColorBlend {
+  ColorBlend_None = -1,
+  ColorBlend_Normal = Live2DCubismCore.ColorBlendType_Normal,
+  ColorBlend_AddGlow = Live2DCubismCore.ColorBlendType_AddGlow,
+  ColorBlend_Add = Live2DCubismCore.ColorBlendType_Add,
+  ColorBlend_Darken = Live2DCubismCore.ColorBlendType_Darken,
+  ColorBlend_Multiply = Live2DCubismCore.ColorBlendType_Multiply,
+  ColorBlend_ColorBurn = Live2DCubismCore.ColorBlendType_ColorBurn,
+  ColorBlend_LinearBurn = Live2DCubismCore.ColorBlendType_LinearBurn,
+  ColorBlend_Lighten = Live2DCubismCore.ColorBlendType_Lighten,
+  ColorBlend_Screen = Live2DCubismCore.ColorBlendType_Screen,
+  ColorBlend_ColorDodge = Live2DCubismCore.ColorBlendType_ColorDodge,
+  ColorBlend_Overlay = Live2DCubismCore.ColorBlendType_Overlay,
+  ColorBlend_SoftLight = Live2DCubismCore.ColorBlendType_SoftLight,
+  ColorBlend_HardLight = Live2DCubismCore.ColorBlendType_HardLight,
+  ColorBlend_LinearLight = Live2DCubismCore.ColorBlendType_LinearLight,
+  ColorBlend_Hue = Live2DCubismCore.ColorBlendType_Hue,
+  ColorBlend_Color = Live2DCubismCore.ColorBlendType_Color,
+  // Cubism 5.2以前
+  ColorBlend_AddCompatible = Live2DCubismCore.ColorBlendType_AddCompatible,
+  ColorBlend_MultiplyCompatible = Live2DCubismCore.ColorBlendType_MultiplyCompatible
+}
+
+/**
+ * アルファブレンドのタイプ
+ */
+export enum CubismAlphaBlend {
+  AlphaBlend_None = -1,
+  AlphaBlend_Over,
+  AlphaBlend_Atop,
+  AlphaBlend_Out,
+  AlphaBlend_ConjointOver,
+  AlphaBlend_DisjointOver
+}
+
+/**
+ * オブジェクトのタイプ
+ */
+export enum CubismModelObjectType {
+  CubismModelObjectType_Drawable = 0,
+  CubismModelObjectType_Parts = 1
+}
+
 /**
  * Structure for managing the override of parameter repetition settings
  */
@@ -46,7 +94,7 @@ export class ParameterRepeatData {
 }
 
 /**
- * SDK側から与えられたDrawableの乗算色・スクリーン色上書きフラグと
+ * (deprecated) SDK側から与えられたDrawableの乗算色・スクリーン色上書きフラグと
  * その色を保持する構造体
  */
 export class DrawableColorData {
@@ -65,8 +113,9 @@ export class DrawableColorData {
     return this.isOverridden;
   }
 }
+
 /**
- * @brief テクスチャの色をRGBAで扱うための構造体
+ * (deprecated) テクスチャの色をRGBAで扱うための構造体
  */
 export class PartColorData {
   constructor(
@@ -86,7 +135,24 @@ export class PartColorData {
 }
 
 /**
- * テクスチャのカリング設定を管理するための構造体
+ * SDK側から与えられた描画オブジェクトの乗算色・スクリーン色上書きフラグと
+ * その色を保持する構造体
+ */
+export class ColorData {
+  constructor(
+    isOverridden = false,
+    color: CubismTextureColor = new CubismTextureColor()
+  ) {
+    this.isOverridden = isOverridden;
+    this.color = color;
+  }
+
+  public isOverridden: boolean;
+  public color: CubismTextureColor;
+}
+
+/**
+ * (deprecated) テクスチャのカリング設定を管理するための構造体
  */
 export class DrawableCullingData {
   /**
@@ -109,6 +175,75 @@ export class DrawableCullingData {
 }
 
 /**
+ * テクスチャのカリング設定を管理するための構造体
+ */
+export class CullingData {
+  /**
+   * コンストラクタ
+   *
+   * @param isOverridden
+   * @param isCulling
+   */
+  public constructor(isOverridden = false, isCulling = false) {
+    this.isOverridden = isOverridden;
+    this.isCulling = isCulling;
+  }
+
+  public isOverridden: boolean;
+  public isCulling: boolean;
+}
+
+/**
+ * パーツ子描画オブジェクト情報構造体
+ */
+export class PartChildDrawObjects {
+  public drawableIndices: csmVector<number>;
+  public offscreenIndices: csmVector<number>;
+
+  constructor(
+    drawableIndices: csmVector<number> = new csmVector<number>(),
+    offscreenIndices: csmVector<number> = new csmVector<number>()
+  ) {
+    this.drawableIndices = drawableIndices;
+    this.offscreenIndices = offscreenIndices;
+  }
+}
+
+/**
+ * オブジェクト情報構造体
+ */
+export class CubismModelObjectInfo {
+  public objectType: CubismModelObjectType; // オブジェクトのタイプ (Drawable / Parts)
+  public objectIndex: number; // オブジェクトインデックス
+
+  constructor(objectIndex: number, objectType: CubismModelObjectType) {
+    this.objectIndex = objectIndex;
+    this.objectType = objectType;
+  }
+}
+
+/**
+ * パーツ情報管理構造体
+ */
+export class CubismModelPartInfo {
+  public objects: csmVector<CubismModelObjectInfo>;
+  public childDrawObjects: PartChildDrawObjects;
+
+  constructor(
+    objects: csmVector<CubismModelObjectInfo> = new csmVector<CubismModelObjectInfo>(),
+    childDrawObjects: PartChildDrawObjects = new PartChildDrawObjects()
+  ) {
+    this.objects = objects;
+    this.childDrawObjects = childDrawObjects;
+  }
+
+  // 子オブジェクト数を返す関数
+  public getChildObjectCount(): number {
+    return this.objects.getSize();
+  }
+}
+
+/**
  * モデル
  *
  * Mocデータから生成されるモデルのクラス。
@@ -126,7 +261,7 @@ export class CubismModel {
 
   /**
    * PixelsPerUnitを取得する
-   * @returns PixelsPerUnit
+   * @return PixelsPerUnit
    */
   public getPixelsPerUnit(): number {
     if (this._model == null) {
@@ -179,110 +314,126 @@ export class CubismModel {
   }
 
   /**
-   * 乗算色を取得する
-   * @param index Drawablesのインデックス
-   * @returns 指定したdrawableの乗算色(RGBA)
+   * Drawableの乗算色を取得する
+   *
+   * @param drawableIndex Drawableのインデックス
+   *
+   * @return 指定した描画オブジェクトの乗算色(RGBA)
    */
-  public getMultiplyColor(index: number): CubismTextureColor {
-    // Drawableとモデル全体の乗算色上書きフラグがどちらもtrueな場合、モデル全体の上書きフラグが優先される
+  public getMultiplyColor(drawableIndex: number): CubismTextureColor {
     if (
       this.getOverrideFlagForModelMultiplyColors() ||
-      this.getOverrideFlagForDrawableMultiplyColors(index)
+      this.getOverrideFlagForDrawableMultiplyColors(drawableIndex)
     ) {
-      return this._userMultiplyColors.at(index).color;
+      return this._userDrawableMultiplyColors.at(drawableIndex).color;
     }
-
-    const color = this.getDrawableMultiplyColor(index);
-    return color;
+    return this.getDrawableMultiplyColor(drawableIndex);
   }
 
   /**
-   * スクリーン色を取得する
-   * @param index Drawablesのインデックス
-   * @returns 指定したdrawableのスクリーン色(RGBA)
+   * Drawableのスクリーン色を取得する
+   *
+   * @param drawableIndex Drawableのインデックス
+   *
+   * @return 指定した描画オブジェクトのスクリーン色(RGBA)
    */
-  public getScreenColor(index: number): CubismTextureColor {
-    // Drawableとモデル全体のスクリーン色上書きフラグがどちらもtrueな場合、モデル全体の上書きフラグが優先される
+  public getScreenColor(drawableIndex: number): CubismTextureColor {
     if (
       this.getOverrideFlagForModelScreenColors() ||
-      this.getOverrideFlagForDrawableScreenColors(index)
+      this.getOverrideFlagForDrawableScreenColors(drawableIndex)
     ) {
-      return this._userScreenColors.at(index).color;
+      return this._userDrawableScreenColors.at(drawableIndex).color;
     }
-
-    const color = this.getDrawableScreenColor(index);
-    return color;
+    return this.getDrawableScreenColor(drawableIndex);
   }
 
   /**
-   * 乗算色をセットする
-   * @param index Drawablesのインデックス
+   * Drawableの乗算色をセットする
+   *
+   * @param drawableIndex Drawableのインデックス
    * @param color 設定する乗算色(CubismTextureColor)
    */
   public setMultiplyColorByTextureColor(
-    index: number,
+    drawableIndex: number,
     color: CubismTextureColor
   ) {
-    this.setMultiplyColorByRGBA(index, color.r, color.g, color.b, color.a);
+    this.setMultiplyColorByRGBA(
+      drawableIndex,
+      color.r,
+      color.g,
+      color.b,
+      color.a
+    );
   }
 
   /**
-   * 乗算色をセットする
-   * @param index Drawablesのインデックス
+   * Drawableの乗算色をセットする
+   *
+   * @param drawableIndex Drawableのインデックス
    * @param r 設定する乗算色のR値
    * @param g 設定する乗算色のG値
    * @param b 設定する乗算色のB値
    * @param a 設定する乗算色のA値
    */
   public setMultiplyColorByRGBA(
-    index: number,
+    drawableIndex: number,
     r: number,
     g: number,
     b: number,
     a = 1.0
   ) {
-    this._userMultiplyColors.at(index).color.r = r;
-    this._userMultiplyColors.at(index).color.g = g;
-    this._userMultiplyColors.at(index).color.b = b;
-    this._userMultiplyColors.at(index).color.a = a;
+    this._userDrawableMultiplyColors.at(drawableIndex).color.r = r;
+    this._userDrawableMultiplyColors.at(drawableIndex).color.g = g;
+    this._userDrawableMultiplyColors.at(drawableIndex).color.b = b;
+    this._userDrawableMultiplyColors.at(drawableIndex).color.a = a;
   }
 
   /**
-   * スクリーン色をセットする
-   * @param index Drawablesのインデックス
+   * Drawableのスクリーン色をセットする
+   *
+   * @param drawableIndex Drawableのインデックス
    * @param color 設定するスクリーン色(CubismTextureColor)
    */
   public setScreenColorByTextureColor(
-    index: number,
+    drawableIndex: number,
     color: CubismTextureColor
   ) {
-    this.setScreenColorByRGBA(index, color.r, color.g, color.b, color.a);
+    this.setScreenColorByRGBA(
+      drawableIndex,
+      color.r,
+      color.g,
+      color.b,
+      color.a
+    );
   }
 
   /**
-   * スクリーン色をセットする
-   * @param index Drawablesのインデックス
+   * Drawableのスクリーン色をセットする
+   *
+   * @param drawableIndex Drawableのインデックス
    * @param r 設定するスクリーン色のR値
    * @param g 設定するスクリーン色のG値
    * @param b 設定するスクリーン色のB値
    * @param a 設定するスクリーン色のA値
    */
   public setScreenColorByRGBA(
-    index: number,
+    drawableIndex: number,
     r: number,
     g: number,
     b: number,
     a = 1.0
   ) {
-    this._userScreenColors.at(index).color.r = r;
-    this._userScreenColors.at(index).color.g = g;
-    this._userScreenColors.at(index).color.b = b;
-    this._userScreenColors.at(index).color.a = a;
+    this._userDrawableScreenColors.at(drawableIndex).color.r = r;
+    this._userDrawableScreenColors.at(drawableIndex).color.g = g;
+    this._userDrawableScreenColors.at(drawableIndex).color.b = b;
+    this._userDrawableScreenColors.at(drawableIndex).color.a = a;
   }
+
   /**
    * partの乗算色を取得する
+   *
    * @param partIndex partのインデックス
-   * @returns 指定したpartの乗算色
+   * @return 指定したpartの乗算色
    */
   public getPartMultiplyColor(partIndex: number): CubismTextureColor {
     return this._userPartMultiplyColors.at(partIndex).color;
@@ -290,8 +441,9 @@ export class CubismModel {
 
   /**
    * partのスクリーン色を取得する
+   *
    * @param partIndex partのインデックス
-   * @returns 指定したpartのスクリーン色
+   * @return 指定したpartのスクリーン色
    */
   public getPartScreenColor(partIndex: number): CubismTextureColor {
     return this._userPartScreenColors.at(partIndex).color;
@@ -299,6 +451,7 @@ export class CubismModel {
 
   /**
    * partのOverrideColor setter関数
+   *
    * @param partIndex partのインデックス
    * @param r 設定する色のR値
    * @param g 設定する色のG値
@@ -313,8 +466,8 @@ export class CubismModel {
     g: number,
     b: number,
     a: number,
-    partColors: csmVector<PartColorData>,
-    drawableColors: csmVector<DrawableColorData>
+    partColors: csmVector<ColorData>,
+    drawableColors: csmVector<ColorData>
   ) {
     partColors.at(partIndex).color.r = r;
     partColors.at(partIndex).color.g = g;
@@ -338,6 +491,7 @@ export class CubismModel {
 
   /**
    * 乗算色をセットする
+   *
    * @param partIndex partのインデックス
    * @param color 設定する乗算色(CubismTextureColor)
    */
@@ -356,6 +510,7 @@ export class CubismModel {
 
   /**
    * 乗算色をセットする
+   *
    * @param partIndex partのインデックス
    * @param r 設定する乗算色のR値
    * @param g 設定する乗算色のG値
@@ -376,12 +531,13 @@ export class CubismModel {
       b,
       a,
       this._userPartMultiplyColors,
-      this._userMultiplyColors
+      this._userDrawableMultiplyColors
     );
   }
 
   /**
    * スクリーン色をセットする
+   *
    * @param partIndex partのインデックス
    * @param color 設定するスクリーン色(CubismTextureColor)
    */
@@ -400,6 +556,7 @@ export class CubismModel {
 
   /**
    * スクリーン色をセットする
+   *
    * @param partIndex partのインデックス
    * @param r 設定するスクリーン色のR値
    * @param g 設定するスクリーン色のG値
@@ -420,8 +577,124 @@ export class CubismModel {
       b,
       a,
       this._userPartScreenColors,
-      this._userScreenColors
+      this._userDrawableScreenColors
     );
+  }
+
+  /**
+   * Offscreenの乗算色を取得する
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   *
+   * @return 指定した描画オブジェクトの乗算色(RGBA)
+   */
+  public getMultiplyColorOffscreen(offscreenIndex: number): CubismTextureColor {
+    if (
+      this.getOverrideFlagForModelMultiplyColors() ||
+      this.getOverrideFlagForOffscreenMultiplyColors(offscreenIndex)
+    ) {
+      return this._userOffscreenMultiplyColors.at(offscreenIndex).color;
+    }
+    return this.getOffscreenMultiplyColor(offscreenIndex);
+  }
+
+  /**
+   * Offscreenのスクリーン色を取得する
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   *
+   * @return 指定した描画オブジェクトのスクリーン色(RGBA)
+   */
+  public getScreenColorOffscreen(offscreenIndex: number): CubismTextureColor {
+    if (
+      this.getOverrideFlagForModelScreenColors() ||
+      this.getOverrideFlagForOffscreenScreenColors(offscreenIndex)
+    ) {
+      return this._userOffscreenScreenColors.at(offscreenIndex).color;
+    }
+    return this.getOffscreenScreenColor(offscreenIndex);
+  }
+
+  /**
+   * Offscreenの乗算色をセットする
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @param color 設定する乗算色(CubismTextureColor)
+   */
+  public setMultiplyColorByTextureColorOffscreen(
+    offscreenIndex: number,
+    color: CubismTextureColor
+  ) {
+    this.setMultiplyColorByRGBAOffscreen(
+      offscreenIndex,
+      color.r,
+      color.g,
+      color.b,
+      color.a
+    );
+  }
+
+  /**
+   * Offscreenの乗算色をセットする
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @param r 設定する乗算色のR値
+   * @param g 設定する乗算色のG値
+   * @param b 設定する乗算色のB値
+   * @param a 設定する乗算色のA値
+   */
+  public setMultiplyColorByRGBAOffscreen(
+    offscreenIndex: number,
+    r: number,
+    g: number,
+    b: number,
+    a = 1.0
+  ) {
+    this._userOffscreenMultiplyColors.at(offscreenIndex).color.r = r;
+    this._userOffscreenMultiplyColors.at(offscreenIndex).color.g = g;
+    this._userOffscreenMultiplyColors.at(offscreenIndex).color.b = b;
+    this._userOffscreenMultiplyColors.at(offscreenIndex).color.a = a;
+  }
+
+  /**
+   * Offscreenのスクリーン色をセットする
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @param color 設定するスクリーン色(CubismTextureColor)
+   */
+  public setScreenColorByTextureColorOffscreen(
+    offscreenIndex: number,
+    color: CubismTextureColor
+  ) {
+    this.setScreenColorByRGBAOffscreen(
+      offscreenIndex,
+      color.r,
+      color.g,
+      color.b,
+      color.a
+    );
+  }
+
+  /**
+   * Offscreenのスクリーン色をセットする
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @param r 設定するスクリーン色のR値
+   * @param g 設定するスクリーン色のG値
+   * @param b 設定するスクリーン色のB値
+   * @param a 設定するスクリーン色のA値
+   */
+  public setScreenColorByRGBAOffscreen(
+    offscreenIndex: number,
+    r: number,
+    g: number,
+    b: number,
+    a = 1.0
+  ) {
+    this._userOffscreenScreenColors.at(offscreenIndex).color.r = r;
+    this._userOffscreenScreenColors.at(offscreenIndex).color.g = g;
+    this._userOffscreenScreenColors.at(offscreenIndex).color.b = b;
+    this._userOffscreenScreenColors.at(offscreenIndex).color.a = a;
   }
 
   /**
@@ -496,7 +769,7 @@ export class CubismModel {
    *
    * @deprecated 名称変更のため非推奨 getOverrideFlagForModelMultiplyColors() に置き換え
    *
-   * @returns true -> SDKからの情報を優先する
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverwriteFlagForModelMultiplyColors(): boolean {
@@ -508,7 +781,7 @@ export class CubismModel {
 
   /**
    * SDKから指定したモデルの乗算色を上書きするか
-   * @returns true -> SDKからの情報を優先する
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverrideFlagForModelMultiplyColors(): boolean {
@@ -520,7 +793,7 @@ export class CubismModel {
    *
    * @deprecated 名称変更のため非推奨 getOverrideFlagForModelScreenColors() に置き換え
    *
-   * @returns true -> SDKからの情報を優先する
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverwriteFlagForModelScreenColors(): boolean {
@@ -532,7 +805,7 @@ export class CubismModel {
 
   /**
    * SDKから指定したモデルのスクリーン色を上書きするか
-   * @returns true -> SDKからの情報を優先する
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverrideFlagForModelScreenColors(): boolean {
@@ -556,6 +829,7 @@ export class CubismModel {
 
   /**
    * SDKから指定したモデルの乗算色を上書きするかセットする
+   *
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
    */
@@ -590,117 +864,133 @@ export class CubismModel {
   /**
    * SDKから指定したDrawableIndexの乗算色を上書きするか
    *
-   * @deprecated 名称変更のため非推奨 getOverrideFlagForDrawableMultiplyColors(drawableindex: number) に置き換え
+   * @deprecated 名称変更のため非推奨 getOverrideFlagForDrawableMultiplyColors(drawableIndex: number) に置き換え
    *
-   * @returns true -> SDKからの情報を優先する
+   * @param drawableIndex drawableのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverwriteFlagForDrawableMultiplyColors(
-    drawableindex: number
+    drawableIndex: number
   ): boolean {
     CubismLogWarning(
-      'getOverwriteFlagForDrawableMultiplyColors(drawableindex: number) is a deprecated function. Please use getOverrideFlagForDrawableMultiplyColors(drawableindex: number).'
+      'getOverwriteFlagForDrawableMultiplyColors(drawableIndex: number) is a deprecated function. Please use getOverrideFlagForDrawableMultiplyColors(drawableIndex: number).'
     );
-    return this.getOverrideFlagForDrawableMultiplyColors(drawableindex);
+    return this.getOverrideFlagForDrawableMultiplyColors(drawableIndex);
   }
 
   /**
    * SDKから指定したDrawableIndexの乗算色を上書きするか
-   * @returns true -> SDKからの情報を優先する
+   *
+   * @param drawableIndex drawableのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverrideFlagForDrawableMultiplyColors(
-    drawableindex: number
+    drawableIndex: number
   ): boolean {
-    return this._userMultiplyColors.at(drawableindex).isOverridden;
+    return this._userDrawableMultiplyColors.at(drawableIndex).isOverridden;
   }
 
   /**
    * SDKから指定したDrawableIndexのスクリーン色を上書きするか
    *
-   * @deprecated 名称変更のため非推奨 getOverrideFlagForDrawableScreenColors(drawableindex: number) に置き換え
+   * @deprecated 名称変更のため非推奨 getOverrideFlagForDrawableScreenColors(drawableIndex: number) に置き換え
    *
-   * @returns true -> SDKからの情報を優先する
+   * @param drawableIndex drawableのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverwriteFlagForDrawableScreenColors(
-    drawableindex: number
+    drawableIndex: number
   ): boolean {
     CubismLogWarning(
-      'getOverwriteFlagForDrawableScreenColors(drawableindex: number) is a deprecated function. Please use getOverrideFlagForDrawableScreenColors(drawableindex: number).'
+      'getOverwriteFlagForDrawableScreenColors(drawableIndex: number) is a deprecated function. Please use getOverrideFlagForDrawableScreenColors(drawableIndex: number).'
     );
-    return this.getOverrideFlagForDrawableScreenColors(drawableindex);
+    return this.getOverrideFlagForDrawableScreenColors(drawableIndex);
   }
 
   /**
    * SDKから指定したDrawableIndexのスクリーン色を上書きするか
-   * @returns true -> SDKからの情報を優先する
+   *
+   * @param drawableIndex drawableのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
    *          false -> モデルに設定されている色情報を使用
    */
   public getOverrideFlagForDrawableScreenColors(
-    drawableindex: number
+    drawableIndex: number
   ): boolean {
-    return this._userScreenColors.at(drawableindex).isOverridden;
+    return this._userDrawableScreenColors.at(drawableIndex).isOverridden;
   }
 
   /**
    * SDKから指定したDrawableIndexの乗算色を上書きするかセットする
    *
-   * @deprecated 名称変更のため非推奨 setOverrideFlagForDrawableMultiplyColors(drawableindex: number, value: boolean) に置き換え
+   * @deprecated 名称変更のため非推奨 setOverrideFlagForDrawableMultiplyColors(drawableIndex: number, value: boolean) に置き換え
    *
+   * @param drawableIndex drawableのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
    */
   public setOverwriteFlagForDrawableMultiplyColors(
-    drawableindex: number,
+    drawableIndex: number,
     value: boolean
   ) {
     CubismLogWarning(
-      'setOverwriteFlagForDrawableMultiplyColors(drawableindex: number, value: boolean) is a deprecated function. Please use setOverrideFlagForDrawableMultiplyColors(drawableindex: number, value: boolean).'
+      'setOverwriteFlagForDrawableMultiplyColors(drawableIndex: number, value: boolean) is a deprecated function. Please use setOverrideFlagForDrawableMultiplyColors(drawableIndex: number, value: boolean).'
     );
-    this.setOverrideFlagForDrawableMultiplyColors(drawableindex, value);
+    this.setOverrideFlagForDrawableMultiplyColors(drawableIndex, value);
   }
 
   /**
    * SDKから指定したDrawableIndexの乗算色を上書きするかセットする
+   *
+   * @param drawableIndex drawableのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
    */
   public setOverrideFlagForDrawableMultiplyColors(
-    drawableindex: number,
+    drawableIndex: number,
     value: boolean
   ) {
-    this._userMultiplyColors.at(drawableindex).isOverridden = value;
+    this._userDrawableMultiplyColors.at(drawableIndex).isOverridden = value;
   }
 
   /**
    * SDKから指定したDrawableIndexのスクリーン色を上書きするかセットする
    *
-   * @deprecated 名称変更のため非推奨 setOverrideFlagForDrawableScreenColors(drawableindex: number, value: boolean) に置き換え
+   * @deprecated 名称変更のため非推奨 setOverrideFlagForDrawableScreenColors(drawableIndex: number, value: boolean) に置き換え
    *
+   * @param drawableIndex drawableのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
    */
   public setOverwriteFlagForDrawableScreenColors(
-    drawableindex: number,
+    drawableIndex: number,
     value: boolean
   ) {
     CubismLogWarning(
-      'setOverwriteFlagForDrawableScreenColors(drawableindex: number, value: boolean) is a deprecated function. Please use setOverrideFlagForDrawableScreenColors(drawableindex: number, value: boolean).'
+      'setOverwriteFlagForDrawableScreenColors(drawableIndex: number, value: boolean) is a deprecated function. Please use setOverrideFlagForDrawableScreenColors(drawableIndex: number, value: boolean).'
     );
-    this.setOverrideFlagForDrawableScreenColors(drawableindex, value);
+    this.setOverrideFlagForDrawableScreenColors(drawableIndex, value);
   }
 
   /**
    * SDKから指定したDrawableIndexのスクリーン色を上書きするかセットする
+   *
+   * @param drawableIndex drawableのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
    */
   public setOverrideFlagForDrawableScreenColors(
-    drawableindex: number,
+    drawableIndex: number,
     value: boolean
   ) {
-    this._userScreenColors.at(drawableindex).isOverridden = value;
+    this._userDrawableScreenColors.at(drawableIndex).isOverridden = value;
   }
 
   /**
@@ -709,7 +999,8 @@ export class CubismModel {
    * @deprecated 名称変更のため非推奨 getOverrideColorForPartMultiplyColors(partIndex: number) に置き換え
    *
    * @param partIndex partのインデックス
-   * @returns true    ->  SDKからの情報を優先する
+   *
+   * @return true    ->  SDKからの情報を優先する
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverwriteColorForPartMultiplyColors(partIndex: number) {
@@ -721,8 +1012,10 @@ export class CubismModel {
 
   /**
    * SDKからpartの乗算色を上書きするか
+   *
    * @param partIndex partのインデックス
-   * @returns true    ->  SDKからの情報を優先する
+   *
+   * @return true    ->  SDKからの情報を優先する
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverrideColorForPartMultiplyColors(partIndex: number) {
@@ -735,7 +1028,8 @@ export class CubismModel {
    * @deprecated 名称変更のため非推奨 getOverrideColorForPartScreenColors(partIndex: number) に置き換え
    *
    * @param partIndex partのインデックス
-   * @returns true    ->  SDKからの情報を優先する
+   *
+   * @return true    ->  SDKからの情報を優先する
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverwriteColorForPartScreenColors(partIndex: number) {
@@ -747,8 +1041,10 @@ export class CubismModel {
 
   /**
    * SDKからpartのスクリーン色を上書きするか
+   *
    * @param partIndex partのインデックス
-   * @returns true    ->  SDKからの情報を優先する
+   *
+   * @return true    ->  SDKからの情報を優先する
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverrideColorForPartScreenColors(partIndex: number) {
@@ -789,6 +1085,7 @@ export class CubismModel {
 
   /**
    * partのOverrideFlag setter関数
+   *
    * @param partIndex partのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
@@ -798,8 +1095,8 @@ export class CubismModel {
   public setOverrideColorForPartColors(
     partIndex: number,
     value: boolean,
-    partColors: csmVector<PartColorData>,
-    drawableColors: csmVector<DrawableColorData>
+    partColors: csmVector<ColorData>,
+    drawableColors: csmVector<ColorData>
   ) {
     partColors.at(partIndex).isOverridden = value;
 
@@ -841,6 +1138,7 @@ export class CubismModel {
 
   /**
    * SDKからpartのスクリーン色を上書きするかをセットする
+   *
    * @param partIndex partのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
@@ -854,7 +1152,7 @@ export class CubismModel {
       partIndex,
       value,
       this._userPartMultiplyColors,
-      this._userMultiplyColors
+      this._userDrawableMultiplyColors
     );
   }
 
@@ -879,6 +1177,7 @@ export class CubismModel {
 
   /**
    * SDKからpartのスクリーン色を上書きするかをセットする
+   *
    * @param partIndex partのインデックス
    * @param value true -> SDKからの情報を優先する
    *              false -> モデルに設定されている色情報を使用
@@ -892,14 +1191,71 @@ export class CubismModel {
       partIndex,
       value,
       this._userPartScreenColors,
-      this._userScreenColors
+      this._userDrawableScreenColors
     );
+  }
+
+  /**
+   * SDKから指定したOffscreenIndexの乗算色を上書きするか
+   *
+   * @param offscreenIndex offscreenのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverrideFlagForOffscreenMultiplyColors(
+    offscreenIndex: number
+  ): boolean {
+    return this._userOffscreenMultiplyColors.at(offscreenIndex).isOverridden;
+  }
+
+  /**
+   * SDKから指定したOffscreenIndexのスクリーン色を上書きするか
+   *
+   * @param offscreenIndex offscreenのインデックス
+   *
+   * @return true -> SDKからの情報を優先する
+   *          false -> モデルに設定されている色情報を使用
+   */
+  public getOverrideFlagForOffscreenScreenColors(
+    offscreemIndex: number
+  ): boolean {
+    return this._userOffscreenScreenColors.at(offscreemIndex).isOverridden;
+  }
+
+  /**
+   * SDKから指定したDrawableIndexの乗算色を上書きするかセットする
+   *
+   * @param offscreenIndex offscreenのインデックス
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverrideFlagForOffscreenMultiplyColors(
+    offscreenIndex: number,
+    value: boolean
+  ) {
+    this._userOffscreenMultiplyColors.at(offscreenIndex).isOverridden = value;
+  }
+
+  /**
+   * SDKから指定したOffscreenIndexのスクリーン色を上書きするかセットする
+   *
+   * @param offscreenIndex offscreenのインデックス
+   * @param value true -> SDKからの情報を優先する
+   *              false -> モデルに設定されている色情報を使用
+   */
+  public setOverrideFlagForOffscreenScreenColors(
+    offscreenIndex: number,
+    value: boolean
+  ) {
+    this._userOffscreenScreenColors.at(offscreenIndex).isOverridden = value;
   }
 
   /**
    * Drawableのカリング情報を取得する。
    *
    * @param   drawableIndex   Drawableのインデックス
+   *
    * @return  Drawableのカリング情報
    */
   public getDrawableCulling(drawableIndex: number): boolean {
@@ -907,7 +1263,7 @@ export class CubismModel {
       this.getOverrideFlagForModelCullings() ||
       this.getOverrideFlagForDrawableCullings(drawableIndex)
     ) {
-      return this._userCullings.at(drawableIndex).isCulling;
+      return this._userDrawableCullings.at(drawableIndex).isCulling;
     }
 
     const constantFlags = this._model.drawables.constantFlags;
@@ -923,7 +1279,38 @@ export class CubismModel {
    * @param isCulling カリング情報
    */
   public setDrawableCulling(drawableIndex: number, isCulling: boolean): void {
-    this._userCullings.at(drawableIndex).isCulling = isCulling;
+    this._userDrawableCullings.at(drawableIndex).isCulling = isCulling;
+  }
+
+  /**
+   * Offscreenのカリング情報を取得する。
+   *
+   * @param   offscreenIndex   Offscreenのインデックス
+   *
+   * @return  Offscreenのカリング情報
+   */
+  public getOffscreenCulling(offscreenIndex: number): boolean {
+    if (
+      this.getOverrideFlagForModelCullings() ||
+      this.getOverrideFlagForOffscreenCullings(offscreenIndex)
+    ) {
+      return this._userOffscreenCullings.at(offscreenIndex).isCulling;
+    }
+
+    const constantFlags = this._model.offscreens.constantFlags;
+    return !Live2DCubismCore.Utils.hasIsDoubleSidedBit(
+      constantFlags[offscreenIndex]
+    );
+  }
+
+  /**
+   * Offscreenのカリング設定を設定する。
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @param isCulling カリング情報
+   */
+  public setOffscreenCulling(offscreenIndex: number, isCulling: boolean): void {
+    this._userOffscreenCullings.at(offscreenIndex).isCulling = isCulling;
   }
 
   /**
@@ -931,8 +1318,8 @@ export class CubismModel {
    *
    * @deprecated 名称変更のため非推奨 getOverrideFlagForModelCullings() に置き換え
    *
-   * @retval  true    ->  SDK上のカリング設定を使用
-   * @retval  false   ->  モデルのカリング設定を使用
+   * @return  true    ->  SDK上のカリング設定を使用
+   *          false   ->  モデルのカリング設定を使用
    */
   public getOverwriteFlagForModelCullings(): boolean {
     CubismLogWarning(
@@ -944,8 +1331,8 @@ export class CubismModel {
   /**
    * SDKからモデル全体のカリング設定を上書きするか。
    *
-   * @retval  true    ->  SDK上のカリング設定を使用
-   * @retval  false   ->  モデルのカリング設定を使用
+   * @return  true    ->  SDK上のカリング設定を使用
+   *          false   ->  モデルのカリング設定を使用
    */
   public getOverrideFlagForModelCullings(): boolean {
     return this._isOverriddenCullings;
@@ -979,8 +1366,8 @@ export class CubismModel {
    * @deprecated 名称変更のため非推奨 getOverrideFlagForDrawableCullings(drawableIndex: number) に置き換え
    *
    * @param drawableIndex Drawableのインデックス
-   * @retval  true    ->  SDK上のカリング設定を使用
-   * @retval  false   ->  モデルのカリング設定を使用
+   * @return  true    ->  SDK上のカリング設定を使用
+   *          false   ->  モデルのカリング設定を使用
    */
   public getOverwriteFlagForDrawableCullings(drawableIndex: number): boolean {
     CubismLogWarning(
@@ -992,11 +1379,20 @@ export class CubismModel {
   /**
    *
    * @param drawableIndex Drawableのインデックス
-   * @retval  true    ->  SDK上のカリング設定を使用
-   * @retval  false   ->  モデルのカリング設定を使用
+   * @return  true    ->  SDK上のカリング設定を使用
+   *          false   ->  モデルのカリング設定を使用
    */
   public getOverrideFlagForDrawableCullings(drawableIndex: number): boolean {
-    return this._userCullings.at(drawableIndex).isOverridden;
+    return this._userDrawableCullings.at(drawableIndex).isOverridden;
+  }
+
+  /**
+   * @param offscreenIndex Offscreenのインデックス
+   * @return  true    ->  SDK上のカリング設定を使用
+   *          false   ->  モデルのカリング設定を使用
+   */
+  public getOverrideFlagForOffscreenCullings(offscreenIndex: number): boolean {
+    return this._userOffscreenCullings.at(offscreenIndex).isOverridden;
   }
 
   /**
@@ -1028,13 +1424,14 @@ export class CubismModel {
     drawableIndex: number,
     isOverriddenCullings: boolean
   ): void {
-    this._userCullings.at(drawableIndex).isOverridden = isOverriddenCullings;
+    this._userDrawableCullings.at(drawableIndex).isOverridden =
+      isOverriddenCullings;
   }
 
   /**
    * モデルの不透明度を取得する
    *
-   * @returns 不透明度の値
+   * @return 不透明度の値
    */
   public getModelOapcity(): number {
     return this._modelOpacity;
@@ -1107,7 +1504,7 @@ export class CubismModel {
   /**
    * パーツの親パーツインデックスのリストを取得
    *
-   * @returns パーツの親パーツインデックスのリスト
+   * @return パーツの親パーツインデックスのリスト
    */
   public getPartParentPartIndices(): Int32Array {
     const parentIndices = this._model.parts.parentIndices;
@@ -1263,7 +1660,7 @@ export class CubismModel {
    * 指定したパラメータindexのIDを取得
    *
    * @param parameterIndex パラメータのインデックス
-   * @returns パラメータID
+   * @return パラメータID
    */
   public getParameterId(parameterIndex: number): CubismIdHandle {
     return CubismFramework.getIdManager().getId(
@@ -1588,8 +1985,8 @@ export class CubismModel {
    * Drawableの描画順リストの取得
    * @return Drawableの描画順リスト
    */
-  public getDrawableRenderOrders(): Int32Array {
-    const renderOrders: Int32Array = this._model.drawables.renderOrders;
+  public getRenderOrders(): Int32Array {
+    const renderOrders: Int32Array = this._model.getRenderOrders();
     return renderOrders;
   }
 
@@ -1621,8 +2018,8 @@ export class CubismModel {
    * 直近のCubismModel.update関数でDrawableの頂点情報が変化したかを取得する。
    *
    * @param   drawableIndex   Drawableのインデックス
-   * @retval  true    Drawableの頂点情報が直近のCubismModel.update関数で変化した
-   * @retval  false   Drawableの頂点情報が直近のCubismModel.update関数で変化していない
+   * @return  true    Drawableの頂点情報が直近のCubismModel.update関数で変化した
+   *          false   Drawableの頂点情報が直近のCubismModel.update関数で変化していない
    */
   public getDrawableDynamicFlagVertexPositionsDidChange(
     drawableIndex: number
@@ -1709,14 +2106,20 @@ export class CubismModel {
    * スクリーン色はRGBAで取得されるが、Aは必ず0
    */
   public getDrawableMultiplyColor(drawableIndex: number): CubismTextureColor {
+    if (this._drawableMultiplyColors == null) {
+      this._drawableMultiplyColors = new Array<CubismTextureColor>(
+        this._model.drawables.count
+      );
+      this._drawableMultiplyColors.fill(new CubismTextureColor());
+    }
     const multiplyColors: Float32Array = this._model.drawables.multiplyColors;
+
     const index = drawableIndex * 4;
-    const multiplyColor: CubismTextureColor = new CubismTextureColor();
-    multiplyColor.r = multiplyColors[index];
-    multiplyColor.g = multiplyColors[index + 1];
-    multiplyColor.b = multiplyColors[index + 2];
-    multiplyColor.a = multiplyColors[index + 3];
-    return multiplyColor;
+    this._drawableMultiplyColors[drawableIndex].r = multiplyColors[index];
+    this._drawableMultiplyColors[drawableIndex].g = multiplyColors[index + 1];
+    this._drawableMultiplyColors[drawableIndex].b = multiplyColors[index + 2];
+    this._drawableMultiplyColors[drawableIndex].a = multiplyColors[index + 3];
+    return this._drawableMultiplyColors[drawableIndex];
   }
 
   /**
@@ -1726,14 +2129,66 @@ export class CubismModel {
    * スクリーン色はRGBAで取得されるが、Aは必ず0
    */
   public getDrawableScreenColor(drawableIndex: number): CubismTextureColor {
+    if (this._drawableScreenColors == null) {
+      this._drawableScreenColors = new Array<CubismTextureColor>(
+        this._model.drawables.count
+      );
+      this._drawableScreenColors.fill(new CubismTextureColor());
+    }
     const screenColors: Float32Array = this._model.drawables.screenColors;
+
     const index = drawableIndex * 4;
-    const screenColor: CubismTextureColor = new CubismTextureColor();
-    screenColor.r = screenColors[index];
-    screenColor.g = screenColors[index + 1];
-    screenColor.b = screenColors[index + 2];
-    screenColor.a = screenColors[index + 3];
-    return screenColor;
+    this._drawableScreenColors[drawableIndex].r = screenColors[index];
+    this._drawableScreenColors[drawableIndex].g = screenColors[index + 1];
+    this._drawableScreenColors[drawableIndex].b = screenColors[index + 2];
+    this._drawableScreenColors[drawableIndex].a = screenColors[index + 3];
+    return this._drawableScreenColors[drawableIndex];
+  }
+
+  /**
+   * Offscreenの乗算色の取得
+   * @param offscreenIndex Offscreenのインデックス
+   * @return Offscreenの乗算色(RGBA)
+   * スクリーン色はRGBAで取得されるが、Aは必ず0
+   */
+  public getOffscreenMultiplyColor(offscreenIndex: number): CubismTextureColor {
+    if (this._offscreenMultiplyColors == null) {
+      this._offscreenMultiplyColors = new Array<CubismTextureColor>(
+        this._model.offscreens.count
+      );
+      this._offscreenMultiplyColors.fill(new CubismTextureColor());
+    }
+    const multiplyColors: Float32Array = this._model.offscreens.multiplyColors;
+
+    const index = offscreenIndex * 4;
+    this._offscreenMultiplyColors[offscreenIndex].r = multiplyColors[index];
+    this._offscreenMultiplyColors[offscreenIndex].g = multiplyColors[index + 1];
+    this._offscreenMultiplyColors[offscreenIndex].b = multiplyColors[index + 2];
+    this._offscreenMultiplyColors[offscreenIndex].a = multiplyColors[index + 3];
+    return this._offscreenMultiplyColors[offscreenIndex];
+  }
+
+  /**
+   * Offscreenのスクリーン色の取得
+   * @param offscreenIndex Offscreenのインデックス
+   * @return Offscreenのスクリーン色(RGBA)
+   * スクリーン色はRGBAで取得されるが、Aは必ず0
+   */
+  public getOffscreenScreenColor(offscreenIndex: number): CubismTextureColor {
+    if (this._offscreenScreenColors == null) {
+      this._offscreenScreenColors = new Array<CubismTextureColor>(
+        this._model.offscreens.count
+      );
+      this._offscreenScreenColors.fill(new CubismTextureColor());
+    }
+    const screenColors: Float32Array = this._model.offscreens.screenColors;
+
+    const index = offscreenIndex * 4;
+    this._offscreenScreenColors[offscreenIndex].r = screenColors[index];
+    this._offscreenScreenColors[offscreenIndex].g = screenColors[index + 1];
+    this._offscreenScreenColors[offscreenIndex].b = screenColors[index + 2];
+    this._offscreenScreenColors[offscreenIndex].a = screenColors[index + 3];
+    return this._offscreenScreenColors[offscreenIndex];
   }
 
   /**
@@ -1762,6 +2217,42 @@ export class CubismModel {
           )
         ? CubismBlendMode.CubismBlendMode_Multiplicative
         : CubismBlendMode.CubismBlendMode_Normal;
+  }
+
+  /**
+   * Drawableのカラーブレンドの取得(Cubism 5.3 以降)
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @return Drawableのカラーブレンド
+   */
+  public getDrawableColorBlend(drawableIndex: number): CubismColorBlend {
+    // キャッシュ
+    if (
+      this._drawableColorBlends[drawableIndex] ==
+      CubismColorBlend.ColorBlend_None
+    ) {
+      this._drawableColorBlends[drawableIndex] =
+        this._model.drawables.blendModes[drawableIndex] & 0xff;
+    }
+    return this._drawableColorBlends[drawableIndex];
+  }
+
+  /**
+   * Drawableのアルファブレンドの取得(Cubism 5.3 以降)
+   *
+   * @param drawableIndex Drawableのインデックス
+   * @return Drawableのアルファブレンド
+   */
+  public getDrawableAlphaBlend(drawableIndex: number): CubismAlphaBlend {
+    // キャッシュ
+    if (
+      this._drawableAlphaBlends[drawableIndex] ==
+      CubismAlphaBlend.AlphaBlend_None
+    ) {
+      this._drawableAlphaBlends[drawableIndex] =
+        (this._model.drawables.blendModes[drawableIndex] >> 8) & 0xff;
+    }
+    return this._drawableAlphaBlends[drawableIndex];
   }
 
   /**
@@ -1808,6 +2299,21 @@ export class CubismModel {
   public isUsingMasking(): boolean {
     for (let d = 0; d < this._model.drawables.count; ++d) {
       if (this._model.drawables.maskCounts[d] <= 0) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Offscreenでクリッピングマスクを使用しているかどうかを取得
+   *
+   * @return true クリッピングマスクをオフスクリーンで使用している
+   */
+  public isUsingMaskingForOffscreen(): boolean {
+    for (let d = 0; d < this.getOffscreenCount(); ++d) {
+      if (this._model.offscreens.maskCounts[d] <= 0) {
         continue;
       }
       return true;
@@ -1900,6 +2406,108 @@ export class CubismModel {
   }
 
   /**
+   * オフスクリーンの個数を取得する
+   * @return オフスクリーンの個数
+   */
+  public getOffscreenCount(): number {
+    return this._model.offscreens.count;
+  }
+
+  /**
+   * Offscreenのカラーブレンドの取得(Cubism 5.3 以降)
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @return Offscreenのカラーブレンド
+   */
+  public getOffscreenColorBlend(offscreenIndex: number): CubismColorBlend {
+    // キャッシュ
+    if (
+      this._offscreenColorBlends[offscreenIndex] ==
+      CubismColorBlend.ColorBlend_None
+    ) {
+      this._offscreenColorBlends[offscreenIndex] =
+        this._model.offscreens.blendModes[offscreenIndex] & 0xff;
+    }
+    return this._offscreenColorBlends[offscreenIndex];
+  }
+
+  /**
+   * Offscreenのアルファブレンドの取得(Cubism 5.3 以降)
+   *
+   * @param offscreenIndex Offscreenのインデックス
+   * @return Offscreenのアルファブレンド
+   */
+  public getOffscreenAlphaBlend(offscreenIndex: number): CubismAlphaBlend {
+    // キャッシュ
+    if (
+      this._offscreenAlphaBlends[offscreenIndex] ==
+      CubismAlphaBlend.AlphaBlend_None
+    ) {
+      this._offscreenAlphaBlends[offscreenIndex] =
+        (this._model.offscreens.blendModes[offscreenIndex] >> 8) & 0xff;
+    }
+    return this._offscreenAlphaBlends[offscreenIndex];
+  }
+
+  /**
+   * オフスクリーンのオーナーインデックス配列を取得する
+   * @return オフスクリーンのオーナーインデックス配列
+   */
+  public getOffscreenOwnerIndices(): Int32Array {
+    return this._model.offscreens.ownerIndices;
+  }
+
+  /**
+   * オフスクリーンの不透明度を取得
+   * @param offscreenIndex オフスクリーンのインデックス
+   * @return 不透明度
+   */
+  public getOffscreenOpacity(offscreenIndex: number): number {
+    if (offscreenIndex < 0 || offscreenIndex >= this._model.offscreens.count) {
+      return 1.0; // オフスクリーンが無いのでスキップ
+    }
+
+    return this._model.offscreens.opacities[offscreenIndex];
+  }
+
+  /**
+   * オフスクリーンのクリッピングマスクリストの取得
+   * @return オフスクリーンのクリッピングマスクリスト
+   */
+  public getOffscreenMasks(): Int32Array[] {
+    return this._model.offscreens.masks;
+  }
+
+  /**
+   * オフスクリーンのクリッピングマスクの個数リストの取得
+   * @return オフスクリーンのクリッピングマスクの個数リスト
+   */
+  public getOffscreenMaskCounts(): Int32Array {
+    return this._model.offscreens.maskCounts;
+  }
+
+  /**
+   * オフスクリーンのマスク反転設定を取得する
+   * @param offscreenIndex オフスクリーンのインデックス
+   * @return オフスクリーンのマスク反転設定
+   */
+  public getOffscreenInvertedMask(offscreenIndex: number): boolean {
+    const constantFlags: Uint8Array = this._model.offscreens.constantFlags;
+    // Live2DCubismCore.Utils.hasIsInvertedMaskBit を利用
+    return Live2DCubismCore.Utils.hasIsInvertedMaskBit(
+      constantFlags[offscreenIndex]
+    );
+  }
+
+  /**
+   * ブレンドモード使用判定
+   * @return ブレンドモードを使用しているか
+   */
+  public isBlendModeEnabled(): boolean {
+    return this._isBlendModeEnabled;
+  }
+
+  /**
    * 保存されたパラメータの読み込み
    */
   public loadParameters(): void {
@@ -1923,6 +2531,8 @@ export class CubismModel {
 
     this._parameterValues = this._model.parameters.values;
     this._partOpacities = this._model.parts.opacities;
+    this._offscreenOpacities = this._model.offscreens.opacities;
+
     this._parameterMaximumValues = this._model.parameters.maximumValues;
     this._parameterMinimumValues = this._model.parameters.minimumValues;
 
@@ -1963,15 +2573,12 @@ export class CubismModel {
       const drawableIds: string[] = this._model.drawables.ids;
       const drawableCount: number = this._model.drawables.count;
 
-      this._userMultiplyColors.prepareCapacity(drawableCount);
-      this._userScreenColors.prepareCapacity(drawableCount);
+      this._userDrawableMultiplyColors.prepareCapacity(drawableCount);
+      this._userDrawableScreenColors.prepareCapacity(drawableCount);
 
       // カリング設定
-      this._userCullings.prepareCapacity(drawableCount);
-      const userCulling: DrawableCullingData = new DrawableCullingData(
-        false,
-        false
-      );
+      this._userDrawableCullings.prepareCapacity(drawableCount);
+      const userCulling: CullingData = new CullingData(false, false);
 
       // Part
       {
@@ -2021,23 +2628,20 @@ export class CubismModel {
             1.0
           );
 
-          const userMultiplyColor: DrawableColorData = new DrawableColorData(
+          const userMultiplyColor: ColorData = new ColorData(
             false,
             multiplyColor
           );
-          const userScreenColor: DrawableColorData = new DrawableColorData(
-            false,
-            screenColor
-          );
+          const userScreenColor: ColorData = new ColorData(false, screenColor);
 
           this._drawableIds.pushBack(
             CubismFramework.getIdManager().getId(drawableIds[i])
           );
 
-          this._userMultiplyColors.pushBack(userMultiplyColor);
-          this._userScreenColors.pushBack(userScreenColor);
+          this._userDrawableMultiplyColors.pushBack(userMultiplyColor);
+          this._userDrawableScreenColors.pushBack(userScreenColor);
 
-          this._userCullings.pushBack(userCulling);
+          this._userDrawableCullings.pushBack(userCulling);
 
           const parentIndex = this.getDrawableParentPartIndex(i);
           if (parentIndex >= 0) {
@@ -2045,7 +2649,237 @@ export class CubismModel {
           }
         }
       }
+
+      // blendMode
+      // オフスクリーンが存在するか、DrawableのブレンドモードでColorBlend、AlphaBlendを使用するのであればブレンドモードを有効にする。
+      if (this.getOffscreenCount() > 0) {
+        this._isBlendModeEnabled = true;
+      } else {
+        const blendModes = this._model.drawables.blendModes;
+        for (let i = 0; i < drawableCount; ++i) {
+          const colorBlendType = this.getDrawableColorBlend(i);
+          const alphaBlendType = this.getDrawableAlphaBlend(i);
+
+          // NormalOver、AddCompatible、MultiplyCompatible以外であればブレンドモードを有効にする。
+          if (
+            !(
+              colorBlendType == CubismColorBlend.ColorBlend_Normal &&
+              alphaBlendType == CubismAlphaBlend.AlphaBlend_Over
+            ) &&
+            colorBlendType != CubismColorBlend.ColorBlend_AddCompatible &&
+            colorBlendType != CubismColorBlend.ColorBlend_MultiplyCompatible
+          ) {
+            this._isBlendModeEnabled = true;
+            break;
+          }
+        }
+      }
+
+      // Offscreen
+      {
+        // オフスクリーンの初期化
+        const offscreenCount: number = this._model.offscreens.count;
+
+        this._userOffscreenMultiplyColors = new csmVector<ColorData>();
+        this._userOffscreenScreenColors = new csmVector<ColorData>();
+        this._userOffscreenCullings = new csmVector<CullingData>();
+
+        // 乗算色・スクリーン色・カリング・オフスクリーン情報の配列を用意
+        this._userOffscreenMultiplyColors.prepareCapacity(offscreenCount);
+        this._userOffscreenScreenColors.prepareCapacity(offscreenCount);
+        this._userOffscreenCullings.prepareCapacity(offscreenCount);
+
+        for (let i = 0; i < offscreenCount; ++i) {
+          const multiplyColor: CubismTextureColor = new CubismTextureColor(
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          );
+          const screenColor: CubismTextureColor = new CubismTextureColor(
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          );
+
+          // 乗算色
+          const userMultiplyColor: ColorData = new ColorData(
+            false,
+            multiplyColor
+          );
+          // スクリーン色
+          const userScreenColor: ColorData = new ColorData(false, screenColor);
+
+          this._userOffscreenMultiplyColors.pushBack(userMultiplyColor);
+          this._userOffscreenScreenColors.pushBack(userScreenColor);
+          this._userOffscreenCullings.pushBack(userCulling);
+        }
+      }
+      this.setupPartsHierarchy();
     }
+  }
+
+  /**
+   * パーツ階層構造を取得する
+   * @return パーツ階層構造の配列
+   */
+  public getPartsHierarchy(): csmVector<CubismModelPartInfo> {
+    return this._partsHierarchy;
+  }
+
+  /**
+   * パーツ階層構造をセットアップする
+   */
+  public setupPartsHierarchy(): void {
+    this._partsHierarchy.clear();
+
+    // すべてのパーツのパーツ情報管理構造体を作成
+    const partCount = this.getPartCount();
+    for (let i = 0; i < partCount; ++i) {
+      const partInfo = new CubismModelPartInfo();
+      this._partsHierarchy.pushBack(partInfo);
+    }
+
+    // Partごとに親パーツを取得し、親パーツの子objectリストに追加する
+    for (let i = 0; i < partCount; ++i) {
+      const parentPartIndex = this.getPartParentPartIndices()[i];
+
+      if (parentPartIndex === NoParentIndex) {
+        continue;
+      }
+
+      for (
+        let partIndex = 0;
+        partIndex < this._partsHierarchy.getSize();
+        ++partIndex
+      ) {
+        if (partIndex === parentPartIndex) {
+          const objectInfo = new CubismModelObjectInfo(
+            i,
+            CubismModelObjectType.CubismModelObjectType_Parts
+          );
+          this._partsHierarchy.at(partIndex).objects.pushBack(objectInfo);
+          break;
+        }
+      }
+    }
+
+    // Drawableごとに親パーツを取得し、親パーツの子objectリストに追加する
+    const drawableCount = this.getDrawableCount();
+    for (let i = 0; i < drawableCount; ++i) {
+      const parentPartIndex = this.getDrawableParentPartIndex(i);
+
+      if (parentPartIndex === NoParentIndex) {
+        continue;
+      }
+
+      for (
+        let partIndex = 0;
+        partIndex < this._partsHierarchy.getSize();
+        ++partIndex
+      ) {
+        if (partIndex === parentPartIndex) {
+          const objectInfo = new CubismModelObjectInfo(
+            i,
+            CubismModelObjectType.CubismModelObjectType_Drawable
+          );
+          this._partsHierarchy.at(partIndex).objects.pushBack(objectInfo);
+          break;
+        }
+      }
+    }
+
+    // パーツ子描画オブジェクト情報構造体を作成していく
+    for (let i = 0; i < this._partsHierarchy.getSize(); ++i) {
+      // パーツ管理構造体を取得
+      this.getPartChildDrawObjects(i);
+    }
+  }
+
+  /**
+   * 指定したパーツの子描画オブジェクト情報を取得・構築する
+   * @param partInfoIndex パーツ情報のインデックス
+   * @return PartChildDrawObjects
+   */
+  public getPartChildDrawObjects(partInfoIndex: number): PartChildDrawObjects {
+    if (this._partsHierarchy.at(partInfoIndex).getChildObjectCount() < 1) {
+      // 子オブジェクトがない場合
+      return this._partsHierarchy.at(partInfoIndex).childDrawObjects;
+    }
+
+    const childDrawObjects =
+      this._partsHierarchy.at(partInfoIndex).childDrawObjects;
+
+    // 既にchildDrawObjectsが処理されている場合はスキップ
+    if (
+      childDrawObjects.drawableIndices.getSize() !== 0 ||
+      childDrawObjects.offscreenIndices.getSize() !== 0
+    ) {
+      return childDrawObjects;
+    }
+
+    const objects = this._partsHierarchy.at(partInfoIndex).objects;
+
+    for (let i = 0; i < objects.getSize(); ++i) {
+      const obj = objects.at(i);
+
+      if (
+        obj.objectType === CubismModelObjectType.CubismModelObjectType_Parts
+      ) {
+        // 子のパーツの場合、再帰的に子objectsを取得
+        this.getPartChildDrawObjects(obj.objectIndex);
+
+        // 子パーツの子Drawable、Offscreenを取得
+        const childToChildDrawObjects = this._partsHierarchy.at(
+          obj.objectIndex
+        ).childDrawObjects;
+
+        for (
+          let j = 0;
+          j < childToChildDrawObjects.drawableIndices.getSize();
+          ++j
+        ) {
+          childDrawObjects.drawableIndices.pushBack(
+            childToChildDrawObjects.drawableIndices.at(j)
+          );
+        }
+        for (
+          let j = 0;
+          j < childToChildDrawObjects.offscreenIndices.getSize();
+          ++j
+        ) {
+          childDrawObjects.offscreenIndices.pushBack(
+            childToChildDrawObjects.offscreenIndices.at(j)
+          );
+        }
+
+        // Offscreenの確認
+        const offscreenIndices = this.getOffscreenIndices();
+        const offscreenIndex = offscreenIndices
+          ? offscreenIndices[obj.objectIndex]
+          : NoOffscreenIndex;
+        if (offscreenIndex !== NoOffscreenIndex) {
+          childDrawObjects.offscreenIndices.pushBack(offscreenIndex);
+        }
+      } else if (
+        obj.objectType === CubismModelObjectType.CubismModelObjectType_Drawable
+      ) {
+        // Drawableの場合、パーツの子Drawableに追加
+        childDrawObjects.drawableIndices.pushBack(obj.objectIndex);
+      }
+    }
+
+    return childDrawObjects;
+  }
+
+  /**
+   * パーツのオフスクリーンインデックス配列を取得
+   * @return Int32Array offscreenIndices
+   */
+  private getOffscreenIndices(): Int32Array {
+    // _model.parts.offscreenIndices が存在する場合のみ返す
+    return this._model.parts.offscreenIndices;
   }
 
   /**
@@ -2058,6 +2892,7 @@ export class CubismModel {
     this._parameterMaximumValues = null;
     this._parameterMinimumValues = null;
     this._partOpacities = null;
+    this._offscreenOpacities = null;
     this._savedParameters = new csmVector<number>();
     this._parameterIds = new csmVector<CubismIdHandle>();
     this._drawableIds = new csmVector<CubismIdHandle>();
@@ -2068,18 +2903,45 @@ export class CubismModel {
     this._isOverriddenCullings = false;
     this._modelOpacity = 1.0;
 
+    this._isBlendModeEnabled = false;
+    this._drawableColorBlends = null;
+    this._drawableAlphaBlends = null;
+    this._offscreenColorBlends = null;
+    this._offscreenAlphaBlends = null;
+    this._drawableMultiplyColors = null;
+    this._drawableScreenColors = null;
+    this._offscreenMultiplyColors = null;
+    this._offscreenScreenColors = null;
+
     this._userParameterRepeatDataList = new csmVector<ParameterRepeatData>();
-    this._userMultiplyColors = new csmVector<DrawableColorData>();
-    this._userScreenColors = new csmVector<DrawableColorData>();
-    this._userCullings = new csmVector<DrawableCullingData>();
-    this._userPartMultiplyColors = new csmVector<PartColorData>();
-    this._userPartScreenColors = new csmVector<PartColorData>();
+    this._userDrawableMultiplyColors = new csmVector<ColorData>();
+    this._userDrawableScreenColors = new csmVector<ColorData>();
+    this._userDrawableCullings = new csmVector<CullingData>();
+    this._userPartMultiplyColors = new csmVector<ColorData>();
+    this._userPartScreenColors = new csmVector<ColorData>();
     this._partChildDrawables = new csmVector<csmVector<number>>();
+    this._partsHierarchy = new csmVector<CubismModelPartInfo>();
 
     this._notExistPartId = new csmMap<CubismIdHandle, number>();
     this._notExistParameterId = new csmMap<CubismIdHandle, number>();
     this._notExistParameterValues = new csmMap<number, number>();
     this._notExistPartOpacities = new csmMap<number, number>();
+
+    // Drawableのカラーブレンドとアルファブレンドの初期化
+    this._drawableColorBlends = new Array<CubismColorBlend>(
+      model.drawables.count
+    ).fill(CubismColorBlend.ColorBlend_None);
+    this._drawableAlphaBlends = new Array<CubismAlphaBlend>(
+      model.drawables.count
+    ).fill(CubismAlphaBlend.AlphaBlend_None);
+
+    // Offscreenのカラーブレンドとアルファブレンドの初期化
+    this._offscreenColorBlends = new Array<CubismColorBlend>(
+      model.offscreens.count
+    ).fill(CubismColorBlend.ColorBlend_None);
+    this._offscreenAlphaBlends = new Array<CubismAlphaBlend>(
+      model.offscreens.count
+    ).fill(CubismAlphaBlend.AlphaBlend_None);
   }
 
   /**
@@ -2088,6 +2950,16 @@ export class CubismModel {
   public release(): void {
     this._model.release();
     this._model = null;
+
+    this._drawableColorBlends = null;
+    this._drawableAlphaBlends = null;
+    this._offscreenColorBlends = null;
+    this._offscreenAlphaBlends = null;
+
+    this._drawableMultiplyColors = null;
+    this._drawableScreenColors = null;
+    this._offscreenMultiplyColors = null;
+    this._offscreenScreenColors = null;
   }
 
   private _notExistPartOpacities: csmMap<number, number>; // 存在していないパーツの不透明度のリスト
@@ -2111,11 +2983,14 @@ export class CubismModel {
    */
   private _userParameterRepeatDataList: csmVector<ParameterRepeatData>;
 
-  private _userMultiplyColors: csmVector<DrawableColorData>; // Drawableごとに設定する乗算色と上書きフラグを管理するリスト
-  private _userScreenColors: csmVector<DrawableColorData>; // Drawableごとに設定するスクリーン色と上書きフラグを管理するリスト
-  private _userPartScreenColors: csmVector<PartColorData>; // Part 乗算色の配列
-  private _userPartMultiplyColors: csmVector<PartColorData>; // Part スクリーン色の配列
+  private _userDrawableMultiplyColors: csmVector<ColorData>; // Drawableごとに設定する乗算色と上書きフラグを管理するリスト
+  private _userDrawableScreenColors: csmVector<ColorData>; // Drawableごとに設定するスクリーン色と上書きフラグを管理するリスト
+  private _userPartScreenColors: csmVector<ColorData>; // Part 乗算色の配列
+  private _userPartMultiplyColors: csmVector<ColorData>; // Part スクリーン色の配列
+  private _userOffscreenMultiplyColors: csmVector<ColorData>; // Offscreen 乗算色の配列
+  private _userOffscreenScreenColors: csmVector<ColorData>; // Off
   private _partChildDrawables: csmVector<csmVector<number>>; // Partの子DrawableIndexの配列
+  private _partsHierarchy: csmVector<CubismModelPartInfo>; // Partの親子構造
 
   private _model: Live2DCubismCore.Model; // モデル
 
@@ -2124,6 +2999,7 @@ export class CubismModel {
   private _parameterMinimumValues: Float32Array; // パラメータの最小値のリスト
 
   private _partOpacities: Float32Array; // パーツの不透明度のリスト
+  private _offscreenOpacities: Float32Array; // オフスクリーンの不透明度のリスト
 
   private _modelOpacity: number; // モデルの不透明度
 
@@ -2132,7 +3008,20 @@ export class CubismModel {
   private _drawableIds: csmVector<CubismIdHandle>;
 
   private _isOverriddenCullings: boolean; // モデルのカリング設定をすべて上書きするか？
-  private _userCullings: csmVector<DrawableCullingData>; // カリング設定の配列
+  private _userDrawableCullings: csmVector<CullingData>; // カリング設定の配列
+  private _userOffscreenCullings: csmVector<CullingData>; // オフスクリーンのカリング設定を使用するか？
+
+  private _isBlendModeEnabled: boolean; // ブレンドモードを使用しているか
+
+  private _drawableColorBlends: CubismColorBlend[]; // Drawableのカラーブレンドの配列
+  private _drawableAlphaBlends: CubismAlphaBlend[]; // Drawableのアルファブレンドの配列
+  private _offscreenColorBlends: CubismColorBlend[]; // Offscreen のカラーブレンドの配列
+  private _offscreenAlphaBlends: CubismAlphaBlend[]; // Offscreen のアルファブレンドの配列
+
+  private _drawableMultiplyColors: CubismTextureColor[]; // Drawableの乗算色の配列
+  private _drawableScreenColors: CubismTextureColor[]; // Drawableのスクリーン色の配列
+  private _offscreenMultiplyColors: CubismTextureColor[]; // Offscreenの乗算色の配列
+  private _offscreenScreenColors: CubismTextureColor[]; // Offscreenのスクリーン色の配列
 }
 
 // Namespace definition for compatibility.
