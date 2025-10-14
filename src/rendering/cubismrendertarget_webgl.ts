@@ -5,13 +5,11 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { CubismRenderTarget } from './cubismrendertarget';
-
 /**
  * WebGL用オフスクリーンサーフェス
- * マスクの描画及びオフスクリーン機能に必要なフレームバッファなどを管理する。
+ * マスクの描画に必要なフレームバッファなどを管理する。
  */
-export class CubismRenderTarget_WebGL implements CubismRenderTarget {
+export class CubismRenderTarget_WebGL {
   /**
    * WebGL2RenderingContext.blitFramebuffer() でバッファのコピーを行う。
    *
@@ -64,6 +62,7 @@ export class CubismRenderTarget_WebGL implements CubismRenderTarget {
    */
   public beginDraw(restoreFbo: WebGLFramebuffer = null): void {
     if (this._renderTexture == null) {
+      console.error('_renderTexture is null');
       return;
     }
 
@@ -111,7 +110,7 @@ export class CubismRenderTarget_WebGL implements CubismRenderTarget {
    *
    * @return 成功した場合はtrue、失敗した場合はfalse
    */
-  public createOffscreenRenderTarget(
+  public createRenderTarget(
     gl: WebGLRenderingContext | WebGL2RenderingContext,
     displayBufferWidth: number,
     displayBufferHeight: number,
@@ -251,68 +250,12 @@ export class CubismRenderTarget_WebGL implements CubismRenderTarget {
   }
 
   /**
-   * オフスクリーンのインデックスを設定する。
-   *
-   * @param offscreenIndex オフスクリーンのインデックス
-   */
-  public setOffscreenIndex(offscreenIndex: number): void {
-    this._offscreenIndex = offscreenIndex;
-  }
-
-  /**
-   * オフスクリーンのインデックスを取得する。
-   *
-   * @return オフスクリーンのインデックス
-   */
-  public getOffscreenIndex(): number {
-    return this._offscreenIndex;
-  }
-
-  /**
    * 以前のフレームバッファを取得する。
    *
    * @return 以前のフレームバッファ
    */
   public getOldFBO(): WebGLFramebuffer {
     return this._oldFbo;
-  }
-
-  /**
-   * 以前のオフスクリーンサーフェスを設定する。
-   *
-   * @param oldOffscreen 以前のオフスクリーンサーフェス
-   */
-  public setOldOffscreen(oldOffscreen: CubismRenderTarget_WebGL): void {
-    this._oldOffscreen = oldOffscreen;
-  }
-
-  /**
-   * 以前のオフスクリーンサーフェスを取得する。
-   *
-   * @return 以前のオフスクリーンサーフェス
-   */
-  public getOldOffscreen(): CubismRenderTarget_WebGL {
-    return this._oldOffscreen;
-  }
-
-  /**
-   * 親のオフスクリーンサーフェスを設定する。
-   *
-   * @param parentOffscreenRenderTarget 親のオフスクリーンサーフェス
-   */
-  public setParentPartOffscreen(
-    parentOffscreenRenderTarget: CubismRenderTarget_WebGL
-  ): void {
-    this._parentOffscreenRenderTarget = parentOffscreenRenderTarget;
-  }
-
-  /**
-   * 親のオフスクリーンサーフェスを取得する。
-   *
-   * @return 親のオフスクリーンサーフェス
-   */
-  public getParentPartOffscreen(): CubismRenderTarget_WebGL {
-    return this._parentOffscreenRenderTarget;
   }
 
   /**
@@ -325,21 +268,14 @@ export class CubismRenderTarget_WebGL implements CubismRenderTarget {
     this._bufferWidth = 0;
     this._bufferHeight = 0;
     this._oldFbo = null;
-    this._offscreenIndex = -1;
-    this._parentOffscreenRenderTarget = null;
-    this._oldOffscreen = null;
   }
 
-  private _gl: WebGLRenderingContext | WebGL2RenderingContext; // WebGLのコンテキスト
-  private _colorBuffer: WebGLTexture; // カラーバッファ
-  private _renderTexture: WebGLFramebuffer; // フレームバッファ
-  private _bufferWidth: number; // カラーバッファの幅
-  private _bufferHeight: number; // カラーバッファの高さ
+  protected _gl: WebGLRenderingContext | WebGL2RenderingContext; // WebGLのコンテキスト
+  protected _colorBuffer: WebGLTexture; // カラーバッファ
+  protected _renderTexture: WebGLFramebuffer; // フレームバッファ
+  protected _bufferWidth: number; // カラーバッファの幅
+  protected _bufferHeight: number; // カラーバッファの高さ
   private _oldFbo: WebGLFramebuffer; // 以前のフレームバッファ
-
-  private _offscreenIndex: number; // オフスクリーンのインデックス
-  private _parentOffscreenRenderTarget: CubismRenderTarget_WebGL; // 親のオフスクリーンレンダーターゲット
-  private _oldOffscreen: CubismRenderTarget_WebGL; // 以前のオフスクリーンレンダーターゲット
 }
 
 // Namespace definition for compatibility.

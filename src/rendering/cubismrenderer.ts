@@ -327,31 +327,6 @@ export class CubismTextureColor {
 }
 
 /**
- * エイリアスの描画対象のソート結果を管理するためのクラス
- */
-export class DrawableSortItem {
-  /**
-   * コンストラクタ
-   * @param objectIndex オブジェクトのインデックス
-   * @param objectType オブジェクトのタイプ
-   * @param renderOrder 描画順
-   */
-  constructor(
-    objectIndex: number,
-    objectType: DrawableObjectType,
-    renderOrder: number
-  ) {
-    this.objectIndex = objectIndex;
-    this.objectType = objectType;
-    this.renderOrder = renderOrder;
-  }
-
-  objectIndex: number;
-  objectType: DrawableObjectType;
-  renderOrder: number;
-}
-
-/**
  * クリッピングマスクのコンテキスト
  */
 export abstract class CubismClippingContext {

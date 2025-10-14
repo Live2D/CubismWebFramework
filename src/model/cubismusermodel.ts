@@ -352,6 +352,15 @@ export class CubismUserModel {
   }
 
   /**
+   * 読み込めないMocファイルの.moc3 Versionを取得
+   * @param mocBytes 読み込めないMocファイルのバイト配列
+   * @returns .moc3 Version番号
+   */
+  public getMocVersionFromBuffer(mocBytes: ArrayBuffer): number {
+    return CubismMoc.getMocVersionFromBuffer(mocBytes);
+  }
+
+  /**
    * レンダラの取得
    * @return レンダラ
    */
