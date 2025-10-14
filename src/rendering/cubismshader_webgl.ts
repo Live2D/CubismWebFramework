@@ -16,6 +16,7 @@ import { csmRect } from '../type/csmrectf';
 import { csmVector } from '../type/csmvector';
 import { CubismLogError, CubismLogWarning } from '../utils/cubismdebug';
 import { CubismRenderTarget_WebGL } from './cubismrendertarget_webgl';
+import { CubismOffscreenRenderTarget_WebGL } from './cubismoffscreenrendertarget_webgl';
 import { CubismBlendMode, CubismTextureColor } from './cubismrenderer';
 import { CubismRenderer_WebGL } from './cubismrenderer_webgl';
 
@@ -506,7 +507,7 @@ export class CubismShader_WebGL {
   public setupShaderProgramForOffscreen(
     renderer: CubismRenderer_WebGL,
     model: Readonly<CubismModel>,
-    offscreen: CubismRenderTarget_WebGL
+    offscreen: CubismOffscreenRenderTarget_WebGL
   ): void {
     if (!renderer.isPremultipliedAlpha()) {
       CubismLogError('NoPremultipliedAlpha is not allowed');

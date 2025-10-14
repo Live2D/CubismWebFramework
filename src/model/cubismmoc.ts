@@ -39,10 +39,8 @@ export class CubismMoc {
 
     if (moc) {
       cubismMoc = new CubismMoc(moc);
-      cubismMoc._mocVersion = Live2DCubismCore.Version.csmGetMocVersion(
-        moc,
-        mocBytes
-      );
+      cubismMoc._mocVersion =
+        Live2DCubismCore.Version.csmGetMocVersion(mocBytes);
     }
 
     return cubismMoc;
@@ -123,6 +121,15 @@ export class CubismMoc {
    */
   public getMocVersion(): number {
     return this._mocVersion;
+  }
+
+  /**
+   * Mocファイルのbufferから.moc3 Versionを取得
+   * @param mocBytes Mocファイルのバイト配列
+   * @returns .moc3 Version番号
+   */
+  public static getMocVersionFromBuffer(mocBytes: ArrayBuffer): number {
+    return Live2DCubismCore.Version.csmGetMocVersion(mocBytes);
   }
 
   /**

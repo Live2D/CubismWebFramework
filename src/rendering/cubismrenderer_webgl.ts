@@ -5,11 +5,7 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import {
-  CubismModel,
-  NoParentIndex,
-  NoOffscreenIndex
-} from '../model/cubismmodel';
+import { CubismModel, NoParentIndex } from '../model/cubismmodel';
 import { csmMap } from '../type/csmmap';
 import { csmRect } from '../type/csmrectf';
 import { csmVector } from '../type/csmvector';
@@ -18,9 +14,9 @@ import { CubismClippingManager } from './cubismclippingmanager';
 import {
   CubismClippingContext,
   CubismRenderer,
-  DrawableObjectType,
-  DrawableSortItem
+  DrawableObjectType
 } from './cubismrenderer';
+import { CubismWebGLOffscreenManager } from './cubismoffscreenmanager';
 import { CubismShaderManager_WebGL } from './cubismshader_webgl';
 
 const s_invalidValue = -1; // 無効な値を表す定数
@@ -540,7 +536,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     model: CubismModel,
     offscreenCount: number
   ): void {
-    let parentOffscreen: CubismRenderTarget_WebGL | null;
+    let parentOffscreen: CubismOffscreenRenderTarget_WebGL | null;
     for (
       let offscreenIndex = 0;
       offscreenIndex < offscreenCount;
@@ -668,7 +664,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     this._clippingContextBufferForMask = null;
     this._clippingContextBufferForDraw = null;
     this._rendererProfile = new CubismRendererProfile_WebGL();
-    this._firstDraw = true;
     this._textures = new csmMap<number, number>();
     this._sortedObjectsIndexList = new csmVector<number>();
     this._sortedObjectsTypeList = new csmVector<number>();
@@ -677,13 +672,14 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       uv: (WebGLBuffer = null),
       index: (WebGLBuffer = null)
     };
-    this._modelRenderTargets = new csmVector<CubismRenderTarget_WebGL>();
+    this._modelRenderTargets =
+      new csmVector<CubismOffscreenRenderTarget_WebGL>();
     this._drawableMasks = new csmVector<CubismRenderTarget_WebGL>();
     this._currentFbo = null;
     this._drawableClippingManager = null;
     this._offscreenClippingManager = null;
     this._offscreenMasks = new csmVector<CubismRenderTarget_WebGL>();
-    this._offscreenList = new csmVector<CubismRenderTarget_WebGL>();
+    this._offscreenList = new csmVector<CubismOffscreenRenderTarget_WebGL>();
 
     // テクスチャ対応マップの容量を確保しておく
     this._textures.prepareCapacity(32, true);
@@ -767,7 +763,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     this._currentFbo = null;
     this._model = null;
     this.gl = null;
-    this._firstDraw = true;
   }
 
   /**
@@ -819,7 +814,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
           // クリッピングマスクのサイズが変更された場合は、オフスクリーンサーフェスを再作成する
           this._drawableMasks
             .at(i)
-            .createOffscreenRenderTarget(
+            .createRenderTarget(
               this.gl,
               this._drawableClippingManager.getClippingMaskBufferSize(),
               this._drawableClippingManager.getClippingMaskBufferSize(),
@@ -861,7 +856,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
         ) {
           this._offscreenMasks
             .at(i)
-            .createOffscreenRenderTarget(
+            .createRenderTarget(
               this.gl,
               this._offscreenClippingManager.getClippingMaskBufferSize(),
               this._offscreenClippingManager.getClippingMaskBufferSize(),
@@ -929,6 +924,9 @@ export class CubismRenderer_WebGL extends CubismRenderer {
         );
       }
     }
+
+    // 描画開始前に前フレームの最大FrameBuffer数をリセット
+    CubismWebGLOffscreenManager.getInstance().resetPreviousActiveCount(this.gl);
 
     // 描画
     for (let i = 0; i < totalCount; ++i) {
@@ -1218,12 +1216,14 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
     const offscreen = this._offscreenList.at(offscreenIndex);
 
-    // サイズが異なるなら新しいオフスクリーンレンダリングターゲットを作成
+    // レンダーターゲットが未生成、レンダーテクスチャ使用中、もしくはサイズが異なるなら新しいオフスクリーンレンダリングターゲットを作成
     if (
+      offscreen.getRenderTexture() == null ||
       offscreen.getBufferWidth() != this._modelRenderTargetWidth ||
-      offscreen.getBufferHeight() != this._modelRenderTargetHeight
+      offscreen.getBufferHeight() != this._modelRenderTargetHeight ||
+      offscreen.getUsingRenderTextureState()
     ) {
-      offscreen.createOffscreenRenderTarget(
+      offscreen.setOffscreenRenderTarget(
         this.gl,
         this._modelRenderTargetWidth,
         this._modelRenderTargetHeight,
@@ -1239,7 +1239,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     if (oldOffscreen != null) {
       oldFBO = oldOffscreen.getRenderTexture();
     }
-
     if (oldFBO == null) {
       oldFBO = this._modelRootFbo; // ルートのFBOを使用
     }
@@ -1264,7 +1263,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    *
    * @param offscreen オフスクリーンレンダリングターゲット
    */
-  public drawOffscreen(offscreen: CubismRenderTarget_WebGL): void {
+  public drawOffscreen(offscreen: CubismOffscreenRenderTarget_WebGL): void {
     const offscreenIndex = offscreen.getOffscreenIndex();
 
     // クリッピングマスク
@@ -1358,7 +1357,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    */
   public drawOffscreenWebGL(
     model: Readonly<CubismModel>,
-    offscreen: CubismRenderTarget_WebGL
+    offscreen: CubismOffscreenRenderTarget_WebGL
   ): void {
     // 裏面描画の有効・無効
     if (this.isCulling()) {
@@ -1404,6 +1403,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
     }
 
     // 後処理
+    offscreen.stopUsingRenderTexture();
     this.gl.useProgram(null);
     this.setClippingContextBufferForMask(null);
     this.setClippingContextBufferForOffscreen(null);
@@ -1441,7 +1441,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       ) {
         this._modelRenderTargets
           .at(i)
-          .createOffscreenRenderTarget(
+          .createRenderTarget(
             this.gl,
             this._modelRenderTargetWidth,
             this._modelRenderTargetHeight,
@@ -1538,10 +1538,6 @@ export class CubismRenderer_WebGL extends CubismRenderer {
    * モデルを描画する前にクリッピングマスクに必要な処理を実装している
    */
   public preDraw(): void {
-    if (this._firstDraw) {
-      this._firstDraw = false;
-    }
-
     this.gl.disable(this.gl.SCISSOR_TEST);
     this.gl.disable(this.gl.STENCIL_TEST);
     this.gl.disable(this.gl.DEPTH_TEST);
@@ -1675,7 +1671,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
         ++i
       ) {
         const renderTarget = new CubismRenderTarget_WebGL();
-        renderTarget.createOffscreenRenderTarget(
+        renderTarget.createRenderTarget(
           this.gl,
           this._drawableClippingManager.getClippingMaskBufferSize(),
           this._drawableClippingManager.getClippingMaskBufferSize(),
@@ -1692,9 +1688,9 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       // TextureBarrierの代替用にオフスクリーンを2つ作成する
       const createSize = 3;
       for (let i = 0; i < createSize; ++i) {
-        const offscreenRenderTarget: CubismRenderTarget_WebGL =
-          new CubismRenderTarget_WebGL();
-        offscreenRenderTarget.createOffscreenRenderTarget(
+        const offscreenRenderTarget: CubismOffscreenRenderTarget_WebGL =
+          new CubismOffscreenRenderTarget_WebGL();
+        offscreenRenderTarget.createRenderTarget(
           this.gl,
           this._modelRenderTargetWidth,
           this._modelRenderTargetHeight,
@@ -1711,7 +1707,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
           ++i
         ) {
           const offscreenMask = new CubismRenderTarget_WebGL();
-          offscreenMask.createOffscreenRenderTarget(
+          offscreenMask.createRenderTarget(
             this.gl,
             this._offscreenClippingManager.getClippingMaskBufferSize(),
             this._offscreenClippingManager.getClippingMaskBufferSize(),
@@ -1724,7 +1720,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       const offscreenCount = this._model.getOffscreenCount();
       // オフスクリーンの数が0の場合は何もしない
       if (offscreenCount > 0) {
-        this._offscreenList = new csmVector<CubismRenderTarget_WebGL>(
+        this._offscreenList = new csmVector<CubismOffscreenRenderTarget_WebGL>(
           offscreenCount
         );
         for (
@@ -1732,13 +1728,7 @@ export class CubismRenderer_WebGL extends CubismRenderer {
           offscreenIndex < offscreenCount;
           ++offscreenIndex
         ) {
-          const offscreenRenderTarget = new CubismRenderTarget_WebGL();
-          offscreenRenderTarget.createOffscreenRenderTarget(
-            this.gl,
-            this._modelRenderTargetWidth,
-            this._modelRenderTargetHeight,
-            this._currentFbo
-          );
+          const offscreenRenderTarget = new CubismOffscreenRenderTarget_WebGL();
           offscreenRenderTarget.setOffscreenIndex(offscreenIndex);
           this._offscreenList.pushBack(offscreenRenderTarget);
         }
@@ -1762,17 +1752,16 @@ export class CubismRenderer_WebGL extends CubismRenderer {
   _clippingContextBufferForOffscreen: CubismClippingContext_WebGL; // オフスクリーン描画用のクリッピングコンテキスト
   _offscreenClippingManager: CubismClippingManager_WebGL; // オフスクリーン描画用のクリッピングマスク管理オブジェクト
 
-  _modelRenderTargets: csmVector<CubismRenderTarget_WebGL>; ///< モデル全体を描画する先のフレームバッファ
+  _modelRenderTargets: csmVector<CubismOffscreenRenderTarget_WebGL>; ///< モデル全体を描画する先のフレームバッファ
 
   _drawableMasks: csmVector<CubismRenderTarget_WebGL>; // マスク用のオフスクリーンサーフェースのリスト
   _offscreenMasks: csmVector<CubismRenderTarget_WebGL>; ///< オフスクリーン機能マスク描画用のフレームバッファ
 
-  _offscreenList: csmVector<CubismRenderTarget_WebGL>; ///< モデルのオフスクリーン
+  _offscreenList: csmVector<CubismOffscreenRenderTarget_WebGL>; ///< モデルのオフスクリーン
   _currentFbo: WebGLFramebuffer; ///< 現在のフレームバッファオブジェクト
-  _currentOffscreen: CubismRenderTarget_WebGL | null; // 現在のオフスクリーン
+  _currentOffscreen: CubismOffscreenRenderTarget_WebGL | null; // 現在のオフスクリーン
 
   _modelRootFbo: WebGLFramebuffer; // モデルのルートフレームバッファ
-  _firstDraw: boolean; // エイリアス内で最初のオフスクリーン描画かどうか
 
   _bufferData: {
     vertex: WebGLBuffer;
@@ -1793,7 +1782,7 @@ CubismRenderer.staticRelease = (): void => {
 // Namespace definition for compatibility.
 import * as $ from './cubismrenderer_webgl';
 import { CubismRenderTarget_WebGL as CubismRenderTarget_WebGL } from './cubismrendertarget_webgl';
-import { mergeSortByIterator } from '../type/cubismvectorsort';
+import { CubismOffscreenRenderTarget_WebGL as CubismOffscreenRenderTarget_WebGL } from './cubismoffscreenrendertarget_webgl';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Live2DCubismFramework {
   export const CubismClippingContext = $.CubismClippingContext_WebGL;

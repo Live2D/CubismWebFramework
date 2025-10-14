@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.5-beta.2] - 2025-10-14
+
+### Added
+
+* Add classes `CubismOffscreenRenderTarget_WebGL` and `CubismOffscreenManager` that reuse `WebGLFramebuffer` for Offscreen drawing.
+* Add `getMocVersionFromBuffer()`function.
+  * Support for retrieving MOC version from unsupported new MOC3 files.
+
+### Removed
+
+* Remove unnecessary classes and variables.
+
+
 ## [5-r.5-beta.1] - 2025-08-26
 
 ### Added
@@ -356,6 +369,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.1...5-r.5-beta.2
 [5-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.4...5-r.5-beta.1
 [5-r.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.3...5-r.4
 [5-r.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.2...5-r.3
