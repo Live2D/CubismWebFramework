@@ -5,6 +5,8 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
+import { CubismLogError } from '../utils/cubismdebug';
+
 /**
  * WebGL用オフスクリーンサーフェス
  * マスクの描画に必要なフレームバッファなどを管理する。
@@ -141,7 +143,7 @@ export class CubismRenderTarget_WebGL {
     // フレームバッファを作成
     const ret = gl.createFramebuffer();
     if (ret == null) {
-      console.error('Failed to create framebuffer');
+      CubismLogError('Failed to create framebuffer');
       return false;
     }
 
@@ -160,7 +162,7 @@ export class CubismRenderTarget_WebGL {
 
     // フレームバッファが完全でない場合はエラーを出力して以前のフレームバッファを復元
     if (status !== gl.FRAMEBUFFER_COMPLETE) {
-      console.error('Framebuffer is not complete');
+      CubismLogError('Framebuffer is not complete');
       gl.bindFramebuffer(gl.FRAMEBUFFER, previousFramebuffer);
       gl.deleteFramebuffer(ret);
 

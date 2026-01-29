@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [5-r.5-beta.3] - 2026-01-29
+
+### Changed
+
+* Replace standard `Array`, `Map`, and `String` with `csmVector`, `csmMap`, and `csmString`.
+* Change to allow shader files to be specified outside the `CubismFramework`.
+* Change the shader strings written in the `CubismShader_WebGL` class to use external files.
+
+### Fixed
+
+* Fix the operation of `CubismOffscreenRenderTargetManager` to be more efficient.
+* Fix the timing of beforeDrawModelRenderTarget call.
+
 
 ## [5-r.5-beta.2] - 2025-10-14
 
@@ -369,6 +382,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.2...5-r.5-beta.3
 [5-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.1...5-r.5-beta.2
 [5-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.4...5-r.5-beta.1
 [5-r.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.3...5-r.4

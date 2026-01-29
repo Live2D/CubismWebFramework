@@ -5,7 +5,9 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { csmVector } from '../type/csmvector';
+import { updateSize } from '../utils/cubismarrayutils';
+import { CubismLogError } from '../utils/cubismdebug';
+import { CubismRenderTarget_WebGL } from './cubismrendertarget_webgl';
 
 /**
  * フレームバッファなどのコンテナのクラス
@@ -64,7 +66,7 @@ class CubismWebGLContextManager {
   constructor(gl: WebGLRenderingContext | WebGL2RenderingContext) {
     this.gl = gl;
     this.offscreenRenderTargetContainers =
-      new csmVector<CubismRenderTargetContainer>();
+      new Array<CubismRenderTargetContainer>();
     this.previousActiveRenderTextureMaxCount = 0;
     this.currentActiveRenderTextureCount = 0;
     this.hasResetThisFrame = false;
@@ -76,20 +78,20 @@ class CubismWebGLContextManager {
     if (this.offscreenRenderTargetContainers != null) {
       for (
         let index = 0;
-        index < this.offscreenRenderTargetContainers.getSize();
+        index < this.offscreenRenderTargetContainers.length;
         ++index
       ) {
-        const container = this.offscreenRenderTargetContainers.at(index);
+        const container = this.offscreenRenderTargetContainers[index];
         this.gl.deleteTexture(container.colorBuffer);
         this.gl.deleteFramebuffer(container.renderTexture);
       }
-      this.offscreenRenderTargetContainers.clear();
+      this.offscreenRenderTargetContainers.length = 0;
       this.offscreenRenderTargetContainers = null;
     }
   }
 
   public gl: WebGLRenderingContext | WebGL2RenderingContext; // WebGLContext
-  public offscreenRenderTargetContainers: csmVector<CubismRenderTargetContainer>; // オフスクリーン描画用レンダーターゲットのリスト
+  public offscreenRenderTargetContainers: Array<CubismRenderTargetContainer>; // オフスクリーン描画用レンダーターゲットのリスト
   public previousActiveRenderTextureMaxCount: number; // 直前のアクティブなレンダーターゲットの最大数
   public currentActiveRenderTextureCount: number; // 現在のアクティブなレンダーターゲットの数
   public hasResetThisFrame: boolean; // 今フレームでリセットされたかどうか
@@ -188,19 +190,18 @@ export class CubismWebGLOffscreenManager {
     if (contextManager.offscreenRenderTargetContainers != null) {
       for (
         let index = 0;
-        index < contextManager.offscreenRenderTargetContainers.getSize();
+        index < contextManager.offscreenRenderTargetContainers.length;
         ++index
       ) {
-        const container =
-          contextManager.offscreenRenderTargetContainers.at(index);
+        const container = contextManager.offscreenRenderTargetContainers[index];
         contextManager.gl.deleteTexture(container.colorBuffer);
         contextManager.gl.deleteFramebuffer(container.renderTexture);
         container.clear();
       }
-      contextManager.offscreenRenderTargetContainers.clear();
+      contextManager.offscreenRenderTargetContainers.length = 0;
     } else {
       contextManager.offscreenRenderTargetContainers =
-        new csmVector<CubismRenderTargetContainer>();
+        new Array<CubismRenderTargetContainer>();
     }
 
     contextManager.width = width;
@@ -211,11 +212,11 @@ export class CubismWebGLOffscreenManager {
   }
 
   /**
-   * フレーム描画開始時のリセット
+   * モデルを描画する前に呼び出すフレーム開始時の処理を行う
    *
    * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
    */
-  public resetPreviousActiveCount(
+  public beginFrameProcess(
     gl: WebGLRenderingContext | WebGL2RenderingContext
   ): void {
     const contextManager = this.getContextManager(gl);
@@ -227,17 +228,14 @@ export class CubismWebGLOffscreenManager {
   }
 
   /**
-   * フレーム描画終了時のフラグクリア
+   * モデルの描画が終わった後に呼び出すフレーム終了時の処理
    *
    * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
    */
-  public clearPreviousActiveRenderTextureCountResetFlag(
+  public endFrameProcess(
     gl: WebGLRenderingContext | WebGL2RenderingContext
   ): void {
     const contextManager = this.getContextManager(gl);
-    if (!contextManager.hasResetThisFrame) {
-      return;
-    }
     contextManager.hasResetThisFrame = false;
   }
 
@@ -253,7 +251,7 @@ export class CubismWebGLOffscreenManager {
     if (contextManager.offscreenRenderTargetContainers == null) {
       return 0;
     }
-    return contextManager.offscreenRenderTargetContainers.getSize();
+    return contextManager.offscreenRenderTargetContainers.length;
   }
 
   /**
@@ -262,12 +260,14 @@ export class CubismWebGLOffscreenManager {
    * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
    * @param width 幅
    * @param height 高さ
+   * @param previousFramebuffer 前のフレームバッファ
    * @return 使用可能なリソースコンテナ
    */
   public getOffscreenRenderTargetContainers(
     gl: WebGLRenderingContext | WebGL2RenderingContext,
     width: number,
-    height: number
+    height: number,
+    previousFramebuffer: WebGLFramebuffer
   ): CubismRenderTargetContainer {
     const contextManager = this.getContextManager(gl);
 
@@ -280,98 +280,23 @@ export class CubismWebGLOffscreenManager {
       this.initialize(gl, width, height);
     }
 
-    contextManager.currentActiveRenderTextureCount++;
-
-    // 最大数更新
-    contextManager.previousActiveRenderTextureMaxCount =
-      contextManager.currentActiveRenderTextureCount >
-      contextManager.previousActiveRenderTextureMaxCount
-        ? contextManager.currentActiveRenderTextureCount
-        : contextManager.previousActiveRenderTextureMaxCount;
+    // 使用数を更新
+    this.updateRenderTargetContainerCount(gl);
 
     // 使われていないリソースコンテナがあればそれを返す
-    for (
-      let index = 0;
-      index < contextManager.offscreenRenderTargetContainers.getSize();
-      ++index
-    ) {
-      const container =
-        contextManager.offscreenRenderTargetContainers.at(index);
-      if (container.inUse == false) {
-        container.inUse = true;
-        return container;
-      }
+    const container = this.getUnusedOffscreenRenderTargetContainer(gl);
+    if (container != null) {
+      return container;
     }
 
     // 使われていないリソースコンテナがなければ新たに作成する
-    const colorTexture = contextManager.gl.createTexture();
-    contextManager.gl.bindTexture(contextManager.gl.TEXTURE_2D, colorTexture);
-    contextManager.gl.texImage2D(
-      contextManager.gl.TEXTURE_2D,
-      0,
-      contextManager.gl.RGBA,
-      width,
-      height,
-      0,
-      contextManager.gl.RGBA,
-      contextManager.gl.UNSIGNED_BYTE,
-      null
-    );
-    contextManager.gl.texParameteri(
-      contextManager.gl.TEXTURE_2D,
-      contextManager.gl.TEXTURE_WRAP_S,
-      contextManager.gl.CLAMP_TO_EDGE
-    );
-    contextManager.gl.texParameteri(
-      contextManager.gl.TEXTURE_2D,
-      contextManager.gl.TEXTURE_WRAP_T,
-      contextManager.gl.CLAMP_TO_EDGE
-    );
-    contextManager.gl.texParameteri(
-      contextManager.gl.TEXTURE_2D,
-      contextManager.gl.TEXTURE_MIN_FILTER,
-      contextManager.gl.LINEAR
-    );
-    contextManager.gl.texParameteri(
-      contextManager.gl.TEXTURE_2D,
-      contextManager.gl.TEXTURE_MAG_FILTER,
-      contextManager.gl.LINEAR
-    );
-
-    const renderFramebuffer = contextManager.gl.createFramebuffer();
-    if (renderFramebuffer == null) {
-      console.error('Failed to create framebuffer');
-      return null;
-    }
-    contextManager.gl.bindFramebuffer(
-      contextManager.gl.FRAMEBUFFER,
-      renderFramebuffer
-    );
-    contextManager.gl.framebufferTexture2D(
-      contextManager.gl.FRAMEBUFFER,
-      contextManager.gl.COLOR_ATTACHMENT0,
-      contextManager.gl.TEXTURE_2D,
-      colorTexture,
-      0
-    );
-
-    const status = contextManager.gl.checkFramebufferStatus(
-      contextManager.gl.FRAMEBUFFER
-    );
-    if (status !== contextManager.gl.FRAMEBUFFER_COMPLETE) {
-      console.error('Framebuffer is not complete');
-      contextManager.gl.deleteFramebuffer(renderFramebuffer);
-      return null;
-    }
-
-    const offscreenRenderTextureContainer = new CubismRenderTargetContainer(
-      colorTexture,
-      renderFramebuffer,
-      true
-    );
-    contextManager.offscreenRenderTargetContainers.pushBack(
-      offscreenRenderTextureContainer
-    );
+    const offscreenRenderTextureContainer =
+      this.createOffscreenRenderTargetContainer(
+        gl,
+        width,
+        height,
+        previousFramebuffer
+      );
 
     return offscreenRenderTextureContainer;
   }
@@ -390,19 +315,48 @@ export class CubismWebGLOffscreenManager {
     const contextManager = this.getContextManager(gl);
     for (
       let index = 0;
-      index < contextManager.offscreenRenderTargetContainers.getSize();
+      index < contextManager.offscreenRenderTargetContainers.length;
       ++index
     ) {
       if (
-        contextManager.offscreenRenderTargetContainers.at(index)
-          .renderTexture != renderTexture
+        contextManager.offscreenRenderTargetContainers[index].renderTexture ==
+        renderTexture
+      ) {
+        return contextManager.offscreenRenderTargetContainers[index].inUse;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * リソースコンテナの使用を開始する。
+   *
+   * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
+   * @param renderTexture WebGLFramebuffer
+   */
+  public startUsingRenderTexture(
+    gl: WebGLRenderingContext | WebGL2RenderingContext,
+    renderTexture: WebGLFramebuffer
+  ): void {
+    const contextManager = this.getContextManager(gl);
+    for (
+      let index = 0;
+      index < contextManager.offscreenRenderTargetContainers.length;
+      ++index
+    ) {
+      if (
+        contextManager.offscreenRenderTargetContainers[index].renderTexture !=
+        renderTexture
       ) {
         continue;
       }
 
-      return contextManager.offscreenRenderTargetContainers.at(index).inUse;
+      contextManager.offscreenRenderTargetContainers[index].inUse = true;
+
+      this.updateRenderTargetContainerCount(gl);
+
+      break;
     }
-    return true;
   }
 
   /**
@@ -418,17 +372,17 @@ export class CubismWebGLOffscreenManager {
     const contextManager = this.getContextManager(gl);
     for (
       let index = 0;
-      index < contextManager.offscreenRenderTargetContainers.getSize();
+      index < contextManager.offscreenRenderTargetContainers.length;
       ++index
     ) {
       if (
-        contextManager.offscreenRenderTargetContainers.at(index)
-          .renderTexture != renderTexture
+        contextManager.offscreenRenderTargetContainers[index].renderTexture !=
+        renderTexture
       ) {
         continue;
       }
 
-      contextManager.offscreenRenderTargetContainers.at(index).inUse = false;
+      contextManager.offscreenRenderTargetContainers[index].inUse = false;
 
       contextManager.currentActiveRenderTextureCount--;
       if (contextManager.currentActiveRenderTextureCount < 0) {
@@ -449,10 +403,10 @@ export class CubismWebGLOffscreenManager {
     const contextManager = this.getContextManager(gl);
     for (
       let index = 0;
-      index < contextManager.offscreenRenderTargetContainers.getSize();
+      index < contextManager.offscreenRenderTargetContainers.length;
       ++index
     ) {
-      contextManager.offscreenRenderTargetContainers.at(index).inUse = false;
+      contextManager.offscreenRenderTargetContainers[index].inUse = false;
     }
 
     contextManager.currentActiveRenderTextureCount = 0;
@@ -467,33 +421,58 @@ export class CubismWebGLOffscreenManager {
     gl: WebGLRenderingContext | WebGL2RenderingContext
   ): void {
     const contextManager = this.getContextManager(gl);
-    if (
-      contextManager.offscreenRenderTargetContainers == null ||
-      contextManager.offscreenRenderTargetContainers.getSize() === 0 ||
-      contextManager.offscreenRenderTargetContainers.getSize() <=
-        contextManager.previousActiveRenderTextureMaxCount
-    ) {
+    const listSize = contextManager.offscreenRenderTargetContainers.length;
+
+    if (contextManager.hasResetThisFrame || listSize === 0) {
+      // 使用する量が変化する場合は開放しない
       return;
     }
 
-    const newSize = Math.max(
-      0,
-      contextManager.previousActiveRenderTextureMaxCount
-    );
+    // 未使用な場所を開放して直前の最大数までリサイズする
+    let findPos = 0;
+    let resize = contextManager.previousActiveRenderTextureMaxCount;
     for (
-      let index = newSize;
-      index < contextManager.offscreenRenderTargetContainers.getSize();
-      ++index
+      let i = listSize;
+      contextManager.previousActiveRenderTextureMaxCount < i;
+      --i
     ) {
-      const container =
-        contextManager.offscreenRenderTargetContainers.at(index);
+      const index = i - 1;
+      if (contextManager.offscreenRenderTargetContainers[index].inUse) {
+        // 空いている場所探して移動させる
+        let isFind = false;
+        for (
+          ;
+          findPos < contextManager.previousActiveRenderTextureMaxCount;
+          ++findPos
+        ) {
+          if (!contextManager.offscreenRenderTargetContainers[findPos].inUse) {
+            const tempContainer =
+              contextManager.offscreenRenderTargetContainers[findPos];
+            contextManager.offscreenRenderTargetContainers[findPos] =
+              contextManager.offscreenRenderTargetContainers[index];
+            contextManager.offscreenRenderTargetContainers[findPos].inUse =
+              true;
+            contextManager.offscreenRenderTargetContainers[index] =
+              tempContainer;
+            contextManager.offscreenRenderTargetContainers[index].inUse = false;
+            isFind = true;
+            break;
+          }
+        }
+        if (!isFind) {
+          // 空いている場所が見つからなかったら現状のサイズでリサイズする
+          resize = i;
+          break;
+        }
+      }
+      const container = contextManager.offscreenRenderTargetContainers[index];
       contextManager.gl.bindTexture(contextManager.gl.TEXTURE_2D, null);
       contextManager.gl.deleteTexture(container.colorBuffer);
       contextManager.gl.bindFramebuffer(contextManager.gl.FRAMEBUFFER, null);
       contextManager.gl.deleteFramebuffer(container.renderTexture);
       container.clear();
     }
-    contextManager.offscreenRenderTargetContainers.resize(newSize);
+    updateSize(contextManager.offscreenRenderTargetContainers, resize);
   }
 
   /**
@@ -520,6 +499,88 @@ export class CubismWebGLOffscreenManager {
   ): number {
     const contextManager = this.getContextManager(gl);
     return contextManager.currentActiveRenderTextureCount;
+  }
+
+  /**
+   * 現在のアクティブなレンダーターゲットの数を更新
+   *
+   * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
+   */
+  public updateRenderTargetContainerCount(
+    gl: WebGLRenderingContext | WebGL2RenderingContext
+  ): void {
+    const contextManager = this.getContextManager(gl);
+    ++contextManager.currentActiveRenderTextureCount;
+
+    // 最大数更新
+    contextManager.previousActiveRenderTextureMaxCount =
+      contextManager.currentActiveRenderTextureCount >
+      contextManager.previousActiveRenderTextureMaxCount
+        ? contextManager.currentActiveRenderTextureCount
+        : contextManager.previousActiveRenderTextureMaxCount;
+  }
+
+  /**
+   * 使用されていないリソースコンテナの取得
+   *
+   * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
+   * @return 使用されていないリソースコンテナ
+   */
+  public getUnusedOffscreenRenderTargetContainer(
+    gl: WebGLRenderingContext | WebGL2RenderingContext
+  ): CubismRenderTargetContainer {
+    const contextManager = this.getContextManager(gl);
+    // 使われていないリソースコンテナがあればそれを返す
+    for (
+      let index = 0;
+      index < contextManager.offscreenRenderTargetContainers.length;
+      ++index
+    ) {
+      const container = contextManager.offscreenRenderTargetContainers[index];
+      if (container.inUse == false) {
+        container.inUse = true;
+        return container;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 新たにリソースコンテナを作成する。
+   *
+   * @param gl WebGLRenderingContextまたはWebGL2RenderingContext
+   * @param width 幅
+   * @param height 高さ
+   * @param previousFramebuffer 前のフレームバッファ
+   * @return 作成されたリソースコンテナ
+   */
+  public createOffscreenRenderTargetContainer(
+    gl: WebGLRenderingContext | WebGL2RenderingContext,
+    width: number,
+    height: number,
+    previousFramebuffer: WebGLFramebuffer
+  ): CubismRenderTargetContainer {
+    const renderTarget = new CubismRenderTarget_WebGL();
+
+    if (
+      !renderTarget.createRenderTarget(gl, width, height, previousFramebuffer)
+    ) {
+      CubismLogError('Failed to create offscreen render texture.');
+      return null;
+    }
+
+    const offscreenRenderTextureContainer = new CubismRenderTargetContainer(
+      renderTarget.getColorBuffer(),
+      renderTarget.getRenderTexture(),
+      true
+    );
+
+    const contextManager = this.getContextManager(gl);
+    contextManager.offscreenRenderTargetContainers.push(
+      offscreenRenderTextureContainer
+    );
+
+    return offscreenRenderTextureContainer;
   }
 
   private static _instance: CubismWebGLOffscreenManager; // オフスクリーン描画用レンダーターゲットマネージャ

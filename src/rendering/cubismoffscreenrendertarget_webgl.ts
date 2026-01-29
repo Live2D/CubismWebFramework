@@ -65,8 +65,15 @@ export class CubismOffscreenRenderTarget_WebGL extends CubismRenderTarget_WebGL 
       this._webGLOffscreenManager.getOffscreenRenderTargetContainers(
         gl,
         displayBufferWidth,
-        displayBufferHeight
+        displayBufferHeight,
+        previousFramebuffer
       );
+
+    if (offscreenRenderTargetContainer == null) {
+      CubismLogError('Failed to acquire offscreen render texture container.');
+      return;
+    }
+
     this._colorBuffer = offscreenRenderTargetContainer.getColorBuffer();
     this._renderTexture = offscreenRenderTargetContainer.getRenderTexture();
 
@@ -94,6 +101,20 @@ export class CubismOffscreenRenderTarget_WebGL extends CubismRenderTarget_WebGL 
     }
 
     return this._webGLOffscreenManager.getUsingRenderTextureState(
+      this._gl,
+      this._renderTexture
+    );
+  }
+
+  /**
+   * リソースコンテナの使用を開始する。
+   */
+  public startUsingRenderTexture(): void {
+    if (this._webGLOffscreenManager == null || this._gl == null) {
+      return;
+    }
+
+    this._webGLOffscreenManager.startUsingRenderTexture(
       this._gl,
       this._renderTexture
     );

@@ -6,7 +6,6 @@
  */
 
 import { CubismIdHandle } from './id/cubismid';
-import { csmMap } from './type/csmmap';
 
 /**
  * モデル設定情報を取り扱う関数を宣言した純粋仮想クラス。
@@ -161,11 +160,11 @@ export abstract class ICubismModelSetting {
 
   /**
    * レイアウト情報を取得する
-   * @param outLayoutMap csmMapクラスのインスタンス
+   * @param outLayoutMap Mapクラスのインスタンス
    * @return true レイアウト情報が存在する
    * @return false レイアウト情報が存在しない
    */
-  public abstract getLayoutMap(outLayoutMap: csmMap<string, number>): boolean;
+  public abstract getLayoutMap(outLayoutMap: Map<string, number>): boolean;
 
   /**
    * 目パチに関連付けられたパラメータの数を取得する

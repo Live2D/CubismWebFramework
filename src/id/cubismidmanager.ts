@@ -5,8 +5,6 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { csmString } from '../type/csmstring';
-import { csmVector } from '../type/csmvector';
 import { CubismId } from './cubismid';
 
 /**
@@ -19,15 +17,15 @@ export class CubismIdManager {
    * コンストラクタ
    */
   public constructor() {
-    this._ids = new csmVector<CubismId>();
+    this._ids = new Array<CubismId>();
   }
 
   /**
    * デストラクタ相当の処理
    */
   public release(): void {
-    for (let i = 0; i < this._ids.getSize(); ++i) {
-      this._ids.set(i, void 0);
+    for (let i = 0; i < this._ids.length; ++i) {
+      this._ids[i] = void 0;
     }
     this._ids = null;
   }
@@ -38,7 +36,7 @@ export class CubismIdManager {
    * @param ids ID名リスト
    * @param count IDの個数
    */
-  public registerIds(ids: string[] | csmString[]): void {
+  public registerIds(ids: string[]): void {
     for (let i = 0; i < ids.length; i++) {
       this.registerId(ids[i]);
     }
@@ -49,7 +47,7 @@ export class CubismIdManager {
    *
    * @param id ID名
    */
-  public registerId(id: string | csmString): CubismId {
+  public registerId(id: string): CubismId {
     let result: CubismId = null;
 
     if ('string' == typeof id) {
@@ -58,9 +56,9 @@ export class CubismIdManager {
       }
 
       result = CubismId.createIdInternal(id);
-      this._ids.pushBack(result);
+      this._ids.push(result);
     } else {
-      return this.registerId(id.s);
+      return this.registerId(id);
     }
 
     return result;
@@ -71,7 +69,7 @@ export class CubismIdManager {
    *
    * @param id ID名
    */
-  public getId(id: csmString | string): CubismId {
+  public getId(id: string): CubismId {
     return this.registerId(id);
   }
 
@@ -81,11 +79,11 @@ export class CubismIdManager {
    * @return true 存在する
    * @return false 存在しない
    */
-  public isExist(id: csmString | string): boolean {
+  public isExist(id: string): boolean {
     if ('string' == typeof id) {
       return this.findId(id) != null;
     }
-    return this.isExist(id.s);
+    return this.isExist(id);
   }
 
   /**
@@ -95,16 +93,16 @@ export class CubismIdManager {
    * @return 登録されているID。なければNULL。
    */
   private findId(id: string): CubismId {
-    for (let i = 0; i < this._ids.getSize(); ++i) {
-      if (this._ids.at(i).getString().isEqual(id)) {
-        return this._ids.at(i);
+    for (let i = 0; i < this._ids.length; ++i) {
+      if (this._ids[i].getString() == id) {
+        return this._ids[i];
       }
     }
 
     return null;
   }
 
-  private _ids: csmVector<CubismId>; // 登録されているIDのリスト
+  private _ids: Array<CubismId>; // 登録されているIDのリスト
 }
 
 // Namespace definition for compatibility.

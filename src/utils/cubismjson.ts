@@ -6,9 +6,6 @@
  */
 
 import { strtod } from '../live2dcubismframework';
-import { csmMap, iterator as csmMap_iterator } from '../type/csmmap';
-import { csmString } from '../type/csmstring';
-import { csmVector, iterator as csmVector_iterator } from '../type/csmvector';
 import { CubismLogInfo } from './cubismdebug';
 
 // StaticInitializeNotForClientCall()で初期化する
@@ -25,7 +22,7 @@ export abstract class Value {
   public constructor() {}
 
   /**
-   * 要素を文字列型で返す(csmString型)
+   * 要素を文字列型で返す(string型)
    */
   public abstract getString(defaultValue?: string, indent?: string): string;
 
@@ -74,14 +71,14 @@ export abstract class Value {
   /**
    * 要素をコンテナで返す(array)
    */
-  public getVector(defaultValue = new csmVector<Value>()): csmVector<Value> {
+  public getVector(defaultValue = new Array<Value>()): Array<Value> {
     return defaultValue;
   }
 
   /**
-   * 要素をマップで返す(csmMap<csmString, Value>)
+   * 要素をマップで返す(Map<String, Value>)
    */
-  public getMap(defaultValue?: csmMap<string, Value>): csmMap<string, Value> {
+  public getMap(defaultValue?: Map<string, Value>): Map<string, Value> {
     return defaultValue;
   }
 
@@ -95,9 +92,9 @@ export abstract class Value {
   }
 
   /**
-   * 添字演算子[string | csmString]
+   * 添字演算子[string]
    */
-  public getValueByString(s: string | csmString): Value {
+  public getValueByString(s: string): Value {
     return Value.nullValue.setErrorNotForClientCall(
       CSM_JSON_ERROR_TYPE_MISMATCH
     );
@@ -108,7 +105,7 @@ export abstract class Value {
    *
    * @return マップのキーの一覧
    */
-  public getKeys(): csmVector<string> {
+  public getKeys(): Array<string> {
     return Value.dummyKeys;
   }
 
@@ -164,7 +161,7 @@ export abstract class Value {
   /**
    * 引数の値と等しければtrue
    */
-  public equals(value: csmString): boolean;
+  public equals(value: string): boolean;
   public equals(value: string): boolean;
   public equals(value: number): boolean;
   public equals(value: boolean): boolean;
@@ -194,7 +191,7 @@ export abstract class Value {
     JsonBoolean.falseValue = new JsonBoolean(false);
     Value.errorValue = new JsonError('ERROR', true);
     Value.nullValue = new JsonNullvalue();
-    Value.dummyKeys = new csmVector<string>();
+    Value.dummyKeys = new Array<string>();
   }
 
   /**
@@ -210,7 +207,7 @@ export abstract class Value {
 
   protected _stringBuffer: string; // 文字列バッファ
 
-  private static dummyKeys: csmVector<string>; // ダミーキー
+  private static dummyKeys: Array<string>; // ダミーキー
 
   public static errorValue: Value; // 一時的な返り値として返すエラー。 CubismFramework::Disposeするまではdeleteしない
   public static nullValue: Value; // 一時的な返り値として返すNULL。   CubismFramework::Disposeするまではdeleteしない
@@ -335,7 +332,7 @@ export class CubismJson {
       CubismLogInfo('{0}', this._root.getRawString());
       return false;
     } else if (this._root == null) {
-      this._root = new JsonError(new csmString(this._error), false); // rootは解放されるのでエラーオブジェクトを別途作成する
+      this._root = new JsonError(this._error, false); // rootは解放されるのでエラーオブジェクトを別途作成する
       return false;
     }
     return true;
@@ -479,7 +476,7 @@ export class CubismJson {
 
     let i = begin;
     let c: string, c2: string;
-    const ret: csmString = new csmString('');
+    let ret: string = '';
     let bufStart: number = begin; // sbufに登録されていない文字の開始位置
 
     for (; i < length; i++) {
@@ -489,8 +486,8 @@ export class CubismJson {
         case '"': {
           // 終端の”、エスケープ文字は別に処理されるのでここに来ない
           outEndPos[0] = i + 1; // ”の次の文字
-          ret.append(string.slice(bufStart), i - bufStart); // 前の文字までを登録する
-          return ret.s;
+          ret += string.substr(bufStart, i - bufStart); // 前の文字までを登録する
+          return ret;
         }
         // falls through
         case '//': {
@@ -498,7 +495,7 @@ export class CubismJson {
           i++; // ２文字をセットで扱う
 
           if (i - 1 > bufStart) {
-            ret.append(string.slice(bufStart), i - bufStart); // 前の文字までを登録する
+            ret += string.substr(bufStart, i - bufStart); // 前の文字までを登録する
           }
           bufStart = i + 1; // エスケープ（２文字)の次の文字から
 
@@ -507,28 +504,28 @@ export class CubismJson {
 
             switch (c2) {
               case '\\':
-                ret.expansion(1, '\\');
+                ret += '\\';
                 break;
               case '"':
-                ret.expansion(1, '"');
+                ret += '"';
                 break;
               case '/':
-                ret.expansion(1, '/');
+                ret += '/';
                 break;
               case 'b':
-                ret.expansion(1, '\b');
+                ret += '\b';
                 break;
               case 'f':
-                ret.expansion(1, '\f');
+                ret += '\f';
                 break;
               case 'n':
-                ret.expansion(1, '\n');
+                ret += '\n';
                 break;
               case 'r':
-                ret.expansion(1, '\r');
+                ret += '\r';
                 break;
               case 't':
-                ret.expansion(1, '\t');
+                ret += '\t';
                 break;
               case 'u':
                 this._error = 'parse string/unicord escape not supported';
@@ -783,7 +780,7 @@ export class JsonFloat extends Value {
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string): string {
     const strbuf = '\0';
@@ -810,7 +807,7 @@ export class JsonFloat extends Value {
   /**
    * 引数の値と等しければtrue
    */
-  public equals(value: csmString): boolean;
+  public equals(value: string): boolean;
   public equals(value: string): boolean;
   public equals(value: number): boolean;
   public equals(value: boolean): boolean;
@@ -850,7 +847,7 @@ export class JsonBoolean extends Value {
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string): string {
     this._stringBuffer = this._boolValue ? 'true' : 'false';
@@ -861,7 +858,7 @@ export class JsonBoolean extends Value {
   /**
    * 引数の値と等しければtrue
    */
-  public equals(value: csmString): boolean;
+  public equals(value: string): boolean;
   public equals(value: string): boolean;
   public equals(value: number): boolean;
   public equals(value: boolean): boolean;
@@ -901,18 +898,9 @@ export class JsonString extends Value {
   /**
    * 引数付きコンストラクタ
    */
-  public constructor(s: string);
-  public constructor(s: csmString);
-  public constructor(s: any) {
+  public constructor(s: string) {
     super();
-
-    if ('string' === typeof s) {
-      this._stringBuffer = s;
-    }
-
-    if (s instanceof csmString) {
-      this._stringBuffer = s.s;
-    }
+    this._stringBuffer = s;
   }
 
   /**
@@ -923,7 +911,7 @@ export class JsonString extends Value {
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string): string {
     return this._stringBuffer;
@@ -932,17 +920,13 @@ export class JsonString extends Value {
   /**
    * 引数の値と等しければtrue
    */
-  public equals(value: csmString): boolean;
+  public equals(value: string): boolean;
   public equals(value: string): boolean;
   public equals(value: number): boolean;
   public equals(value: boolean): boolean;
   public equals(value: any): boolean {
     if ('string' === typeof value) {
       return this._stringBuffer == value;
-    }
-
-    if (value instanceof csmString) {
-      return this._stringBuffer == value.s;
     }
 
     return false;
@@ -971,7 +955,7 @@ export class JsonError extends JsonString {
   /**
    * 引数付きコンストラクタ
    */
-  public constructor(s: csmString | string, isStatic: boolean) {
+  public constructor(s: string, isStatic: boolean) {
     if ('string' === typeof s) {
       super(s);
     } else {
@@ -1002,7 +986,7 @@ export class JsonNullvalue extends Value {
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string): string {
     return this._stringBuffer;
@@ -1042,20 +1026,15 @@ export class JsonArray extends Value {
    */
   public constructor() {
     super();
-    this._array = new csmVector<Value>();
+    this._array = new Array<Value>();
   }
 
   /**
    * デストラクタ相当の処理
    */
   public release(): void {
-    for (
-      let ite: csmVector_iterator<Value> = this._array.begin();
-      ite.notEqual(this._array.end());
-      ite.preIncrement()
-    ) {
-      let v: Value = ite.ptr();
-
+    for (let i = 0; i < this._array.length; i++) {
+      let v: Value = this._array[i];
       if (v && !v.isStatic()) {
         v = void 0;
         v = null;
@@ -1074,13 +1053,13 @@ export class JsonArray extends Value {
    * 添字演算子[index]
    */
   public getValueByIndex(index: number): Value {
-    if (index < 0 || this._array.getSize() <= index) {
+    if (index < 0 || this._array.length <= index) {
       return Value.errorValue.setErrorNotForClientCall(
         CSM_JSON_ERROR_INDEX_OF_BOUNDS
       );
     }
 
-    const v: Value = this._array.at(index);
+    const v: Value = this._array[index];
 
     if (v == null) {
       return Value.nullValue;
@@ -1090,26 +1069,22 @@ export class JsonArray extends Value {
   }
 
   /**
-   * 添字演算子[string | csmString]
+   * 添字演算子[string]
    */
-  public getValueByString(s: string | csmString): Value {
+  public getValueByString(s: string): Value {
     return Value.errorValue.setErrorNotForClientCall(
       CSM_JSON_ERROR_TYPE_MISMATCH
     );
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string): string {
     const stringBuffer: string = indent + '[\n';
 
-    for (
-      let ite: csmVector_iterator<Value> = this._array.begin();
-      ite.notEqual(this._array.end());
-      ite.increment()
-    ) {
-      const v: Value = ite.ptr();
+    for (let i = 0; i < this._array.length; i++) {
+      const v: Value = this._array[i];
       this._stringBuffer += indent + '' + v.getString(indent + ' ') + '\n';
     }
 
@@ -1123,13 +1098,13 @@ export class JsonArray extends Value {
    * @param v 追加する要素
    */
   public add(v: Value): void {
-    this._array.pushBack(v);
+    this._array.push(v);
   }
 
   /**
-   * 要素をコンテナで返す(csmVector<Value>)
+   * 要素をコンテナで返す(Array<Value>)
    */
-  public getVector(defaultValue: csmVector<Value> = null): csmVector<Value> {
+  public getVector(defaultValue: Array<Value> = null): Array<Value> {
     return this._array;
   }
 
@@ -1137,10 +1112,10 @@ export class JsonArray extends Value {
    * 要素の数を返す
    */
   public getSize(): number {
-    return this._array.getSize();
+    return this._array.length;
   }
 
-  private _array: csmVector<Value>; // JSON要素の値
+  private _array: Array<Value>; // JSON要素の値
 }
 
 /**
@@ -1152,25 +1127,14 @@ export class JsonMap extends Value {
    */
   public constructor() {
     super();
-    this._map = new csmMap<string, Value>();
+    this._map = new Map<string, Value>();
   }
 
   /**
    * デストラクタ相当の処理
    */
   public release(): void {
-    const ite: csmMap_iterator<string, Value> = this._map.begin();
-
-    while (ite.notEqual(this._map.end())) {
-      let v: Value = ite.ptr().second;
-
-      if (v && !v.isStatic()) {
-        v = void 0;
-        v = null;
-      }
-
-      ite.preIncrement();
-    }
+    this._map.clear();
   }
 
   /**
@@ -1181,30 +1145,13 @@ export class JsonMap extends Value {
   }
 
   /**
-   * 添字演算子[string | csmString]
+   * 添字演算子[string]
    */
-  public getValueByString(s: string | csmString): Value {
-    if (s instanceof csmString) {
-      const ret: Value = this._map.getValue(s.s);
-      if (ret == null) {
-        return Value.nullValue;
-      }
+  public getValueByString(s: string): Value {
+    const ret = this._map.get(s);
+    if (ret != undefined) {
       return ret;
     }
-
-    for (
-      let iter: csmMap_iterator<string, Value> = this._map.begin();
-      iter.notEqual(this._map.end());
-      iter.preIncrement()
-    ) {
-      if (iter.ptr().first == s) {
-        if (iter.ptr().second == null) {
-          return Value.nullValue;
-        }
-        return iter.ptr().second;
-      }
-    }
-
     return Value.nullValue;
   }
 
@@ -1218,19 +1165,17 @@ export class JsonMap extends Value {
   }
 
   /**
-   * 要素を文字列で返す(csmString型)
+   * 要素を文字列で返す(string型)
    */
   public getString(defaultValue: string, indent: string) {
     this._stringBuffer = indent + '{\n';
 
-    const ite: csmMap_iterator<string, Value> = this._map.begin();
-    while (ite.notEqual(this._map.end())) {
-      const key = ite.ptr().first;
-      const v: Value = ite.ptr().second;
+    for (const element of this._map) {
+      const key = element[0];
+      const v: Value = element[1];
 
       this._stringBuffer +=
         indent + ' ' + key + ' : ' + v.getString(indent + '   ') + ' \n';
-      ite.preIncrement();
     }
 
     this._stringBuffer += indent + '}\n';
@@ -1241,7 +1186,7 @@ export class JsonMap extends Value {
   /**
    * 要素をMap型で返す
    */
-  public getMap(defaultValue?: csmMap<string, Value>): csmMap<string, Value> {
+  public getMap(defaultValue?: Map<string, Value>): Map<string, Value> {
     return this._map;
   }
 
@@ -1249,23 +1194,15 @@ export class JsonMap extends Value {
    * Mapに要素を追加する
    */
   public put(key: string, v: Value): void {
-    this._map.setValue(key, v);
+    this._map.set(key, v);
   }
 
   /**
    * Mapからキーのリストを取得する
    */
-  public getKeys(): csmVector<string> {
+  public getKeys(): Array<string> {
     if (!this._keys) {
-      this._keys = new csmVector<string>();
-
-      const ite: csmMap_iterator<string, Value> = this._map.begin();
-
-      while (ite.notEqual(this._map.end())) {
-        const key: string = ite.ptr().first;
-        this._keys.pushBack(key);
-        ite.preIncrement();
-      }
+      this._keys = [...this._map.keys()];
     }
     return this._keys;
   }
@@ -1274,11 +1211,11 @@ export class JsonMap extends Value {
    * Mapの要素数を取得する
    */
   public getSize(): number {
-    return this._keys.getSize();
+    return this._keys.length;
   }
 
-  private _map: csmMap<string, Value>; // JSON要素の値
-  private _keys: csmVector<string>; // JSON要素の値
+  private _map: Map<string, Value>; // JSON要素の値
+  private _keys: Array<string>; // JSON要素の値
 }
 
 // Namespace definition for compatibility.

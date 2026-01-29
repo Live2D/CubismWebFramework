@@ -7,8 +7,6 @@
 
 import { CubismMath } from '../math/cubismmath';
 import { CubismModel } from '../model/cubismmodel';
-import { csmString } from '../type/csmstring';
-import { csmVector } from '../type/csmvector';
 import { CSM_ASSERT, CubismDebug } from '../utils/cubismdebug';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
 
@@ -43,7 +41,7 @@ export abstract class ACubismMotion {
     this._isLoop = false; // ループするか
     this._isLoopFadeIn = true; // ループ時にフェードインが有効かどうかのフラグ。初期値では有効。
     this._previousLoopState = this._isLoop;
-    this._firedEventValues = new csmVector<csmString>();
+    this._firedEventValues = new Array<string>();
   }
 
   /**
@@ -297,7 +295,7 @@ export abstract class ACubismMotion {
   public getFiredEvent(
     beforeCheckTimeSeconds: number,
     motionTimeSeconds: number
-  ): csmVector<csmString> {
+  ): Array<string> {
     return this._firedEventValues;
   }
 
@@ -424,7 +422,7 @@ export abstract class ACubismMotion {
   public _isLoop: boolean; // ループが有効かのフラグ
   public _isLoopFadeIn: boolean; // ループ時にフェードインが有効かどうかのフラグ
   public _previousLoopState: boolean; // 前回の `_isLoop` の状態
-  public _firedEventValues: csmVector<csmString>;
+  public _firedEventValues: Array<string>;
 
   // モーション再生開始コールバック関数
   public _onBeganMotion?: BeganMotionCallback;

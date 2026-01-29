@@ -8,7 +8,6 @@
 import { ICubismModelSetting } from '../icubismmodelsetting';
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismModel } from '../model/cubismmodel';
-import { csmVector } from '../type/csmvector';
 
 /**
  * 自動まばたき機能
@@ -66,7 +65,7 @@ export class CubismEyeBlink {
    * まばたきさせるパラメータIDのリストの設定
    * @param parameterIds パラメータのIDのリスト
    */
-  public setParameterIds(parameterIds: csmVector<CubismIdHandle>): void {
+  public setParameterIds(parameterIds: Array<CubismIdHandle>): void {
     this._parameterIds = parameterIds;
   }
 
@@ -74,7 +73,7 @@ export class CubismEyeBlink {
    * まばたきさせるパラメータIDのリストの取得
    * @return パラメータIDのリスト
    */
-  public getParameterIds(): csmVector<CubismIdHandle> {
+  public getParameterIds(): Array<CubismIdHandle> {
     return this._parameterIds;
   }
 
@@ -153,8 +152,8 @@ export class CubismEyeBlink {
       parameterValue = -parameterValue;
     }
 
-    for (let i = 0; i < this._parameterIds.getSize(); ++i) {
-      model.setParameterValueById(this._parameterIds.at(i), parameterValue);
+    for (let i = 0; i < this._parameterIds.length; ++i) {
+      model.setParameterValueById(this._parameterIds[i], parameterValue);
     }
   }
 
@@ -171,14 +170,15 @@ export class CubismEyeBlink {
     this._closedSeconds = 0.05;
     this._openingSeconds = 0.15;
     this._userTimeSeconds = 0.0;
-    this._parameterIds = new csmVector<CubismIdHandle>();
+    this._parameterIds = new Array<CubismIdHandle>();
 
     if (modelSetting == null) {
       return;
     }
 
+    this._parameterIds.length = modelSetting.getEyeBlinkParameterCount();
     for (let i = 0; i < modelSetting.getEyeBlinkParameterCount(); ++i) {
-      this._parameterIds.pushBack(modelSetting.getEyeBlinkParameterId(i));
+      this._parameterIds[i] = modelSetting.getEyeBlinkParameterId(i);
     }
   }
 
@@ -195,7 +195,7 @@ export class CubismEyeBlink {
   }
 
   _blinkingState: number; // 現在の状態
-  _parameterIds: csmVector<CubismIdHandle>; // 操作対象のパラメータのIDのリスト
+  _parameterIds: Array<CubismIdHandle>; // 操作対象のパラメータのIDのリスト
   _nextBlinkingTime: number; // 次のまばたきの時刻[秒]
   _stateStartTimeSeconds: number; // 現在の状態が開始した時刻[秒]
   _blinkingIntervalSeconds: number; // まばたきの間隔[秒]

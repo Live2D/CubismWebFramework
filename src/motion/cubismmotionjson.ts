@@ -7,7 +7,6 @@
 
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
-import { csmString } from '../type/csmstring';
 import { CSM_ASSERT, CubismLogWarning } from '../utils/cubismdebug';
 import { CubismJson, JsonMap } from '../utils/cubismjson';
 import { CubismMotionSegmentType } from './cubismmotioninternal';
@@ -93,8 +92,7 @@ export class CubismMotionJson {
     const actualCurveListSize = this._json
       .getRoot()
       .getValueByString(Curves)
-      .getVector()
-      .getSize();
+      .getVector().length;
     let actualTotalSegmentCount = 0;
     let actualTotalPointCount = 0;
 
@@ -107,7 +105,6 @@ export class CubismMotionJson {
       for (
         let segmentPosition = 0;
         segmentPosition < this.getMotionCurveSegmentCount(curvePosition);
-
       ) {
         if (segmentPosition == 0) {
           actualTotalPointCount += 1;
@@ -373,8 +370,7 @@ export class CubismMotionJson {
       .getValueByString(Curves)
       .getValueByIndex(curveIndex)
       .getValueByString(Segments)
-      .getVector()
-      .getSize();
+      .getVector().length;
   }
 
   /**
@@ -439,15 +435,13 @@ export class CubismMotionJson {
    * @param userDataIndex イベントのインデックス
    * @return イベントの文字列
    */
-  public getEventValue(userDataIndex: number): csmString {
-    return new csmString(
-      this._json
-        .getRoot()
-        .getValueByString(UserData)
-        .getValueByIndex(userDataIndex)
-        .getValueByString(Value)
-        .getRawString()
-    );
+  public getEventValue(userDataIndex: number): string {
+    return this._json
+      .getRoot()
+      .getValueByString(UserData)
+      .getValueByIndex(userDataIndex)
+      .getValueByString(Value)
+      .getRawString();
   }
 
   _json: CubismJson; // motion3.jsonのデータ

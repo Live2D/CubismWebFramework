@@ -5,8 +5,6 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { csmString } from '../type/csmstring';
-
 /**
  * パラメータ名・パーツ名・Drawable名を保持
  *
@@ -24,14 +22,14 @@ export class CubismId {
    * @note 指定したID文字列からCubismIdを取得する際は
    *       CubismIdManager().getId(id)を使用してください
    */
-  public static createIdInternal(id: string | csmString) {
+  public static createIdInternal(id: string) {
     return new CubismId(id);
   }
 
   /**
    * ID名を取得する
    */
-  public getString(): csmString {
+  public getString() {
     return this._id;
   }
 
@@ -40,13 +38,11 @@ export class CubismId {
    * @param c 比較するid
    * @return 同じならばtrue,異なっていればfalseを返す
    */
-  public isEqual(c: string | csmString | CubismId): boolean {
+  public isEqual(c: string | CubismId): boolean {
     if (typeof c === 'string') {
-      return this._id.isEqual(c);
-    } else if (c instanceof csmString) {
-      return this._id.isEqual(c.s);
+      return this._id == c;
     } else if (c instanceof CubismId) {
-      return this._id.isEqual(c._id.s);
+      return this._id == c._id;
     }
     return false;
   }
@@ -56,13 +52,11 @@ export class CubismId {
    * @param c 比較するid
    * @return 同じならばtrue,異なっていればfalseを返す
    */
-  public isNotEqual(c: string | csmString | CubismId): boolean {
+  public isNotEqual(c: string | CubismId): boolean {
     if (typeof c == 'string') {
-      return !this._id.isEqual(c);
-    } else if (c instanceof csmString) {
-      return !this._id.isEqual(c.s);
+      return !(this._id == c);
     } else if (c instanceof CubismId) {
-      return !this._id.isEqual(c._id.s);
+      return !(this._id == c._id);
     }
     return false;
   }
@@ -72,16 +66,11 @@ export class CubismId {
    *
    * @note ユーザーによる生成は許可しません
    */
-  private constructor(id: string | csmString) {
-    if (typeof id === 'string') {
-      this._id = new csmString(id);
-      return;
-    }
-
+  private constructor(id: string) {
     this._id = id;
   }
 
-  private _id: csmString; // ID名
+  private _id: string; // ID名
 }
 
 export declare type CubismIdHandle = CubismId;
