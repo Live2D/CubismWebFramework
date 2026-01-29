@@ -7,7 +7,6 @@
 
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismVector2 } from '../math/cubismvector2';
-import { csmVector } from '../type/csmvector';
 
 /**
  * 物理演算の適用先の種類
@@ -202,20 +201,20 @@ export class CubismPhysicsOutput {
  */
 export class CubismPhysicsRig {
   constructor() {
-    this.settings = new csmVector<CubismPhysicsSubRig>();
-    this.inputs = new csmVector<CubismPhysicsInput>();
-    this.outputs = new csmVector<CubismPhysicsOutput>();
-    this.particles = new csmVector<CubismPhysicsParticle>();
+    this.settings = new Array<CubismPhysicsSubRig>();
+    this.inputs = new Array<CubismPhysicsInput>();
+    this.outputs = new Array<CubismPhysicsOutput>();
+    this.particles = new Array<CubismPhysicsParticle>();
     this.gravity = new CubismVector2(0, 0);
     this.wind = new CubismVector2(0, 0);
     this.fps = 0.0;
   }
 
   subRigCount: number; // 物理演算の物理点の個数
-  settings: csmVector<CubismPhysicsSubRig>; // 物理演算の物理点の管理のリスト
-  inputs: csmVector<CubismPhysicsInput>; // 物理演算の入力のリスト
-  outputs: csmVector<CubismPhysicsOutput>; // 物理演算の出力のリスト
-  particles: csmVector<CubismPhysicsParticle>; // 物理演算の物理点のリスト
+  settings: Array<CubismPhysicsSubRig>; // 物理演算の物理点の管理のリスト
+  inputs: Array<CubismPhysicsInput>; // 物理演算の入力のリスト
+  outputs: Array<CubismPhysicsOutput>; // 物理演算の出力のリスト
+  particles: Array<CubismPhysicsParticle>; // 物理演算の物理点のリスト
   gravity: CubismVector2; // 重力
   wind: CubismVector2; // 風
   fps: number; //物理演算動作FPS

@@ -8,7 +8,6 @@
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
 import { CubismModel } from '../model/cubismmodel';
-import { csmVector } from '../type/csmvector';
 import { CubismJson, Value } from '../utils/cubismjson';
 import { ACubismMotion } from './acubismmotion';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
@@ -62,8 +61,8 @@ export class CubismExpressionMotion extends ACubismMotion {
     weight: number,
     motionQueueEntry: CubismMotionQueueEntry
   ): void {
-    for (let i = 0; i < this._parameters.getSize(); ++i) {
-      const parameter: ExpressionParameter = this._parameters.at(i);
+    for (let i = 0; i < this._parameters.length; ++i) {
+      const parameter: ExpressionParameter = this._parameters[i];
 
       switch (parameter.blendType) {
         case ExpressionBlendType.Additive: {
@@ -113,7 +112,7 @@ export class CubismExpressionMotion extends ACubismMotion {
     model: CubismModel,
     userTimeSeconds: number,
     motionQueueEntry: CubismMotionQueueEntry,
-    expressionParameterValues: csmVector<ExpressionParameterValue>,
+    expressionParameterValues: Array<ExpressionParameterValue>,
     expressionIndex: number,
     fadeWeight: number
   ) {
@@ -130,8 +129,8 @@ export class CubismExpressionMotion extends ACubismMotion {
     this._fadeWeight = this.updateFadeWeight(motionQueueEntry, userTimeSeconds);
 
     // モデルに適用する値を計算
-    for (let i = 0; i < expressionParameterValues.getSize(); ++i) {
-      const expressionParameterValue = expressionParameterValues.at(i);
+    for (let i = 0; i < expressionParameterValues.length; ++i) {
+      const expressionParameterValue = expressionParameterValues[i];
 
       if (expressionParameterValue.parameterId == null) {
         continue;
@@ -142,10 +141,10 @@ export class CubismExpressionMotion extends ACubismMotion {
 
       const expressionParameters = this.getExpressionParameters();
       let parameterIndex = -1;
-      for (let j = 0; j < expressionParameters.getSize(); ++j) {
+      for (let j = 0; j < expressionParameters.length; ++j) {
         if (
           expressionParameterValue.parameterId !=
-          expressionParameters.at(j).parameterId
+          expressionParameters[j].parameterId
         ) {
           continue;
         }
@@ -184,9 +183,9 @@ export class CubismExpressionMotion extends ACubismMotion {
       }
 
       // 値を計算
-      const value = expressionParameters.at(parameterIndex).value;
+      const value = expressionParameters[parameterIndex].value;
       let newAdditiveValue, newMultiplyValue, newOverwriteValue;
-      switch (expressionParameters.at(parameterIndex).blendType) {
+      switch (expressionParameters[parameterIndex].blendType) {
         case ExpressionBlendType.Additive:
           newAdditiveValue = value;
           newMultiplyValue = CubismExpressionMotion.DefaultMultiplyValue;
@@ -272,8 +271,9 @@ export class CubismExpressionMotion extends ACubismMotion {
     const parameterCount = root
       .getValueByString(ExpressionKeyParameters)
       .getSize();
-    this._parameters.prepareCapacity(parameterCount);
 
+    let dstIndex: number = this._parameters.length;
+    this._parameters.length += parameterCount;
     for (let i = 0; i < parameterCount; ++i) {
       const param: Value = root
         .getValueByString(ExpressionKeyParameters)
@@ -316,7 +316,7 @@ export class CubismExpressionMotion extends ACubismMotion {
       item.blendType = blendType;
       item.value = value;
 
-      this._parameters.pushBack(item);
+      this._parameters[dstIndex++] = item;
     }
 
     CubismJson.delete(json); // JSONデータは不要になったら削除する
@@ -345,11 +345,11 @@ export class CubismExpressionMotion extends ACubismMotion {
    */
   protected constructor() {
     super();
-    this._parameters = new csmVector<ExpressionParameter>();
+    this._parameters = new Array<ExpressionParameter>();
     this._fadeWeight = 0.0;
   }
 
-  private _parameters: csmVector<ExpressionParameter>; // 表情のパラメータ情報リスト
+  private _parameters: Array<ExpressionParameter>; // 表情のパラメータ情報リスト
 
   /**
    * 表情の現在のウェイト

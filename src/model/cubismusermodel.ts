@@ -25,7 +25,6 @@ import { CubismMotionManager } from '../motion/cubismmotionmanager';
 import { CubismMotionQueueManager } from '../motion/cubismmotionqueuemanager';
 import { CubismPhysics } from '../physics/cubismphysics';
 import { CubismRenderer_WebGL } from '../rendering/cubismrenderer_webgl';
-import { csmString } from '../type/csmstring';
 import { CubismLogError, CubismLogInfo } from '../utils/cubismdebug';
 import { CubismMoc } from './cubismmoc';
 import { CubismModel } from './cubismmodel';
@@ -406,8 +405,8 @@ export class CubismUserModel {
    *
    * @param eventValue 発火したイベントの文字列データ
    */
-  public motionEventFired(eventValue: csmString): void {
-    CubismLogInfo('{0}', eventValue.s);
+  public motionEventFired(eventValue: string): void {
+    CubismLogInfo('{0}', eventValue);
   }
 
   /**
@@ -422,7 +421,7 @@ export class CubismUserModel {
    */
   public static cubismDefaultMotionEventCallback(
     caller: CubismMotionQueueManager,
-    eventValue: csmString,
+    eventValue: string,
     customData: CubismUserModel
   ): void {
     const model: CubismUserModel = customData;

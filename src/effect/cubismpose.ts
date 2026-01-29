@@ -8,7 +8,6 @@
 import { CubismIdHandle } from '../id/cubismid';
 import { CubismFramework } from '../live2dcubismframework';
 import { CubismModel } from '../model/cubismmodel';
-import { csmVector, iterator } from '../type/csmvector';
 import { CubismJson, Value } from '../utils/cubismjson';
 
 const Epsilon = 0.001;
@@ -56,6 +55,7 @@ export class CubismPose {
     const poseListInfo: Value = root.getValueByString(Groups);
     const poseCount: number = poseListInfo.getSize();
 
+    ret._partGroupCounts.length = poseCount;
     for (let poseIndex = 0; poseIndex < poseCount; ++poseIndex) {
       const idListInfo: Value = poseListInfo.getValueByIndex(poseIndex);
       const idCount: number = idListInfo.getSize();
@@ -84,16 +84,16 @@ export class CubismPose {
 
             linkPart.partId = linkId;
 
-            partData.link.pushBack(linkPart);
+            partData.link.push(linkPart);
           }
         }
 
-        ret._partGroups.pushBack(partData.clone());
+        ret._partGroups.push(partData.clone());
 
         ++groupCount;
       }
 
-      ret._partGroupCounts.pushBack(groupCount);
+      ret._partGroupCounts[poseIndex] = groupCount;
     }
 
     CubismJson.delete(json);
@@ -132,8 +132,8 @@ export class CubismPose {
 
     let beginIndex = 0;
 
-    for (let i = 0; i < this._partGroupCounts.getSize(); i++) {
-      const partGroupCount: number = this._partGroupCounts.at(i);
+    for (let i = 0; i < this._partGroupCounts.length; i++) {
+      const partGroupCount: number = this._partGroupCounts[i];
 
       this.doFade(model, deltaTimeSeconds, beginIndex, partGroupCount);
 
@@ -151,14 +151,14 @@ export class CubismPose {
   public reset(model: CubismModel): void {
     let beginIndex = 0;
 
-    for (let i = 0; i < this._partGroupCounts.getSize(); ++i) {
-      const groupCount: number = this._partGroupCounts.at(i);
+    for (let i = 0; i < this._partGroupCounts.length; ++i) {
+      const groupCount: number = this._partGroupCounts[i];
 
       for (let j: number = beginIndex; j < beginIndex + groupCount; ++j) {
-        this._partGroups.at(j).initialize(model);
+        this._partGroups[j].initialize(model);
 
-        const partsIndex: number = this._partGroups.at(j).partIndex;
-        const paramIndex: number = this._partGroups.at(j).parameterIndex;
+        const partsIndex: number = this._partGroups[j].partIndex;
+        const paramIndex: number = this._partGroups[j].parameterIndex;
 
         if (partsIndex < 0) {
           continue;
@@ -167,8 +167,8 @@ export class CubismPose {
         model.setPartOpacityByIndex(partsIndex, j == beginIndex ? 1.0 : 0.0);
         model.setParameterValueByIndex(paramIndex, j == beginIndex ? 1.0 : 0.0);
 
-        for (let k = 0; k < this._partGroups.at(j).link.getSize(); ++k) {
-          this._partGroups.at(j).link.at(k).initialize(model);
+        for (let k = 0; k < this._partGroups[j].link.length; ++k) {
+          this._partGroups[j].link[k].initialize(model);
         }
       }
 
@@ -184,24 +184,20 @@ export class CubismPose {
   public copyPartOpacities(model: CubismModel): void {
     for (
       let groupIndex = 0;
-      groupIndex < this._partGroups.getSize();
+      groupIndex < this._partGroups.length;
       ++groupIndex
     ) {
-      const partData: PartData = this._partGroups.at(groupIndex);
+      const partData: PartData = this._partGroups[groupIndex];
 
-      if (partData.link.getSize() == 0) {
+      if (partData.link.length == 0) {
         continue; // 連動するパラメータはない
       }
 
-      const partIndex: number = this._partGroups.at(groupIndex).partIndex;
+      const partIndex: number = this._partGroups[groupIndex].partIndex;
       const opacity: number = model.getPartOpacityByIndex(partIndex);
 
-      for (
-        let linkIndex = 0;
-        linkIndex < partData.link.getSize();
-        ++linkIndex
-      ) {
-        const linkPart: PartData = partData.link.at(linkIndex);
+      for (let linkIndex = 0; linkIndex < partData.link.length; ++linkIndex) {
+        const linkPart: PartData = partData.link[linkIndex];
         const linkPartIndex: number = linkPart.partIndex;
 
         if (linkPartIndex < 0) {
@@ -234,8 +230,8 @@ export class CubismPose {
 
     // 現在、表示状態になっているパーツを取得
     for (let i: number = beginIndex; i < beginIndex + partGroupCount; ++i) {
-      const partIndex: number = this._partGroups.at(i).partIndex;
-      const paramIndex: number = this._partGroups.at(i).parameterIndex;
+      const partIndex: number = this._partGroups[i].partIndex;
+      const paramIndex: number = this._partGroups[i].parameterIndex;
 
       if (model.getParameterValueByIndex(paramIndex) > Epsilon) {
         if (visiblePartIndex >= 0) {
@@ -267,7 +263,7 @@ export class CubismPose {
 
     // 表示パーツ、非表示パーツの不透明度を設定する
     for (let i: number = beginIndex; i < beginIndex + partGroupCount; ++i) {
-      const partsIndex: number = this._partGroups.at(i).partIndex;
+      const partsIndex: number = this._partGroups[i].partIndex;
 
       // 表示パーツの設定
       if (visiblePartIndex == i) {
@@ -306,12 +302,12 @@ export class CubismPose {
   public constructor() {
     this._fadeTimeSeconds = DefaultFadeInSeconds;
     this._lastModel = null;
-    this._partGroups = new csmVector<PartData>();
-    this._partGroupCounts = new csmVector<number>();
+    this._partGroups = new Array<PartData>();
+    this._partGroupCounts = new Array<number>();
   }
 
-  _partGroups: csmVector<PartData>; // パーツグループ
-  _partGroupCounts: csmVector<number>; // それぞれのパーツグループの個数
+  _partGroups: Array<PartData>; // パーツグループ
+  _partGroupCounts: Array<number>; // それぞれのパーツグループの個数
   _fadeTimeSeconds: number; // フェード時間[秒]
   _lastModel: CubismModel; // 前回操作したモデル
 }
@@ -326,17 +322,14 @@ export class PartData {
   constructor(v?: PartData) {
     this.parameterIndex = 0;
     this.partIndex = 0;
-    this.link = new csmVector<PartData>();
+    this.link = new Array<PartData>();
 
     if (v != undefined) {
       this.partId = v.partId;
 
-      for (
-        const ite: iterator<PartData> = v.link.begin();
-        ite.notEqual(v.link.end());
-        ite.preIncrement()
-      ) {
-        this.link.pushBack(ite.ptr().clone());
+      this.link.length = v.link.length;
+      for (let i = 0; i < v.link.length; i++) {
+        this.link[i] = v.link[i].clone();
       }
     }
   }
@@ -347,12 +340,10 @@ export class PartData {
   public assignment(v: PartData): PartData {
     this.partId = v.partId;
 
-    for (
-      const ite: iterator<PartData> = v.link.begin();
-      ite.notEqual(v.link.end());
-      ite.preIncrement()
-    ) {
-      this.link.pushBack(ite.ptr().clone());
+    let dstIndex: number = this.link.length;
+    this.link.length += v.link.length;
+    for (const partData of v.link) {
+      this.link[dstIndex++] = partData.clone();
     }
 
     return this;
@@ -378,14 +369,11 @@ export class PartData {
     clonePartData.partId = this.partId;
     clonePartData.parameterIndex = this.parameterIndex;
     clonePartData.partIndex = this.partIndex;
-    clonePartData.link = new csmVector<PartData>();
+    clonePartData.link = new Array<PartData>();
 
-    for (
-      let ite: iterator<PartData> = this.link.begin();
-      ite.notEqual(this.link.end());
-      ite.increment()
-    ) {
-      clonePartData.link.pushBack(ite.ptr().clone());
+    clonePartData.link.length = this.link.length;
+    for (let i = 0; i < this.link.length; i++) {
+      clonePartData.link[i] = this.link[i].clone();
     }
 
     return clonePartData;
@@ -394,7 +382,7 @@ export class PartData {
   partId: CubismIdHandle; // パーツID
   parameterIndex: number; // パラメータのインデックス
   partIndex: number; // パーツのインデックス
-  link: csmVector<PartData>; // 連動するパラメータ
+  link: Array<PartData>; // 連動するパラメータ
 }
 
 // Namespace definition for compatibility.

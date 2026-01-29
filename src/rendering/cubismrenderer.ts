@@ -54,14 +54,15 @@ export abstract class CubismRenderer {
 
   /**
    * モデルを描画する
+   * @param shaderPath ブレンドモード用シェーダのパス
    */
-  public drawModel(): void {
+  public drawModel(shaderPath: string = null): void {
     if (this.getModel() == null) return;
 
     // NOTE: WebGL最適化のため、デフォルトではコメントアウト
     //this.saveProfile();
 
-    this.doDrawModel();
+    this.doDrawModel(shaderPath);
 
     // NOTE: WebGL最適化のため、デフォルトではコメントアウト
     //this.restoreProfile();
@@ -262,8 +263,9 @@ export abstract class CubismRenderer {
 
   /**
    * モデル描画の実装
+   * @param shaderPath ブレンドモード用シェーダのパス
    */
-  public abstract doDrawModel(): void;
+  public abstract doDrawModel(shaderPath: string): void;
 
   /**
    * モデル描画直前のレンダラのステートを保持する

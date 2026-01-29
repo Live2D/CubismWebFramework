@@ -17,22 +17,19 @@ Live2D Cubism Editor で出力したモデルをアプリケーションで利�
 本 SDK を使用する前に、[ライセンス](LICENSE.md)をご確認ください。
 
 
-## Cubism 5新機能や過去バージョンとの互換性について
+## Cubism 5.3新機能や過去バージョンとの互換性について
 
-本 SDK はCubism 5に対応した製品です。
-
-Cubism 5 Editorに搭載された新機能のSDK対応については [こちら](https://docs.live2d.com/cubism-sdk-manual/cubism-5-new-functions/)をご確認ください。
-
-過去バージョンのCubism SDKとの互換性については [こちら](https://docs.live2d.com/cubism-sdk-manual/compatibility-with-cubism-5/)をご確認ください。
+本 SDK はCubism 5.3に対応した製品です。
+Cubism 5.3 Editorに搭載された新機能のSDK対応については [こちら](https://docs.live2d.com/cubism-sdk-manual/cubism-5-3-new-functions/)をご確認ください。
+過去バージョンのCubism SDKとの互換性については [こちら](https://docs.live2d.com/cubism-sdk-manual/compatibility-with-cubism-5-3/)をご確認ください。
 
 
 ## 開発環境
 
 ### Node.js
 
-* 24.10.0
-* 22.20.0
-* 20.19.5
+* 25.4.0
+* 24.13.0
 
 
 ### TypeScript

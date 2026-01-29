@@ -17,22 +17,19 @@ You can use it as a JavaScript library that can be used in the browser by buildi
 Please check the [license](LICENSE.md) before using this SDK.
 
 
-## Compatibility with Cubism 5 new features and previous Cubism SDK versions
+## Compatibility with Cubism 5.3 new features and previous Cubism SDK versions
 
-This SDK is compatible with Cubism 5.
-
-For SDK compatibility with new features in Cubism 5 Editor, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/cubism-5-new-functions/).
-
-For compatibility with previous versions of Cubism SDK, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/compatibility-with-cubism-5/).
+This SDK is compatible with Cubism 5.3.
+For SDK compatibility with new features in Cubism 5.3 Editor, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/cubism-5-3-new-functions/).
+For compatibility with previous versions of Cubism SDK, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/compatibility-with-cubism-5-3/).
 
 
 ## Development environment
 
 ### Node.js
 
-* 24.10.0
-* 22.20.0
-* 20.19.5
+* 25.4.0
+* 24.13.0
 
 
 ### TypeScript

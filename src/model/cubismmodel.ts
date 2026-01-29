@@ -12,8 +12,6 @@ import {
   CubismBlendMode,
   CubismTextureColor
 } from '../rendering/cubismrenderer';
-import { csmMap } from '../type/csmmap';
-import { csmVector } from '../type/csmvector';
 import { CSM_ASSERT, CubismLogWarning } from '../utils/cubismdebug';
 
 export const NoParentIndex = -1; // 親が取得できない場合の値を表す定数
@@ -197,12 +195,12 @@ export class CullingData {
  * パーツ子描画オブジェクト情報構造体
  */
 export class PartChildDrawObjects {
-  public drawableIndices: csmVector<number>;
-  public offscreenIndices: csmVector<number>;
+  public drawableIndices: Array<number>;
+  public offscreenIndices: Array<number>;
 
   constructor(
-    drawableIndices: csmVector<number> = new csmVector<number>(),
-    offscreenIndices: csmVector<number> = new csmVector<number>()
+    drawableIndices: Array<number> = new Array<number>(),
+    offscreenIndices: Array<number> = new Array<number>()
   ) {
     this.drawableIndices = drawableIndices;
     this.offscreenIndices = offscreenIndices;
@@ -226,11 +224,11 @@ export class CubismModelObjectInfo {
  * パーツ情報管理構造体
  */
 export class CubismModelPartInfo {
-  public objects: csmVector<CubismModelObjectInfo>;
+  public objects: Array<CubismModelObjectInfo>;
   public childDrawObjects: PartChildDrawObjects;
 
   constructor(
-    objects: csmVector<CubismModelObjectInfo> = new csmVector<CubismModelObjectInfo>(),
+    objects: Array<CubismModelObjectInfo> = new Array<CubismModelObjectInfo>(),
     childDrawObjects: PartChildDrawObjects = new PartChildDrawObjects()
   ) {
     this.objects = objects;
@@ -239,7 +237,7 @@ export class CubismModelPartInfo {
 
   // 子オブジェクト数を返す関数
   public getChildObjectCount(): number {
-    return this.objects.getSize();
+    return this.objects.length;
   }
 }
 
@@ -302,13 +300,13 @@ export class CubismModel {
    */
   public saveParameters(): void {
     const parameterCount: number = this._model.parameters.count;
-    const savedParameterCount: number = this._savedParameters.getSize();
+    const savedParameterCount: number = this._savedParameters.length;
 
     for (let i = 0; i < parameterCount; ++i) {
       if (i < savedParameterCount) {
-        this._savedParameters.set(i, this._parameterValues[i]);
+        this._savedParameters[i] = this._parameterValues[i];
       } else {
-        this._savedParameters.pushBack(this._parameterValues[i]);
+        this._savedParameters.push(this._parameterValues[i]);
       }
     }
   }
@@ -325,7 +323,7 @@ export class CubismModel {
       this.getOverrideFlagForModelMultiplyColors() ||
       this.getOverrideFlagForDrawableMultiplyColors(drawableIndex)
     ) {
-      return this._userDrawableMultiplyColors.at(drawableIndex).color;
+      return this._userDrawableMultiplyColors[drawableIndex].color;
     }
     return this.getDrawableMultiplyColor(drawableIndex);
   }
@@ -342,7 +340,7 @@ export class CubismModel {
       this.getOverrideFlagForModelScreenColors() ||
       this.getOverrideFlagForDrawableScreenColors(drawableIndex)
     ) {
-      return this._userDrawableScreenColors.at(drawableIndex).color;
+      return this._userDrawableScreenColors[drawableIndex].color;
     }
     return this.getDrawableScreenColor(drawableIndex);
   }
@@ -382,10 +380,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userDrawableMultiplyColors.at(drawableIndex).color.r = r;
-    this._userDrawableMultiplyColors.at(drawableIndex).color.g = g;
-    this._userDrawableMultiplyColors.at(drawableIndex).color.b = b;
-    this._userDrawableMultiplyColors.at(drawableIndex).color.a = a;
+    this._userDrawableMultiplyColors[drawableIndex].color.r = r;
+    this._userDrawableMultiplyColors[drawableIndex].color.g = g;
+    this._userDrawableMultiplyColors[drawableIndex].color.b = b;
+    this._userDrawableMultiplyColors[drawableIndex].color.a = a;
   }
 
   /**
@@ -423,10 +421,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userDrawableScreenColors.at(drawableIndex).color.r = r;
-    this._userDrawableScreenColors.at(drawableIndex).color.g = g;
-    this._userDrawableScreenColors.at(drawableIndex).color.b = b;
-    this._userDrawableScreenColors.at(drawableIndex).color.a = a;
+    this._userDrawableScreenColors[drawableIndex].color.r = r;
+    this._userDrawableScreenColors[drawableIndex].color.g = g;
+    this._userDrawableScreenColors[drawableIndex].color.b = b;
+    this._userDrawableScreenColors[drawableIndex].color.a = a;
   }
 
   /**
@@ -436,7 +434,7 @@ export class CubismModel {
    * @return 指定したpartの乗算色
    */
   public getPartMultiplyColor(partIndex: number): CubismTextureColor {
-    return this._userPartMultiplyColors.at(partIndex).color;
+    return this._userPartMultiplyColors[partIndex].color;
   }
 
   /**
@@ -446,7 +444,7 @@ export class CubismModel {
    * @return 指定したpartのスクリーン色
    */
   public getPartScreenColor(partIndex: number): CubismTextureColor {
-    return this._userPartScreenColors.at(partIndex).color;
+    return this._userPartScreenColors[partIndex].color;
   }
 
   /**
@@ -466,25 +464,21 @@ export class CubismModel {
     g: number,
     b: number,
     a: number,
-    partColors: csmVector<ColorData>,
-    drawableColors: csmVector<ColorData>
+    partColors: Array<ColorData>,
+    drawableColors: Array<ColorData>
   ) {
-    partColors.at(partIndex).color.r = r;
-    partColors.at(partIndex).color.g = g;
-    partColors.at(partIndex).color.b = b;
-    partColors.at(partIndex).color.a = a;
+    partColors[partIndex].color.r = r;
+    partColors[partIndex].color.g = g;
+    partColors[partIndex].color.b = b;
+    partColors[partIndex].color.a = a;
 
-    if (partColors.at(partIndex).isOverridden) {
-      for (
-        let i = 0;
-        i < this._partChildDrawables.at(partIndex).getSize();
-        ++i
-      ) {
-        const drawableIndex = this._partChildDrawables.at(partIndex).at(i);
-        drawableColors.at(drawableIndex).color.r = r;
-        drawableColors.at(drawableIndex).color.g = g;
-        drawableColors.at(drawableIndex).color.b = b;
-        drawableColors.at(drawableIndex).color.a = a;
+    if (partColors[partIndex].isOverridden) {
+      for (let i = 0; i < this._partChildDrawables[partIndex].length; ++i) {
+        const drawableIndex = this._partChildDrawables[partIndex][i];
+        drawableColors[drawableIndex].color.r = r;
+        drawableColors[drawableIndex].color.g = g;
+        drawableColors[drawableIndex].color.b = b;
+        drawableColors[drawableIndex].color.a = a;
       }
     }
   }
@@ -593,7 +587,7 @@ export class CubismModel {
       this.getOverrideFlagForModelMultiplyColors() ||
       this.getOverrideFlagForOffscreenMultiplyColors(offscreenIndex)
     ) {
-      return this._userOffscreenMultiplyColors.at(offscreenIndex).color;
+      return this._userOffscreenMultiplyColors[offscreenIndex].color;
     }
     return this.getOffscreenMultiplyColor(offscreenIndex);
   }
@@ -610,7 +604,7 @@ export class CubismModel {
       this.getOverrideFlagForModelScreenColors() ||
       this.getOverrideFlagForOffscreenScreenColors(offscreenIndex)
     ) {
-      return this._userOffscreenScreenColors.at(offscreenIndex).color;
+      return this._userOffscreenScreenColors[offscreenIndex].color;
     }
     return this.getOffscreenScreenColor(offscreenIndex);
   }
@@ -650,10 +644,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userOffscreenMultiplyColors.at(offscreenIndex).color.r = r;
-    this._userOffscreenMultiplyColors.at(offscreenIndex).color.g = g;
-    this._userOffscreenMultiplyColors.at(offscreenIndex).color.b = b;
-    this._userOffscreenMultiplyColors.at(offscreenIndex).color.a = a;
+    this._userOffscreenMultiplyColors[offscreenIndex].color.r = r;
+    this._userOffscreenMultiplyColors[offscreenIndex].color.g = g;
+    this._userOffscreenMultiplyColors[offscreenIndex].color.b = b;
+    this._userOffscreenMultiplyColors[offscreenIndex].color.a = a;
   }
 
   /**
@@ -691,10 +685,10 @@ export class CubismModel {
     b: number,
     a = 1.0
   ) {
-    this._userOffscreenScreenColors.at(offscreenIndex).color.r = r;
-    this._userOffscreenScreenColors.at(offscreenIndex).color.g = g;
-    this._userOffscreenScreenColors.at(offscreenIndex).color.b = b;
-    this._userOffscreenScreenColors.at(offscreenIndex).color.a = a;
+    this._userOffscreenScreenColors[offscreenIndex].color.r = r;
+    this._userOffscreenScreenColors[offscreenIndex].color.g = g;
+    this._userOffscreenScreenColors[offscreenIndex].color.b = b;
+    this._userOffscreenScreenColors[offscreenIndex].color.a = a;
   }
 
   /**
@@ -722,7 +716,7 @@ export class CubismModel {
    * @return true if the parameter repeat is overridden, false otherwise.
    */
   public getOverrideFlagForParameterRepeat(parameterIndex: number): boolean {
-    return this._userParameterRepeatDataList.at(parameterIndex).isOverridden;
+    return this._userParameterRepeatDataList[parameterIndex].isOverridden;
   }
 
   /**
@@ -735,7 +729,7 @@ export class CubismModel {
     parameterIndex: number,
     value: boolean
   ): void {
-    this._userParameterRepeatDataList.at(parameterIndex).isOverridden = value;
+    this._userParameterRepeatDataList[parameterIndex].isOverridden = value;
   }
 
   /**
@@ -746,7 +740,7 @@ export class CubismModel {
    * @return true if repeating, false otherwise.
    */
   public getRepeatFlagForParameterRepeat(parameterIndex: number): boolean {
-    return this._userParameterRepeatDataList.at(parameterIndex)
+    return this._userParameterRepeatDataList[parameterIndex]
       .isParameterRepeated;
   }
 
@@ -760,7 +754,7 @@ export class CubismModel {
     parameterIndex: number,
     value: boolean
   ): void {
-    this._userParameterRepeatDataList.at(parameterIndex).isParameterRepeated =
+    this._userParameterRepeatDataList[parameterIndex].isParameterRepeated =
       value;
   }
 
@@ -891,7 +885,7 @@ export class CubismModel {
   public getOverrideFlagForDrawableMultiplyColors(
     drawableIndex: number
   ): boolean {
-    return this._userDrawableMultiplyColors.at(drawableIndex).isOverridden;
+    return this._userDrawableMultiplyColors[drawableIndex].isOverridden;
   }
 
   /**
@@ -924,7 +918,7 @@ export class CubismModel {
   public getOverrideFlagForDrawableScreenColors(
     drawableIndex: number
   ): boolean {
-    return this._userDrawableScreenColors.at(drawableIndex).isOverridden;
+    return this._userDrawableScreenColors[drawableIndex].isOverridden;
   }
 
   /**
@@ -957,7 +951,7 @@ export class CubismModel {
     drawableIndex: number,
     value: boolean
   ) {
-    this._userDrawableMultiplyColors.at(drawableIndex).isOverridden = value;
+    this._userDrawableMultiplyColors[drawableIndex].isOverridden = value;
   }
 
   /**
@@ -990,7 +984,7 @@ export class CubismModel {
     drawableIndex: number,
     value: boolean
   ) {
-    this._userDrawableScreenColors.at(drawableIndex).isOverridden = value;
+    this._userDrawableScreenColors[drawableIndex].isOverridden = value;
   }
 
   /**
@@ -1019,7 +1013,7 @@ export class CubismModel {
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverrideColorForPartMultiplyColors(partIndex: number) {
-    return this._userPartMultiplyColors.at(partIndex).isOverridden;
+    return this._userPartMultiplyColors[partIndex].isOverridden;
   }
 
   /**
@@ -1048,7 +1042,7 @@ export class CubismModel {
    *          false   ->  モデルに設定されている色情報を使用
    */
   public getOverrideColorForPartScreenColors(partIndex: number) {
-    return this._userPartScreenColors.at(partIndex).isOverridden;
+    return this._userPartScreenColors[partIndex].isOverridden;
   }
 
   /**
@@ -1057,8 +1051,8 @@ export class CubismModel {
    * @deprecated 名称変更のため非推奨 setOverrideColorForPartColors(
    * partIndex: number,
    * value: boolean,
-   * partColors: csmVector<PartColorData>,
-   * drawableColors: csmVector<DrawableColorData>) に置き換え
+   * partColors: Array<PartColorData>,
+   * drawableColors: Array<DrawableColorData>) に置き換え
    *
    * @param partIndex partのインデックス
    * @param value true -> SDKからの情報を優先する
@@ -1069,11 +1063,11 @@ export class CubismModel {
   public setOverwriteColorForPartColors(
     partIndex: number,
     value: boolean,
-    partColors: csmVector<PartColorData>,
-    drawableColors: csmVector<DrawableColorData>
+    partColors: Array<PartColorData>,
+    drawableColors: Array<DrawableColorData>
   ) {
     CubismLogWarning(
-      'setOverwriteColorForPartColors(partIndex: number, value: boolean, partColors: csmVector<PartColorData>, drawableColors: csmVector<DrawableColorData>) is a deprecated function. Please use setOverrideColorForPartColors(partIndex: number, value: boolean, partColors: csmVector<PartColorData>, drawableColors: csmVector<DrawableColorData>).'
+      'setOverwriteColorForPartColors(partIndex: number, value: boolean, partColors: Array<PartColorData>, drawableColors: Array<DrawableColorData>) is a deprecated function. Please use setOverrideColorForPartColors(partIndex: number, value: boolean, partColors: Array<PartColorData>, drawableColors: Array<DrawableColorData>).'
     );
     this.setOverrideColorForPartColors(
       partIndex,
@@ -1095,24 +1089,20 @@ export class CubismModel {
   public setOverrideColorForPartColors(
     partIndex: number,
     value: boolean,
-    partColors: csmVector<ColorData>,
-    drawableColors: csmVector<ColorData>
+    partColors: Array<ColorData>,
+    drawableColors: Array<ColorData>
   ) {
-    partColors.at(partIndex).isOverridden = value;
+    partColors[partIndex].isOverridden = value;
 
-    for (let i = 0; i < this._partChildDrawables.at(partIndex).getSize(); ++i) {
-      const drawableIndex = this._partChildDrawables.at(partIndex).at(i);
-      drawableColors.at(drawableIndex).isOverridden = value;
+    for (let i = 0; i < this._partChildDrawables[partIndex].length; ++i) {
+      const drawableIndex = this._partChildDrawables[partIndex][i];
+      drawableColors[drawableIndex].isOverridden = value;
 
       if (value) {
-        drawableColors.at(drawableIndex).color.r =
-          partColors.at(partIndex).color.r;
-        drawableColors.at(drawableIndex).color.g =
-          partColors.at(partIndex).color.g;
-        drawableColors.at(drawableIndex).color.b =
-          partColors.at(partIndex).color.b;
-        drawableColors.at(drawableIndex).color.a =
-          partColors.at(partIndex).color.a;
+        drawableColors[drawableIndex].color.r = partColors[partIndex].color.r;
+        drawableColors[drawableIndex].color.g = partColors[partIndex].color.g;
+        drawableColors[drawableIndex].color.b = partColors[partIndex].color.b;
+        drawableColors[drawableIndex].color.a = partColors[partIndex].color.a;
       }
     }
   }
@@ -1147,7 +1137,7 @@ export class CubismModel {
     partIndex: number,
     value: boolean
   ) {
-    this._userPartMultiplyColors.at(partIndex).isOverridden = value;
+    this._userPartMultiplyColors[partIndex].isOverridden = value;
     this.setOverrideColorForPartColors(
       partIndex,
       value,
@@ -1186,7 +1176,7 @@ export class CubismModel {
     partIndex: number,
     value: boolean
   ) {
-    this._userPartScreenColors.at(partIndex).isOverridden = value;
+    this._userPartScreenColors[partIndex].isOverridden = value;
     this.setOverrideColorForPartColors(
       partIndex,
       value,
@@ -1206,7 +1196,7 @@ export class CubismModel {
   public getOverrideFlagForOffscreenMultiplyColors(
     offscreenIndex: number
   ): boolean {
-    return this._userOffscreenMultiplyColors.at(offscreenIndex).isOverridden;
+    return this._userOffscreenMultiplyColors[offscreenIndex].isOverridden;
   }
 
   /**
@@ -1220,7 +1210,7 @@ export class CubismModel {
   public getOverrideFlagForOffscreenScreenColors(
     offscreemIndex: number
   ): boolean {
-    return this._userOffscreenScreenColors.at(offscreemIndex).isOverridden;
+    return this._userOffscreenScreenColors[offscreemIndex].isOverridden;
   }
 
   /**
@@ -1234,7 +1224,7 @@ export class CubismModel {
     offscreenIndex: number,
     value: boolean
   ) {
-    this._userOffscreenMultiplyColors.at(offscreenIndex).isOverridden = value;
+    this._userOffscreenMultiplyColors[offscreenIndex].isOverridden = value;
   }
 
   /**
@@ -1248,7 +1238,7 @@ export class CubismModel {
     offscreenIndex: number,
     value: boolean
   ) {
-    this._userOffscreenScreenColors.at(offscreenIndex).isOverridden = value;
+    this._userOffscreenScreenColors[offscreenIndex].isOverridden = value;
   }
 
   /**
@@ -1263,7 +1253,7 @@ export class CubismModel {
       this.getOverrideFlagForModelCullings() ||
       this.getOverrideFlagForDrawableCullings(drawableIndex)
     ) {
-      return this._userDrawableCullings.at(drawableIndex).isCulling;
+      return this._userDrawableCullings[drawableIndex].isCulling;
     }
 
     const constantFlags = this._model.drawables.constantFlags;
@@ -1279,7 +1269,7 @@ export class CubismModel {
    * @param isCulling カリング情報
    */
   public setDrawableCulling(drawableIndex: number, isCulling: boolean): void {
-    this._userDrawableCullings.at(drawableIndex).isCulling = isCulling;
+    this._userDrawableCullings[drawableIndex].isCulling = isCulling;
   }
 
   /**
@@ -1294,7 +1284,7 @@ export class CubismModel {
       this.getOverrideFlagForModelCullings() ||
       this.getOverrideFlagForOffscreenCullings(offscreenIndex)
     ) {
-      return this._userOffscreenCullings.at(offscreenIndex).isCulling;
+      return this._userOffscreenCullings[offscreenIndex].isCulling;
     }
 
     const constantFlags = this._model.offscreens.constantFlags;
@@ -1310,7 +1300,7 @@ export class CubismModel {
    * @param isCulling カリング情報
    */
   public setOffscreenCulling(offscreenIndex: number, isCulling: boolean): void {
-    this._userOffscreenCullings.at(offscreenIndex).isCulling = isCulling;
+    this._userOffscreenCullings[offscreenIndex].isCulling = isCulling;
   }
 
   /**
@@ -1383,7 +1373,7 @@ export class CubismModel {
    *          false   ->  モデルのカリング設定を使用
    */
   public getOverrideFlagForDrawableCullings(drawableIndex: number): boolean {
-    return this._userDrawableCullings.at(drawableIndex).isOverridden;
+    return this._userDrawableCullings[drawableIndex].isOverridden;
   }
 
   /**
@@ -1392,7 +1382,7 @@ export class CubismModel {
    *          false   ->  モデルのカリング設定を使用
    */
   public getOverrideFlagForOffscreenCullings(offscreenIndex: number): boolean {
-    return this._userOffscreenCullings.at(offscreenIndex).isOverridden;
+    return this._userOffscreenCullings[offscreenIndex].isOverridden;
   }
 
   /**
@@ -1424,7 +1414,7 @@ export class CubismModel {
     drawableIndex: number,
     isOverriddenCullings: boolean
   ): void {
-    this._userDrawableCullings.at(drawableIndex).isOverridden =
+    this._userDrawableCullings[drawableIndex].isOverridden =
       isOverriddenCullings;
   }
 
@@ -1463,20 +1453,20 @@ export class CubismModel {
     const partCount: number = this._model.parts.count;
 
     for (partIndex = 0; partIndex < partCount; ++partIndex) {
-      if (partId == this._partIds.at(partIndex)) {
+      if (partId == this._partIds[partIndex]) {
         return partIndex;
       }
     }
 
     // モデルに存在していない場合、非存在パーツIDリスト内にあるかを検索し、そのインデックスを返す
-    if (this._notExistPartId.isExist(partId)) {
-      return this._notExistPartId.getValue(partId);
+    if (this._notExistPartId.has(partId)) {
+      return this._notExistPartId.get(partId);
     }
 
     // 非存在パーツIDリストにない場合、新しく要素を追加する
-    partIndex = partCount + this._notExistPartId.getSize();
-    this._notExistPartId.setValue(partId, partIndex);
-    this._notExistPartOpacities.appendKey(partIndex);
+    partIndex = partCount + this._notExistPartId.size;
+    this._notExistPartId.set(partId, partIndex);
+    this._notExistPartOpacities.set(partIndex, null);
 
     return partIndex;
   }
@@ -1517,8 +1507,8 @@ export class CubismModel {
    * @param opacity 不透明度
    */
   public setPartOpacityByIndex(partIndex: number, opacity: number): void {
-    if (this._notExistPartOpacities.isExist(partIndex)) {
-      this._notExistPartOpacities.setValue(partIndex, opacity);
+    if (this._notExistPartOpacities.has(partIndex)) {
+      this._notExistPartOpacities.set(partIndex, opacity);
       return;
     }
 
@@ -1550,9 +1540,9 @@ export class CubismModel {
    * @return パーツの不透明度
    */
   public getPartOpacityByIndex(partIndex: number): number {
-    if (this._notExistPartOpacities.isExist(partIndex)) {
+    if (this._notExistPartOpacities.has(partIndex)) {
       // モデルに存在しないパーツIDの場合、非存在パーツリストから不透明度を返す。
-      return this._notExistPartOpacities.getValue(partIndex);
+      return this._notExistPartOpacities.get(partIndex);
     }
 
     // インデックスの範囲内検知
@@ -1587,7 +1577,7 @@ export class CubismModel {
     const idCount: number = this._model.parameters.count;
 
     for (parameterIndex = 0; parameterIndex < idCount; ++parameterIndex) {
-      if (parameterId != this._parameterIds.at(parameterIndex)) {
+      if (parameterId != this._parameterIds[parameterIndex]) {
         continue;
       }
 
@@ -1595,16 +1585,16 @@ export class CubismModel {
     }
 
     // モデルに存在していない場合、非存在パラメータIDリスト内を検索し、そのインデックスを返す
-    if (this._notExistParameterId.isExist(parameterId)) {
-      return this._notExistParameterId.getValue(parameterId);
+    if (this._notExistParameterId.has(parameterId)) {
+      return this._notExistParameterId.get(parameterId);
     }
 
     // 非存在パラメータIDリストにない場合新しく要素を追加する
     parameterIndex =
-      this._model.parameters.count + this._notExistParameterId.getSize();
+      this._model.parameters.count + this._notExistParameterId.size;
 
-    this._notExistParameterId.setValue(parameterId, parameterIndex);
-    this._notExistParameterValues.appendKey(parameterIndex);
+    this._notExistParameterId.set(parameterId, parameterIndex);
+    this._notExistParameterValues.set(parameterIndex, null);
 
     return parameterIndex;
   }
@@ -1674,8 +1664,8 @@ export class CubismModel {
    * @return パラメータの値
    */
   public getParameterValueByIndex(parameterIndex: number): number {
-    if (this._notExistParameterValues.isExist(parameterIndex)) {
-      return this._notExistParameterValues.getValue(parameterIndex);
+    if (this._notExistParameterValues.has(parameterIndex)) {
+      return this._notExistParameterValues.get(parameterIndex);
     }
 
     // インデックスの範囲内検知
@@ -1708,13 +1698,12 @@ export class CubismModel {
     value: number,
     weight = 1.0
   ): void {
-    if (this._notExistParameterValues.isExist(parameterIndex)) {
-      this._notExistParameterValues.setValue(
+    if (this._notExistParameterValues.has(parameterIndex)) {
+      this._notExistParameterValues.set(
         parameterIndex,
         weight == 1
           ? value
-          : this._notExistParameterValues.getValue(parameterIndex) *
-              (1 - weight) +
+          : this._notExistParameterValues.get(parameterIndex) * (1 - weight) +
               value * weight
       );
 
@@ -1795,7 +1784,7 @@ export class CubismModel {
    * @return true if it is set, otherwise returns false.
    */
   public isRepeat(parameterIndex: number): boolean {
-    if (this._notExistParameterValues.isExist(parameterIndex)) {
+    if (this._notExistParameterValues.has(parameterIndex)) {
       return false;
     }
 
@@ -1809,13 +1798,11 @@ export class CubismModel {
     // Determines whether to perform parameter repeat processing
     if (
       this._isOverriddenParameterRepeat ||
-      this._userParameterRepeatDataList.at(parameterIndex).isOverridden
+      this._userParameterRepeatDataList[parameterIndex].isOverridden
     ) {
       // Use repeat information set on the SDK side
       isRepeat =
-        this._userParameterRepeatDataList.at(
-          parameterIndex
-        ).isParameterRepeated;
+        this._userParameterRepeatDataList[parameterIndex].isParameterRepeated;
     } else {
       // Use repeat information set in Editor
       isRepeat = this._model.parameters.repeats[parameterIndex] != 0;
@@ -1836,7 +1823,7 @@ export class CubismModel {
     parameterIndex: number,
     value: number
   ): number {
-    if (this._notExistParameterValues.isExist(parameterIndex)) {
+    if (this._notExistParameterValues.has(parameterIndex)) {
       return value;
     }
 
@@ -1880,7 +1867,7 @@ export class CubismModel {
    * @return the clamped value. If the parameter does not exist, returns it as is.
    */
   public getParameterClampValue(parameterIndex: number, value: number): number {
-    if (this._notExistParameterValues.isExist(parameterIndex)) {
+    if (this._notExistParameterValues.has(parameterIndex)) {
       return value;
     }
 
@@ -1954,7 +1941,7 @@ export class CubismModel {
       drawableIndex < drawableCount;
       ++drawableIndex
     ) {
-      if (this._drawableIds.at(drawableIndex) == drawableId) {
+      if (this._drawableIds[drawableIndex] == drawableId) {
         return drawableIndex;
       }
     }
@@ -2512,14 +2499,14 @@ export class CubismModel {
    */
   public loadParameters(): void {
     let parameterCount: number = this._model.parameters.count;
-    const savedParameterCount: number = this._savedParameters.getSize();
+    const savedParameterCount: number = this._savedParameters.length;
 
     if (parameterCount > savedParameterCount) {
       parameterCount = savedParameterCount;
     }
 
     for (let i = 0; i < parameterCount; ++i) {
-      this._parameterValues[i] = this._savedParameters.at(i);
+      this._parameterValues[i] = this._savedParameters[i];
     }
   }
 
@@ -2540,14 +2527,15 @@ export class CubismModel {
       const parameterIds: string[] = this._model.parameters.ids;
       const parameterCount: number = this._model.parameters.count;
 
-      this._parameterIds.prepareCapacity(parameterCount);
-      this._userParameterRepeatDataList.prepareCapacity(parameterCount);
+      this._parameterIds.length = parameterCount;
+      this._userParameterRepeatDataList.length = parameterCount;
       for (let i = 0; i < parameterCount; ++i) {
-        this._parameterIds.pushBack(
-          CubismFramework.getIdManager().getId(parameterIds[i])
+        this._parameterIds[i] = CubismFramework.getIdManager().getId(
+          parameterIds[i]
         );
-        this._userParameterRepeatDataList.pushBack(
-          new ParameterRepeatData(false, false)
+        this._userParameterRepeatDataList[i] = new ParameterRepeatData(
+          false,
+          false
         );
       }
     }
@@ -2556,28 +2544,28 @@ export class CubismModel {
     {
       const partIds: string[] = this._model.parts.ids;
 
-      this._partIds.prepareCapacity(partCount);
+      this._partIds.length = partCount;
       for (let i = 0; i < partCount; ++i) {
-        this._partIds.pushBack(
-          CubismFramework.getIdManager().getId(partIds[i])
-        );
+        this._partIds[i] = CubismFramework.getIdManager().getId(partIds[i]);
       }
-
-      this._userPartMultiplyColors.prepareCapacity(partCount);
-      this._userPartScreenColors.prepareCapacity(partCount);
-
-      this._partChildDrawables.prepareCapacity(partCount);
     }
 
     {
       const drawableIds: string[] = this._model.drawables.ids;
       const drawableCount: number = this._model.drawables.count;
 
-      this._userDrawableMultiplyColors.prepareCapacity(drawableCount);
-      this._userDrawableScreenColors.prepareCapacity(drawableCount);
+      const offsetsPartChildDrawables: number[] = new Array<number>();
+
+      offsetsPartChildDrawables.length = partCount;
+      this._userPartMultiplyColors.length = partCount;
+      this._userPartScreenColors.length = partCount;
+      this._partChildDrawables.length = partCount;
+
+      this._userDrawableMultiplyColors.length = drawableCount;
+      this._userDrawableScreenColors.length = drawableCount;
 
       // カリング設定
-      this._userDrawableCullings.prepareCapacity(drawableCount);
+      this._userDrawableCullings.length = drawableCount;
       const userCulling: CullingData = new CullingData(false, false);
 
       // Part
@@ -2605,10 +2593,10 @@ export class CubismModel {
             screenColor
           );
 
-          this._userPartMultiplyColors.pushBack(userMultiplyColor);
-          this._userPartScreenColors.pushBack(userScreenColor);
-          this._partChildDrawables.pushBack(new csmVector<number>());
-          this._partChildDrawables.at(i).prepareCapacity(drawableCount);
+          this._userPartMultiplyColors[i] = userMultiplyColor;
+          this._userPartScreenColors[i] = userScreenColor;
+          this._partChildDrawables[i] = new Array<number>();
+          this._partChildDrawables[i].length = drawableCount;
         }
       }
 
@@ -2634,18 +2622,18 @@ export class CubismModel {
           );
           const userScreenColor: ColorData = new ColorData(false, screenColor);
 
-          this._drawableIds.pushBack(
+          this._drawableIds.push(
             CubismFramework.getIdManager().getId(drawableIds[i])
           );
 
-          this._userDrawableMultiplyColors.pushBack(userMultiplyColor);
-          this._userDrawableScreenColors.pushBack(userScreenColor);
+          this._userDrawableMultiplyColors[i] = userMultiplyColor;
+          this._userDrawableScreenColors[i] = userScreenColor;
 
-          this._userDrawableCullings.pushBack(userCulling);
+          this._userDrawableCullings[i] = userCulling;
 
           const parentIndex = this.getDrawableParentPartIndex(i);
           if (parentIndex >= 0) {
-            this._partChildDrawables.at(parentIndex).pushBack(i);
+            this._partChildDrawables[parentIndex][i] = i;
           }
         }
       }
@@ -2680,14 +2668,14 @@ export class CubismModel {
         // オフスクリーンの初期化
         const offscreenCount: number = this._model.offscreens.count;
 
-        this._userOffscreenMultiplyColors = new csmVector<ColorData>();
-        this._userOffscreenScreenColors = new csmVector<ColorData>();
-        this._userOffscreenCullings = new csmVector<CullingData>();
+        this._userOffscreenMultiplyColors = new Array<ColorData>();
+        this._userOffscreenScreenColors = new Array<ColorData>();
+        this._userOffscreenCullings = new Array<CullingData>();
 
         // 乗算色・スクリーン色・カリング・オフスクリーン情報の配列を用意
-        this._userOffscreenMultiplyColors.prepareCapacity(offscreenCount);
-        this._userOffscreenScreenColors.prepareCapacity(offscreenCount);
-        this._userOffscreenCullings.prepareCapacity(offscreenCount);
+        this._userOffscreenMultiplyColors.length = offscreenCount;
+        this._userOffscreenScreenColors.length = offscreenCount;
+        this._userOffscreenCullings.length = offscreenCount;
 
         for (let i = 0; i < offscreenCount; ++i) {
           const multiplyColor: CubismTextureColor = new CubismTextureColor(
@@ -2711,9 +2699,9 @@ export class CubismModel {
           // スクリーン色
           const userScreenColor: ColorData = new ColorData(false, screenColor);
 
-          this._userOffscreenMultiplyColors.pushBack(userMultiplyColor);
-          this._userOffscreenScreenColors.pushBack(userScreenColor);
-          this._userOffscreenCullings.pushBack(userCulling);
+          this._userOffscreenMultiplyColors[i] = userMultiplyColor;
+          this._userOffscreenScreenColors[i] = userScreenColor;
+          this._userOffscreenCullings[i] = userCulling;
         }
       }
       this.setupPartsHierarchy();
@@ -2724,7 +2712,7 @@ export class CubismModel {
    * パーツ階層構造を取得する
    * @return パーツ階層構造の配列
    */
-  public getPartsHierarchy(): csmVector<CubismModelPartInfo> {
+  public getPartsHierarchy(): Array<CubismModelPartInfo> {
     return this._partsHierarchy;
   }
 
@@ -2732,13 +2720,14 @@ export class CubismModel {
    * パーツ階層構造をセットアップする
    */
   public setupPartsHierarchy(): void {
-    this._partsHierarchy.clear();
+    this._partsHierarchy.length = 0;
 
     // すべてのパーツのパーツ情報管理構造体を作成
     const partCount = this.getPartCount();
+    this._partsHierarchy.length = partCount;
     for (let i = 0; i < partCount; ++i) {
       const partInfo = new CubismModelPartInfo();
-      this._partsHierarchy.pushBack(partInfo);
+      this._partsHierarchy[i] = partInfo;
     }
 
     // Partごとに親パーツを取得し、親パーツの子objectリストに追加する
@@ -2751,7 +2740,7 @@ export class CubismModel {
 
       for (
         let partIndex = 0;
-        partIndex < this._partsHierarchy.getSize();
+        partIndex < this._partsHierarchy.length;
         ++partIndex
       ) {
         if (partIndex === parentPartIndex) {
@@ -2759,7 +2748,7 @@ export class CubismModel {
             i,
             CubismModelObjectType.CubismModelObjectType_Parts
           );
-          this._partsHierarchy.at(partIndex).objects.pushBack(objectInfo);
+          this._partsHierarchy[partIndex].objects.push(objectInfo);
           break;
         }
       }
@@ -2776,7 +2765,7 @@ export class CubismModel {
 
       for (
         let partIndex = 0;
-        partIndex < this._partsHierarchy.getSize();
+        partIndex < this._partsHierarchy.length;
         ++partIndex
       ) {
         if (partIndex === parentPartIndex) {
@@ -2784,14 +2773,14 @@ export class CubismModel {
             i,
             CubismModelObjectType.CubismModelObjectType_Drawable
           );
-          this._partsHierarchy.at(partIndex).objects.pushBack(objectInfo);
+          this._partsHierarchy[partIndex].objects.push(objectInfo);
           break;
         }
       }
     }
 
     // パーツ子描画オブジェクト情報構造体を作成していく
-    for (let i = 0; i < this._partsHierarchy.getSize(); ++i) {
+    for (let i = 0; i < this._partsHierarchy.length; ++i) {
       // パーツ管理構造体を取得
       this.getPartChildDrawObjects(i);
     }
@@ -2803,26 +2792,26 @@ export class CubismModel {
    * @return PartChildDrawObjects
    */
   public getPartChildDrawObjects(partInfoIndex: number): PartChildDrawObjects {
-    if (this._partsHierarchy.at(partInfoIndex).getChildObjectCount() < 1) {
+    if (this._partsHierarchy[partInfoIndex].getChildObjectCount() < 1) {
       // 子オブジェクトがない場合
-      return this._partsHierarchy.at(partInfoIndex).childDrawObjects;
+      return this._partsHierarchy[partInfoIndex].childDrawObjects;
     }
 
     const childDrawObjects =
-      this._partsHierarchy.at(partInfoIndex).childDrawObjects;
+      this._partsHierarchy[partInfoIndex].childDrawObjects;
 
     // 既にchildDrawObjectsが処理されている場合はスキップ
     if (
-      childDrawObjects.drawableIndices.getSize() !== 0 ||
-      childDrawObjects.offscreenIndices.getSize() !== 0
+      childDrawObjects.drawableIndices.length !== 0 ||
+      childDrawObjects.offscreenIndices.length !== 0
     ) {
       return childDrawObjects;
     }
 
-    const objects = this._partsHierarchy.at(partInfoIndex).objects;
+    const objects = this._partsHierarchy[partInfoIndex].objects;
 
-    for (let i = 0; i < objects.getSize(); ++i) {
-      const obj = objects.at(i);
+    for (let i = 0; i < objects.length; ++i) {
+      const obj = objects[i];
 
       if (
         obj.objectType === CubismModelObjectType.CubismModelObjectType_Parts
@@ -2831,28 +2820,15 @@ export class CubismModel {
         this.getPartChildDrawObjects(obj.objectIndex);
 
         // 子パーツの子Drawable、Offscreenを取得
-        const childToChildDrawObjects = this._partsHierarchy.at(
-          obj.objectIndex
-        ).childDrawObjects;
+        const childToChildDrawObjects =
+          this._partsHierarchy[obj.objectIndex].childDrawObjects;
 
-        for (
-          let j = 0;
-          j < childToChildDrawObjects.drawableIndices.getSize();
-          ++j
-        ) {
-          childDrawObjects.drawableIndices.pushBack(
-            childToChildDrawObjects.drawableIndices.at(j)
-          );
-        }
-        for (
-          let j = 0;
-          j < childToChildDrawObjects.offscreenIndices.getSize();
-          ++j
-        ) {
-          childDrawObjects.offscreenIndices.pushBack(
-            childToChildDrawObjects.offscreenIndices.at(j)
-          );
-        }
+        childDrawObjects.drawableIndices.push(
+          ...childToChildDrawObjects.drawableIndices
+        );
+        childDrawObjects.offscreenIndices.push(
+          ...childToChildDrawObjects.offscreenIndices
+        );
 
         // Offscreenの確認
         const offscreenIndices = this.getOffscreenIndices();
@@ -2860,13 +2836,13 @@ export class CubismModel {
           ? offscreenIndices[obj.objectIndex]
           : NoOffscreenIndex;
         if (offscreenIndex !== NoOffscreenIndex) {
-          childDrawObjects.offscreenIndices.pushBack(offscreenIndex);
+          childDrawObjects.offscreenIndices.push(offscreenIndex);
         }
       } else if (
         obj.objectType === CubismModelObjectType.CubismModelObjectType_Drawable
       ) {
         // Drawableの場合、パーツの子Drawableに追加
-        childDrawObjects.drawableIndices.pushBack(obj.objectIndex);
+        childDrawObjects.drawableIndices.push(obj.objectIndex);
       }
     }
 
@@ -2893,10 +2869,10 @@ export class CubismModel {
     this._parameterMinimumValues = null;
     this._partOpacities = null;
     this._offscreenOpacities = null;
-    this._savedParameters = new csmVector<number>();
-    this._parameterIds = new csmVector<CubismIdHandle>();
-    this._drawableIds = new csmVector<CubismIdHandle>();
-    this._partIds = new csmVector<CubismIdHandle>();
+    this._savedParameters = new Array<number>();
+    this._parameterIds = new Array<CubismIdHandle>();
+    this._drawableIds = new Array<CubismIdHandle>();
+    this._partIds = new Array<CubismIdHandle>();
     this._isOverriddenParameterRepeat = true;
     this._isOverriddenModelMultiplyColors = false;
     this._isOverriddenModelScreenColors = false;
@@ -2913,19 +2889,19 @@ export class CubismModel {
     this._offscreenMultiplyColors = null;
     this._offscreenScreenColors = null;
 
-    this._userParameterRepeatDataList = new csmVector<ParameterRepeatData>();
-    this._userDrawableMultiplyColors = new csmVector<ColorData>();
-    this._userDrawableScreenColors = new csmVector<ColorData>();
-    this._userDrawableCullings = new csmVector<CullingData>();
-    this._userPartMultiplyColors = new csmVector<ColorData>();
-    this._userPartScreenColors = new csmVector<ColorData>();
-    this._partChildDrawables = new csmVector<csmVector<number>>();
-    this._partsHierarchy = new csmVector<CubismModelPartInfo>();
+    this._userParameterRepeatDataList = new Array<ParameterRepeatData>();
+    this._userDrawableMultiplyColors = new Array<ColorData>();
+    this._userDrawableScreenColors = new Array<ColorData>();
+    this._userDrawableCullings = new Array<CullingData>();
+    this._userPartMultiplyColors = new Array<ColorData>();
+    this._userPartScreenColors = new Array<ColorData>();
+    this._partChildDrawables = new Array<Array<number>>();
+    this._partsHierarchy = new Array<CubismModelPartInfo>();
 
-    this._notExistPartId = new csmMap<CubismIdHandle, number>();
-    this._notExistParameterId = new csmMap<CubismIdHandle, number>();
-    this._notExistParameterValues = new csmMap<number, number>();
-    this._notExistPartOpacities = new csmMap<number, number>();
+    this._notExistPartId = new Map<CubismIdHandle, number>();
+    this._notExistParameterId = new Map<CubismIdHandle, number>();
+    this._notExistParameterValues = new Map<number, number>();
+    this._notExistPartOpacities = new Map<number, number>();
 
     // Drawableのカラーブレンドとアルファブレンドの初期化
     this._drawableColorBlends = new Array<CubismColorBlend>(
@@ -2962,13 +2938,13 @@ export class CubismModel {
     this._offscreenScreenColors = null;
   }
 
-  private _notExistPartOpacities: csmMap<number, number>; // 存在していないパーツの不透明度のリスト
-  private _notExistPartId: csmMap<CubismIdHandle, number>; // 存在していないパーツIDのリスト
+  private _notExistPartOpacities: Map<number, number>; // 存在していないパーツの不透明度のリスト
+  private _notExistPartId: Map<CubismIdHandle, number>; // 存在していないパーツIDのリスト
 
-  private _notExistParameterValues: csmMap<number, number>; // 存在していないパラメータの値のリスト
-  private _notExistParameterId: csmMap<CubismIdHandle, number>; // 存在していないパラメータIDのリスト
+  private _notExistParameterValues: Map<number, number>; // 存在していないパラメータの値のリスト
+  private _notExistParameterId: Map<CubismIdHandle, number>; // 存在していないパラメータIDのリスト
 
-  private _savedParameters: csmVector<number>; // 保存されたパラメータ
+  private _savedParameters: Array<number>; // 保存されたパラメータ
 
   /**
    * Flag to determine whether to override model-wide parameter repeats on the SDK
@@ -2981,16 +2957,16 @@ export class CubismModel {
   /**
    * List to manage ParameterRepeat and Override flag to be set for each Parameter
    */
-  private _userParameterRepeatDataList: csmVector<ParameterRepeatData>;
+  private _userParameterRepeatDataList: Array<ParameterRepeatData>;
 
-  private _userDrawableMultiplyColors: csmVector<ColorData>; // Drawableごとに設定する乗算色と上書きフラグを管理するリスト
-  private _userDrawableScreenColors: csmVector<ColorData>; // Drawableごとに設定するスクリーン色と上書きフラグを管理するリスト
-  private _userPartScreenColors: csmVector<ColorData>; // Part 乗算色の配列
-  private _userPartMultiplyColors: csmVector<ColorData>; // Part スクリーン色の配列
-  private _userOffscreenMultiplyColors: csmVector<ColorData>; // Offscreen 乗算色の配列
-  private _userOffscreenScreenColors: csmVector<ColorData>; // Off
-  private _partChildDrawables: csmVector<csmVector<number>>; // Partの子DrawableIndexの配列
-  private _partsHierarchy: csmVector<CubismModelPartInfo>; // Partの親子構造
+  private _userDrawableMultiplyColors: Array<ColorData>; // Drawableごとに設定する乗算色と上書きフラグを管理するリスト
+  private _userDrawableScreenColors: Array<ColorData>; // Drawableごとに設定するスクリーン色と上書きフラグを管理するリスト
+  private _userPartScreenColors: Array<ColorData>; // Part 乗算色の配列
+  private _userPartMultiplyColors: Array<ColorData>; // Part スクリーン色の配列
+  private _userOffscreenMultiplyColors: Array<ColorData>; // Offscreen 乗算色の配列
+  private _userOffscreenScreenColors: Array<ColorData>; // Off
+  private _partChildDrawables: Array<Array<number>>; // Partの子DrawableIndexの配列
+  private _partsHierarchy: Array<CubismModelPartInfo>; // Partの親子構造
 
   private _model: Live2DCubismCore.Model; // モデル
 
@@ -3003,13 +2979,13 @@ export class CubismModel {
 
   private _modelOpacity: number; // モデルの不透明度
 
-  private _parameterIds: csmVector<CubismIdHandle>;
-  private _partIds: csmVector<CubismIdHandle>;
-  private _drawableIds: csmVector<CubismIdHandle>;
+  private _parameterIds: Array<CubismIdHandle>;
+  private _partIds: Array<CubismIdHandle>;
+  private _drawableIds: Array<CubismIdHandle>;
 
   private _isOverriddenCullings: boolean; // モデルのカリング設定をすべて上書きするか？
-  private _userDrawableCullings: csmVector<CullingData>; // カリング設定の配列
-  private _userOffscreenCullings: csmVector<CullingData>; // オフスクリーンのカリング設定を使用するか？
+  private _userDrawableCullings: Array<CullingData>; // カリング設定の配列
+  private _userOffscreenCullings: Array<CullingData>; // オフスクリーンのカリング設定を使用するか？
 
   private _isBlendModeEnabled: boolean; // ブレンドモードを使用しているか
 

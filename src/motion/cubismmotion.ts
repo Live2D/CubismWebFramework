@@ -8,9 +8,8 @@
 import { CubismIdHandle } from '../id/cubismid';
 import { csmDelete, CubismFramework } from '../live2dcubismframework';
 import { CubismMath } from '../math/cubismmath';
+import { updateSize } from '../utils/cubismarrayutils';
 import { CubismModel } from '../model/cubismmodel';
-import { csmString } from '../type/csmstring';
-import { csmVector } from '../type/csmvector';
 import {
   CSM_ASSERT,
   CubismLogDebug,
@@ -210,7 +209,7 @@ function evaluateCurve(
   endTime: number
 ): number {
   // Find segment to evaluate.
-  const curve: CubismMotionCurve = motionData.curves.at(index);
+  const curve: CubismMotionCurve = motionData.curves[index];
 
   let target = -1;
   const totalSegmentCount: number = curve.baseSegmentIndex + curve.segmentCount;
@@ -218,14 +217,14 @@ function evaluateCurve(
   for (let i: number = curve.baseSegmentIndex; i < totalSegmentCount; ++i) {
     // Get first point of next segment.
     pointPosition =
-      motionData.segments.at(i).basePointIndex +
-      ((motionData.segments.at(i).segmentType as CubismMotionSegmentType) ==
+      motionData.segments[i].basePointIndex +
+      ((motionData.segments[i].segmentType as CubismMotionSegmentType) ==
       CubismMotionSegmentType.CubismMotionSegmentType_Bezier
         ? 3
         : 1);
 
     // Break if time lies within current segment.
-    if (motionData.points.at(pointPosition).time > time) {
+    if (motionData.points[pointPosition].time > time) {
       target = i;
       break;
     }
@@ -236,18 +235,21 @@ function evaluateCurve(
       return correctEndPoint(
         motionData,
         totalSegmentCount - 1,
-        motionData.segments.at(curve.baseSegmentIndex).basePointIndex,
+        motionData.segments[curve.baseSegmentIndex].basePointIndex,
         pointPosition,
         time,
         endTime
       );
     }
-    return motionData.points.at(pointPosition).value;
+    return motionData.points[pointPosition].value;
   }
 
-  const segment: CubismMotionSegment = motionData.segments.at(target);
+  const segment: CubismMotionSegment = motionData.segments[target];
 
-  return segment.evaluate(motionData.points.get(segment.basePointIndex), time);
+  return segment.evaluate(
+    motionData.points.slice(segment.basePointIndex),
+    time
+  );
 }
 
 /**
@@ -273,18 +275,18 @@ function correctEndPoint(
     new CubismMotionPoint()
   ];
   {
-    const src = motionData.points.at(endIndex);
+    const src = motionData.points[endIndex];
     motionPoint[0].time = src.time;
     motionPoint[0].value = src.value;
   }
   {
-    const src = motionData.points.at(beginIndex);
+    const src = motionData.points[beginIndex];
     motionPoint[1].time = endTime;
     motionPoint[1].value = src.value;
   }
 
   switch (
-    motionData.segments.at(segmentIndex).segmentType as CubismMotionSegmentType
+    motionData.segments[segmentIndex].segmentType as CubismMotionSegmentType
   ) {
     case CubismMotionSegmentType.CubismMotionSegmentType_Linear:
     case CubismMotionSegmentType.CubismMotionSegmentType_Bezier:
@@ -399,16 +401,16 @@ export class CubismMotion extends ACubismMotion {
     let eyeBlinkFlags = 0;
 
     //瞬き、リップシンクのターゲット数が上限を超えている場合
-    if (this._eyeBlinkParameterIds.getSize() > maxTargetSize) {
+    if (this._eyeBlinkParameterIds.length > maxTargetSize) {
       CubismLogDebug(
         'too many eye blink targets : {0}',
-        this._eyeBlinkParameterIds.getSize()
+        this._eyeBlinkParameterIds.length
       );
     }
-    if (this._lipSyncParameterIds.getSize() > maxTargetSize) {
+    if (this._lipSyncParameterIds.length > maxTargetSize) {
       CubismLogDebug(
         'too many lip sync targets : {0}',
-        this._lipSyncParameterIds.getSize()
+        this._lipSyncParameterIds.length
       );
     }
 
@@ -445,24 +447,23 @@ export class CubismMotion extends ACubismMotion {
       }
     }
 
-    const curves: csmVector<CubismMotionCurve> = this._motionData.curves;
+    const curves: Array<CubismMotionCurve> = this._motionData.curves;
 
     // Evaluate model curves.
     for (
       c = 0;
       c < this._motionData.curveCount &&
-      curves.at(c).type ==
-        CubismMotionCurveTarget.CubismMotionCurveTarget_Model;
+      curves[c].type == CubismMotionCurveTarget.CubismMotionCurveTarget_Model;
       ++c
     ) {
       // Evaluate curve and call handler.
       value = evaluateCurve(this._motionData, c, time, isCorrection, duration);
 
-      if (curves.at(c).id == this._modelCurveIdEyeBlink) {
+      if (curves[c].id == this._modelCurveIdEyeBlink) {
         eyeBlinkValue = value;
-      } else if (curves.at(c).id == this._modelCurveIdLipSync) {
+      } else if (curves[c].id == this._modelCurveIdLipSync) {
         lipSyncValue = value;
-      } else if (curves.at(c).id == this._modelCurveIdOpacity) {
+      } else if (curves[c].id == this._modelCurveIdOpacity) {
         this._modelOpacity = value;
         model.setModelOapcity(this.getModelOpacityValue());
       }
@@ -473,14 +474,14 @@ export class CubismMotion extends ACubismMotion {
     for (
       ;
       c < this._motionData.curveCount &&
-      curves.at(c).type ==
+      curves[c].type ==
         CubismMotionCurveTarget.CubismMotionCurveTarget_Parameter;
       ++c
     ) {
       parameterMotionCurveCount++;
 
       // Find parameter index.
-      parameterIndex = model.getParameterIndex(curves.at(c).id);
+      parameterIndex = model.getParameterIndex(curves[c].id);
 
       // Skip curve evaluation if no value in sink.
       if (parameterIndex == -1) {
@@ -496,10 +497,10 @@ export class CubismMotion extends ACubismMotion {
       if (eyeBlinkValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._eyeBlinkParameterIds.getSize() && i < maxTargetSize;
+          i < this._eyeBlinkParameterIds.length && i < maxTargetSize;
           ++i
         ) {
-          if (this._eyeBlinkParameterIds.at(i) == curves.at(c).id) {
+          if (this._eyeBlinkParameterIds[i] == curves[c].id) {
             value *= eyeBlinkValue;
             eyeBlinkFlags |= 1 << i;
             break;
@@ -510,10 +511,10 @@ export class CubismMotion extends ACubismMotion {
       if (lipSyncValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._lipSyncParameterIds.getSize() && i < maxTargetSize;
+          i < this._lipSyncParameterIds.length && i < maxTargetSize;
           ++i
         ) {
-          if (this._lipSyncParameterIds.at(i) == curves.at(c).id) {
+          if (this._lipSyncParameterIds[i] == curves[c].id) {
             value += lipSyncValue;
             lipSyncFlags |= 1 << i;
             break;
@@ -529,7 +530,7 @@ export class CubismMotion extends ACubismMotion {
       let v: number;
 
       // パラメータごとのフェード
-      if (curves.at(c).fadeInTime < 0.0 && curves.at(c).fadeOutTime < 0.0) {
+      if (curves[c].fadeInTime < 0.0 && curves[c].fadeOutTime < 0.0) {
         // モーションのフェードを適用
         v = sourceValue + (value - sourceValue) * fadeWeight;
       } else {
@@ -537,28 +538,27 @@ export class CubismMotion extends ACubismMotion {
         let fin: number;
         let fout: number;
 
-        if (curves.at(c).fadeInTime < 0.0) {
+        if (curves[c].fadeInTime < 0.0) {
           fin = tmpFadeIn;
         } else {
           fin =
-            curves.at(c).fadeInTime == 0.0
+            curves[c].fadeInTime == 0.0
               ? 1.0
               : CubismMath.getEasingSine(
                   (userTimeSeconds - motionQueueEntry.getFadeInStartTime()) /
-                    curves.at(c).fadeInTime
+                    curves[c].fadeInTime
                 );
         }
 
-        if (curves.at(c).fadeOutTime < 0.0) {
+        if (curves[c].fadeOutTime < 0.0) {
           fout = tmpFadeOut;
         } else {
           fout =
-            curves.at(c).fadeOutTime == 0.0 ||
-            motionQueueEntry.getEndTime() < 0.0
+            curves[c].fadeOutTime == 0.0 || motionQueueEntry.getEndTime() < 0.0
               ? 1.0
               : CubismMath.getEasingSine(
                   (motionQueueEntry.getEndTime() - userTimeSeconds) /
-                    curves.at(c).fadeOutTime
+                    curves[c].fadeOutTime
                 );
         }
 
@@ -575,11 +575,11 @@ export class CubismMotion extends ACubismMotion {
       if (eyeBlinkValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._eyeBlinkParameterIds.getSize() && i < maxTargetSize;
+          i < this._eyeBlinkParameterIds.length && i < maxTargetSize;
           ++i
         ) {
           const sourceValue: number = model.getParameterValueById(
-            this._eyeBlinkParameterIds.at(i)
+            this._eyeBlinkParameterIds[i]
           );
 
           // モーションでの上書きがあった時にはまばたきは適用しない
@@ -590,18 +590,18 @@ export class CubismMotion extends ACubismMotion {
           const v: number =
             sourceValue + (eyeBlinkValue - sourceValue) * fadeWeight;
 
-          model.setParameterValueById(this._eyeBlinkParameterIds.at(i), v);
+          model.setParameterValueById(this._eyeBlinkParameterIds[i], v);
         }
       }
 
       if (lipSyncValue != Number.MAX_VALUE) {
         for (
           let i = 0;
-          i < this._lipSyncParameterIds.getSize() && i < maxTargetSize;
+          i < this._lipSyncParameterIds.length && i < maxTargetSize;
           ++i
         ) {
           const sourceValue: number = model.getParameterValueById(
-            this._lipSyncParameterIds.at(i)
+            this._lipSyncParameterIds[i]
           );
 
           // モーションでの上書きがあった時にはリップシンクは適用しない
@@ -612,7 +612,7 @@ export class CubismMotion extends ACubismMotion {
           const v: number =
             sourceValue + (lipSyncValue - sourceValue) * fadeWeight;
 
-          model.setParameterValueById(this._lipSyncParameterIds.at(i), v);
+          model.setParameterValueById(this._lipSyncParameterIds[i], v);
         }
       }
     }
@@ -620,12 +620,12 @@ export class CubismMotion extends ACubismMotion {
     for (
       ;
       c < this._motionData.curveCount &&
-      curves.at(c).type ==
+      curves[c].type ==
         CubismMotionCurveTarget.CubismMotionCurveTarget_PartOpacity;
       ++c
     ) {
       // Find parameter index.
-      parameterIndex = model.getParameterIndex(curves.at(c).id);
+      parameterIndex = model.getParameterIndex(curves[c].id);
 
       // Skip curve evaluation if no value in sink.
       if (parameterIndex == -1) {
@@ -745,11 +745,11 @@ export class CubismMotion extends ACubismMotion {
     parameterId: CubismIdHandle,
     value: number
   ): void {
-    const curves: csmVector<CubismMotionCurve> = this._motionData.curves;
+    const curves: Array<CubismMotionCurve> = this._motionData.curves;
 
     for (let i = 0; i < this._motionData.curveCount; ++i) {
-      if (parameterId == curves.at(i).id) {
-        curves.at(i).fadeInTime = value;
+      if (parameterId == curves[i].id) {
+        curves[i].fadeInTime = value;
         return;
       }
     }
@@ -764,11 +764,11 @@ export class CubismMotion extends ACubismMotion {
     parameterId: CubismIdHandle,
     value: number
   ): void {
-    const curves: csmVector<CubismMotionCurve> = this._motionData.curves;
+    const curves: Array<CubismMotionCurve> = this._motionData.curves;
 
     for (let i = 0; i < this._motionData.curveCount; ++i) {
-      if (parameterId == curves.at(i).id) {
-        curves.at(i).fadeOutTime = value;
+      if (parameterId == curves[i].id) {
+        curves[i].fadeOutTime = value;
         return;
       }
     }
@@ -780,11 +780,11 @@ export class CubismMotion extends ACubismMotion {
    * @return   フェードインにかかる時間[秒]
    */
   public getParameterFadeInTime(parameterId: CubismIdHandle): number {
-    const curves: csmVector<CubismMotionCurve> = this._motionData.curves;
+    const curves: Array<CubismMotionCurve> = this._motionData.curves;
 
     for (let i = 0; i < this._motionData.curveCount; ++i) {
-      if (parameterId == curves.at(i).id) {
-        return curves.at(i).fadeInTime;
+      if (parameterId == curves[i].id) {
+        return curves[i].fadeInTime;
       }
     }
 
@@ -798,11 +798,11 @@ export class CubismMotion extends ACubismMotion {
    * @return   フェードアウトにかかる時間[秒]
    */
   public getParameterFadeOutTime(parameterId: CubismIdHandle): number {
-    const curves: csmVector<CubismMotionCurve> = this._motionData.curves;
+    const curves: Array<CubismMotionCurve> = this._motionData.curves;
 
     for (let i = 0; i < this._motionData.curveCount; ++i) {
-      if (parameterId == curves.at(i).id) {
-        return curves.at(i).fadeOutTime;
+      if (parameterId == curves[i].id) {
+        return curves[i].fadeOutTime;
       }
     }
 
@@ -815,8 +815,8 @@ export class CubismMotion extends ACubismMotion {
    * @param lipSyncParameterIds     リップシンクがかかっているパラメータIDのリスト
    */
   public setEffectIds(
-    eyeBlinkParameterIds: csmVector<CubismIdHandle>,
-    lipSyncParameterIds: csmVector<CubismIdHandle>
+    eyeBlinkParameterIds: Array<CubismIdHandle>,
+    lipSyncParameterIds: Array<CubismIdHandle>
   ): void {
     this._eyeBlinkParameterIds = eyeBlinkParameterIds;
     this._lipSyncParameterIds = lipSyncParameterIds;
@@ -940,22 +940,26 @@ export class CubismMotion extends ACubismMotion {
       this._fadeOutSeconds = 1.0;
     }
 
-    this._motionData.curves.updateSize(
+    updateSize(
+      this._motionData.curves,
       this._motionData.curveCount,
       CubismMotionCurve,
       true
     );
-    this._motionData.segments.updateSize(
+    updateSize(
+      this._motionData.segments,
       json.getMotionTotalSegmentCount(),
       CubismMotionSegment,
       true
     );
-    this._motionData.points.updateSize(
+    updateSize(
+      this._motionData.points,
       json.getMotionTotalPointCount(),
       CubismMotionPoint,
       true
     );
-    this._motionData.events.updateSize(
+    updateSize(
+      this._motionData.events,
       this._motionData.eventCount,
       CubismMotionEvent,
       true
@@ -971,15 +975,15 @@ export class CubismMotion extends ACubismMotion {
       ++curveCount
     ) {
       if (json.getMotionCurveTarget(curveCount) == TargetNameModel) {
-        this._motionData.curves.at(curveCount).type =
+        this._motionData.curves[curveCount].type =
           CubismMotionCurveTarget.CubismMotionCurveTarget_Model;
       } else if (json.getMotionCurveTarget(curveCount) == TargetNameParameter) {
-        this._motionData.curves.at(curveCount).type =
+        this._motionData.curves[curveCount].type =
           CubismMotionCurveTarget.CubismMotionCurveTarget_Parameter;
       } else if (
         json.getMotionCurveTarget(curveCount) == TargetNamePartOpacity
       ) {
-        this._motionData.curves.at(curveCount).type =
+        this._motionData.curves[curveCount].type =
           CubismMotionCurveTarget.CubismMotionCurveTarget_PartOpacity;
       } else {
         CubismLogWarning(
@@ -987,17 +991,16 @@ export class CubismMotion extends ACubismMotion {
         );
       }
 
-      this._motionData.curves.at(curveCount).id =
+      this._motionData.curves[curveCount].id =
         json.getMotionCurveId(curveCount);
 
-      this._motionData.curves.at(curveCount).baseSegmentIndex =
-        totalSegmentCount;
+      this._motionData.curves[curveCount].baseSegmentIndex = totalSegmentCount;
 
-      this._motionData.curves.at(curveCount).fadeInTime =
+      this._motionData.curves[curveCount].fadeInTime =
         json.isExistMotionCurveFadeInTime(curveCount)
           ? json.getMotionCurveFadeInTime(curveCount)
           : -1.0;
-      this._motionData.curves.at(curveCount).fadeOutTime =
+      this._motionData.curves[curveCount].fadeOutTime =
         json.isExistMotionCurveFadeOutTime(curveCount)
           ? json.getMotionCurveFadeOutTime(curveCount)
           : -1.0;
@@ -1006,21 +1009,20 @@ export class CubismMotion extends ACubismMotion {
       for (
         let segmentPosition = 0;
         segmentPosition < json.getMotionCurveSegmentCount(curveCount);
-
       ) {
         if (segmentPosition == 0) {
-          this._motionData.segments.at(totalSegmentCount).basePointIndex =
+          this._motionData.segments[totalSegmentCount].basePointIndex =
             totalPointCount;
 
-          this._motionData.points.at(totalPointCount).time =
+          this._motionData.points[totalPointCount].time =
             json.getMotionCurveSegment(curveCount, segmentPosition);
-          this._motionData.points.at(totalPointCount).value =
+          this._motionData.points[totalPointCount].value =
             json.getMotionCurveSegment(curveCount, segmentPosition + 1);
 
           totalPointCount += 1;
           segmentPosition += 2;
         } else {
-          this._motionData.segments.at(totalSegmentCount).basePointIndex =
+          this._motionData.segments[totalSegmentCount].basePointIndex =
             totalPointCount - 1;
         }
 
@@ -1032,14 +1034,14 @@ export class CubismMotion extends ACubismMotion {
         const segmentType: CubismMotionSegmentType = segment;
         switch (segmentType) {
           case CubismMotionSegmentType.CubismMotionSegmentType_Linear: {
-            this._motionData.segments.at(totalSegmentCount).segmentType =
+            this._motionData.segments[totalSegmentCount].segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_Linear;
-            this._motionData.segments.at(totalSegmentCount).evaluate =
+            this._motionData.segments[totalSegmentCount].evaluate =
               linearEvaluate;
 
-            this._motionData.points.at(totalPointCount).time =
+            this._motionData.points[totalPointCount].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 1);
-            this._motionData.points.at(totalPointCount).value =
+            this._motionData.points[totalPointCount].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 2);
 
             totalPointCount += 1;
@@ -1048,30 +1050,30 @@ export class CubismMotion extends ACubismMotion {
             break;
           }
           case CubismMotionSegmentType.CubismMotionSegmentType_Bezier: {
-            this._motionData.segments.at(totalSegmentCount).segmentType =
+            this._motionData.segments[totalSegmentCount].segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_Bezier;
 
             if (areBeziersRestructed || UseOldBeziersCurveMotion) {
-              this._motionData.segments.at(totalSegmentCount).evaluate =
+              this._motionData.segments[totalSegmentCount].evaluate =
                 bezierEvaluate;
             } else {
-              this._motionData.segments.at(totalSegmentCount).evaluate =
+              this._motionData.segments[totalSegmentCount].evaluate =
                 bezierEvaluateCardanoInterpretation;
             }
 
-            this._motionData.points.at(totalPointCount).time =
+            this._motionData.points[totalPointCount].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 1);
-            this._motionData.points.at(totalPointCount).value =
+            this._motionData.points[totalPointCount].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 2);
 
-            this._motionData.points.at(totalPointCount + 1).time =
+            this._motionData.points[totalPointCount + 1].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 3);
-            this._motionData.points.at(totalPointCount + 1).value =
+            this._motionData.points[totalPointCount + 1].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 4);
 
-            this._motionData.points.at(totalPointCount + 2).time =
+            this._motionData.points[totalPointCount + 2].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 5);
-            this._motionData.points.at(totalPointCount + 2).value =
+            this._motionData.points[totalPointCount + 2].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 6);
 
             totalPointCount += 3;
@@ -1081,14 +1083,14 @@ export class CubismMotion extends ACubismMotion {
           }
 
           case CubismMotionSegmentType.CubismMotionSegmentType_Stepped: {
-            this._motionData.segments.at(totalSegmentCount).segmentType =
+            this._motionData.segments[totalSegmentCount].segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_Stepped;
-            this._motionData.segments.at(totalSegmentCount).evaluate =
+            this._motionData.segments[totalSegmentCount].evaluate =
               steppedEvaluate;
 
-            this._motionData.points.at(totalPointCount).time =
+            this._motionData.points[totalPointCount].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 1);
-            this._motionData.points.at(totalPointCount).value =
+            this._motionData.points[totalPointCount].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 2);
 
             totalPointCount += 1;
@@ -1098,14 +1100,14 @@ export class CubismMotion extends ACubismMotion {
           }
 
           case CubismMotionSegmentType.CubismMotionSegmentType_InverseStepped: {
-            this._motionData.segments.at(totalSegmentCount).segmentType =
+            this._motionData.segments[totalSegmentCount].segmentType =
               CubismMotionSegmentType.CubismMotionSegmentType_InverseStepped;
-            this._motionData.segments.at(totalSegmentCount).evaluate =
+            this._motionData.segments[totalSegmentCount].evaluate =
               inverseSteppedEvaluate;
 
-            this._motionData.points.at(totalPointCount).time =
+            this._motionData.points[totalPointCount].time =
               json.getMotionCurveSegment(curveCount, segmentPosition + 1);
-            this._motionData.points.at(totalPointCount).value =
+            this._motionData.points[totalPointCount].value =
               json.getMotionCurveSegment(curveCount, segmentPosition + 2);
 
             totalPointCount += 1;
@@ -1119,7 +1121,7 @@ export class CubismMotion extends ACubismMotion {
           }
         }
 
-        ++this._motionData.curves.at(curveCount).segmentCount;
+        ++this._motionData.curves[curveCount].segmentCount;
         ++totalSegmentCount;
       }
     }
@@ -1129,9 +1131,9 @@ export class CubismMotion extends ACubismMotion {
       userdatacount < json.getEventCount();
       ++userdatacount
     ) {
-      this._motionData.events.at(userdatacount).fireTime =
+      this._motionData.events[userdatacount].fireTime =
         json.getEventTime(userdatacount);
-      this._motionData.events.at(userdatacount).value =
+      this._motionData.events[userdatacount].value =
         json.getEventValue(userdatacount);
     }
 
@@ -1152,18 +1154,16 @@ export class CubismMotion extends ACubismMotion {
   public getFiredEvent(
     beforeCheckTimeSeconds: number,
     motionTimeSeconds: number
-  ): csmVector<csmString> {
-    this._firedEventValues.updateSize(0);
+  ): Array<string> {
+    updateSize(this._firedEventValues, 0);
 
     // イベントの発火チェック
     for (let u = 0; u < this._motionData.eventCount; ++u) {
       if (
-        this._motionData.events.at(u).fireTime > beforeCheckTimeSeconds &&
-        this._motionData.events.at(u).fireTime <= motionTimeSeconds
+        this._motionData.events[u].fireTime > beforeCheckTimeSeconds &&
+        this._motionData.events[u].fireTime <= motionTimeSeconds
       ) {
-        this._firedEventValues.pushBack(
-          new csmString(this._motionData.events.at(u).value.s)
-        );
+        this._firedEventValues.push(this._motionData.events[u].value);
       }
     }
 
@@ -1178,13 +1178,13 @@ export class CubismMotion extends ACubismMotion {
    */
   public isExistModelOpacity(): boolean {
     for (let i = 0; i < this._motionData.curveCount; i++) {
-      const curve: CubismMotionCurve = this._motionData.curves.at(i);
+      const curve: CubismMotionCurve = this._motionData.curves[i];
 
       if (curve.type != CubismMotionCurveTarget.CubismMotionCurveTarget_Model) {
         continue;
       }
 
-      if (curve.id.getString().s.localeCompare(IdNameOpacity) == 0) {
+      if (curve.id.getString().localeCompare(IdNameOpacity) == 0) {
         return true;
       }
     }
@@ -1200,7 +1200,7 @@ export class CubismMotion extends ACubismMotion {
   public getModelOpacityIndex(): number {
     if (this.isExistModelOpacity()) {
       for (let i = 0; i < this._motionData.curveCount; i++) {
-        const curve: CubismMotionCurve = this._motionData.curves.at(i);
+        const curve: CubismMotionCurve = this._motionData.curves[i];
 
         if (
           curve.type != CubismMotionCurveTarget.CubismMotionCurveTarget_Model
@@ -1208,7 +1208,7 @@ export class CubismMotion extends ACubismMotion {
           continue;
         }
 
-        if (curve.id.getString().s.localeCompare(IdNameOpacity) == 0) {
+        if (curve.id.getString().localeCompare(IdNameOpacity) == 0) {
           return i;
         }
       }
@@ -1224,11 +1224,11 @@ export class CubismMotion extends ACubismMotion {
    */
   public getModelOpacityId(index: number): CubismIdHandle {
     if (index != -1) {
-      const curve: CubismMotionCurve = this._motionData.curves.at(index);
+      const curve: CubismMotionCurve = this._motionData.curves[index];
 
       if (curve.type == CubismMotionCurveTarget.CubismMotionCurveTarget_Model) {
-        if (curve.id.getString().s.localeCompare(IdNameOpacity) == 0) {
-          return CubismFramework.getIdManager().getId(curve.id.getString().s);
+        if (curve.id.getString().localeCompare(IdNameOpacity) == 0) {
+          return CubismFramework.getIdManager().getId(curve.id.getString());
         }
       }
     }
@@ -1261,8 +1261,8 @@ export class CubismMotion extends ACubismMotion {
 
   public _motionData: CubismMotionData; // 実際のモーションデータ本体
 
-  public _eyeBlinkParameterIds: csmVector<CubismIdHandle>; // 自動まばたきを適用するパラメータIDハンドルのリスト。  モデル（モデルセッティング）とパラメータを対応付ける。
-  public _lipSyncParameterIds: csmVector<CubismIdHandle>; // リップシンクを適用するパラメータIDハンドルのリスト。  モデル（モデルセッティング）とパラメータを対応付ける。
+  public _eyeBlinkParameterIds: Array<CubismIdHandle>; // 自動まばたきを適用するパラメータIDハンドルのリスト。  モデル（モデルセッティング）とパラメータを対応付ける。
+  public _lipSyncParameterIds: Array<CubismIdHandle>; // リップシンクを適用するパラメータIDハンドルのリスト。  モデル（モデルセッティング）とパラメータを対応付ける。
 
   public _modelCurveIdEyeBlink: CubismIdHandle; // モデルが持つ自動まばたき用パラメータIDのハンドル。  モデルとモーションを対応付ける。
   public _modelCurveIdLipSync: CubismIdHandle; // モデルが持つリップシンク用パラメータIDのハンドル。  モデルとモーションを対応付ける。

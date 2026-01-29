@@ -6,8 +6,6 @@
  */
 
 import { CubismIdHandle } from '../id/cubismid';
-import { csmString } from '../type/csmstring';
-import { csmVector } from '../type/csmvector';
 
 /**
  * @brief モーションカーブの種類
@@ -101,7 +99,7 @@ export class CubismMotionCurve {
  */
 export class CubismMotionEvent {
   fireTime = 0.0;
-  value: csmString;
+  value: string;
 }
 
 /**
@@ -117,10 +115,10 @@ export class CubismMotionData {
     this.eventCount = 0;
     this.fps = 0.0;
 
-    this.curves = new csmVector<CubismMotionCurve>();
-    this.segments = new csmVector<CubismMotionSegment>();
-    this.points = new csmVector<CubismMotionPoint>();
-    this.events = new csmVector<CubismMotionEvent>();
+    this.curves = new Array<CubismMotionCurve>();
+    this.segments = new Array<CubismMotionSegment>();
+    this.points = new Array<CubismMotionPoint>();
+    this.events = new Array<CubismMotionEvent>();
   }
 
   duration: number; // モーションの長さ[秒]
@@ -128,10 +126,10 @@ export class CubismMotionData {
   curveCount: number; // カーブの個数
   eventCount: number; // UserDataの個数
   fps: number; // フレームレート
-  curves: csmVector<CubismMotionCurve>; // カーブのリスト
-  segments: csmVector<CubismMotionSegment>; // セグメントのリスト
-  points: csmVector<CubismMotionPoint>; // ポイントのリスト
-  events: csmVector<CubismMotionEvent>; // イベントのリスト
+  curves: Array<CubismMotionCurve>; // カーブのリスト
+  segments: Array<CubismMotionSegment>; // セグメントのリスト
+  points: Array<CubismMotionPoint>; // ポイントのリスト
+  events: Array<CubismMotionEvent>; // イベントのリスト
 }
 
 // Namespace definition for compatibility.
