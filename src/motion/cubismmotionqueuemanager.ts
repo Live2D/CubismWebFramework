@@ -157,14 +157,15 @@ export class CubismMotionQueueManager {
       const motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
-        this._motions.slice(i, 1); // 削除
+        this._motions.splice(i, 1); // 削除
 
         continue;
       }
 
       // ----- 終了済みの処理があれば削除する ------
       motionQueueEntry.release();
-      this._motions.slice(i, 1); // 削除
+      this._motions.splice(i, 1); // 削除
+      continue;
     }
   }
 

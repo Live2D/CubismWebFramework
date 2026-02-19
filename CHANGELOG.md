@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [5-r.5-beta.3.1] - 2026-02-19
+
+### Fixed
+
+* Fix a bug where rendering results were not as expected when using Blend mode on semi-transparent objects.
+* Fix a bug where the `stopAllMotions()` function in the `CubismMotionQueueManager` class did not work correctly.
+
+
 ## [5-r.5-beta.3] - 2026-01-29
 
 ### Changed
@@ -382,6 +390,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5-beta.3.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.3...5-r.5-beta.3.1
 [5-r.5-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.2...5-r.5-beta.3
 [5-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.1...5-r.5-beta.2
 [5-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.4...5-r.5-beta.1

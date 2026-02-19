@@ -23,37 +23,45 @@ vec4 AlphaBlend(vec3 C, vec3 Cs, float As, vec3 Cd, float Ad);
 
 void main()
 {
-  vec4 texColor = texture2D(s_texture0, v_texCoord);
-  texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
-  texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);
-  vec4 colorSource = texColor;
-  colorSource.rgb *= u_baseColor.rgb;
+  vec4 renderTextureColor = texture2D(s_blendTexture, v_blendCoord);
+  vec3 colorDestination = renderTextureColor.rgb;
+  float alphaDestination = renderTextureColor.a;
 
-  float maskVal = 1.0;
+  if (alphaDestination < 0.00001)
+  {
+    colorDestination = vec3(0.0, 0.0, 0.0);
+  }
+  else {
+    colorDestination /= alphaDestination;
+  }
+
+  vec4 texColor = texture2D(s_texture0, v_texCoord);
+  texColor.rgb *= u_multiplyColor.rgb;
+  texColor.rgb = (texColor.rgb + u_screenColor.rgb) - (texColor.rgb * u_screenColor.rgb);
+
+  texColor *= u_baseColor;
+  vec3 colorSource = texColor.rgb;
+  float alphaSource = texColor.a;
+
+  if (alphaSource < 0.00001)
+  {
+    colorSource = vec3(0.0, 0.0, 0.0);
+  }
+  else {
+    colorSource /= alphaSource;
+  }
+
 #ifdef CLIPPING_MASK
+    float maskVal = 1.0;
     vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
     maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
     maskVal = abs(u_invertClippingMask - maskVal);
+
+    alphaSource *= maskVal;
 #endif
-  colorSource.a *= u_baseColor.a * maskVal;
 
-  if (colorSource.a < 0.00001)
-  {
-    colorSource = vec4(0.0, 0.0, 0.0, 0.0);
-  }
-  else {
-    colorSource.rgb /= colorSource.a;
-  }
+  vec4 source = vec4(colorSource.r, colorSource.g, colorSource.b, alphaSource);
+  vec4 destination = vec4(colorDestination.r, colorDestination.g, colorDestination.b, alphaDestination);
 
-  vec4 colorDestination = texture2D(s_blendTexture, v_blendCoord);
-
-  if (colorDestination.a < 0.00001)
-  {
-    colorDestination = vec4(0.0, 0.0, 0.0, 0.0);
-  }
-  else {
-    colorDestination.rgb /= colorDestination.a;
-  }
-
-  gl_FragColor = AlphaBlend(ColorBlend(colorSource.rgb, colorDestination.rgb), colorSource, colorDestination);
+  gl_FragColor = AlphaBlend(ColorBlend(colorSource, colorDestination), source, destination);
 }
