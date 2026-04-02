@@ -8,14 +8,9 @@
 import { CubismId, CubismIdHandle } from '../id/cubismid';
 import { LogLevel, csmDelete } from '../live2dcubismframework';
 import { CubismModel } from '../model/cubismmodel';
-import { ACubismMotion } from './acubismmotion';
 import { CubismExpressionMotion } from './cubismexpressionmotion';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
-import {
-  CubismMotionQueueEntryHandle,
-  CubismMotionQueueManager
-} from './cubismmotionqueuemanager';
-import { CubismLogInfo } from '../utils/cubismdebug';
+import { CubismMotionQueueManager } from './cubismmotionqueuemanager';
 
 /**
  * @brief パラメータに適用する表情の値を持たせる構造体
@@ -38,8 +33,6 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
    */
   public constructor() {
     super();
-    this._currentPriority = 0;
-    this._reservePriority = 0;
     this._expressionParameterValues = new Array<ExpressionParameterValue>();
     this._fadeWeights = new Array<number>();
   }
@@ -57,40 +50,6 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
       csmDelete(this._fadeWeights);
       this._fadeWeights = null;
     }
-  }
-
-  /**
-   * @deprecated
-   * ExpressionではPriorityを使用していないため、この関数は非推奨となりました。
-   *
-   * @brief 再生中のモーションの優先度の取得
-   *
-   * 再生中のモーションの優先度を取得する。
-   *
-   * @return モーションの優先度
-   */
-  public getCurrentPriority(): number {
-    CubismLogInfo(
-      'CubismExpressionMotionManager.getCurrentPriority() is deprecated because a priority value is not actually used during expression motion playback.'
-    );
-    return this._currentPriority;
-  }
-
-  /**
-   * @deprecated
-   * ExpressionではPriorityを使用していないため、この関数は非推奨となりました。
-   *
-   * @brief 予約中のモーションの優先度の取得
-   *
-   * 予約中のモーションの優先度を取得する。
-   *
-   * @return  モーションの優先度
-   */
-  public getReservePriority(): number {
-    CubismLogInfo(
-      'CubismExpressionMotionManager.getReservePriority() is deprecated because a priority value is not actually used during expression motion playback.'
-    );
-    return this._reservePriority;
   }
 
   /**
@@ -133,53 +92,6 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
     }
 
     this._fadeWeights[index] = expressionFadeWeight;
-  }
-
-  /**
-   * @deprecated
-   * ExpressionではPriorityを使用していないため、この関数は非推奨となりました。
-   *
-   * @brief 予約中のモーションの優先度の設定
-   *
-   * 予約中のモーションの優先度を設定する。
-   *
-   * @param[in]   priority     優先度
-   */
-  public setReservePriority(priority: number) {
-    CubismLogInfo(
-      'CubismExpressionMotionManager.setReservePriority() is deprecated because a priority value is not actually used during expression motion playback.'
-    );
-    this._reservePriority = priority;
-  }
-
-  /**
-   * @deprecated
-   * ExpressionではPriorityを使用していないため、この関数は非推奨となりました。
-   * CubismExpressionMotionManager.startMotion() を使用してください。
-   *
-   * @brief 優先度を設定してモーションの開始
-   *
-   * 優先度を設定してモーションを開始する。
-   *
-   * @param[in]   motion          モーション
-   * @param[in]   autoDelete      再生が終了したモーションのインスタンスを削除するならtrue
-   * @param[in]   priority        優先度
-   * @return                      開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
-   */
-  public startMotionPriority(
-    motion: ACubismMotion,
-    autoDelete: boolean,
-    priority: number
-  ): CubismMotionQueueEntryHandle {
-    CubismLogInfo(
-      'CubismExpressionMotionManager.startMotionPriority() is deprecated because a priority value is not actually used during expression motion playback.'
-    );
-    if (priority == this.getReservePriority()) {
-      this.setReservePriority(0);
-    }
-    this._currentPriority = priority;
-
-    return this.startMotion(motion, autoDelete);
   }
 
   /**
@@ -356,8 +268,6 @@ export class CubismExpressionMotionManager extends CubismMotionQueueManager {
 
   private _expressionParameterValues: Array<ExpressionParameterValue>; ///< モデルに適用する各パラメータの値
   private _fadeWeights: Array<number>; ///< 再生中の表情のウェイト
-  private _currentPriority: number; ///< @deprecated 現在再生中のモーションの優先度。Expressionでは使用しないため非推奨。
-  private _reservePriority: number; ///< @deprecated 再生予定のモーションの優先度。再生中は0になる。モーションファイルを別スレッドで読み込むときの機能。Expressionでは使用しないため非推奨。
   private _startExpressionTime: number; ///< 表情の再生開始時刻
 }
 

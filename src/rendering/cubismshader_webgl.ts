@@ -487,8 +487,11 @@ export class CubismShader_WebGL {
       );
     }
 
-    const multiplyColor: CubismTextureColor = model.getMultiplyColor(index);
-    const screenColor: CubismTextureColor = model.getScreenColor(index);
+    const multiplyAndScreenColor = model.getOverrideMultiplyAndScreenColor();
+    const multiplyColor: CubismTextureColor =
+      multiplyAndScreenColor.getDrawableMultiplyColor(index);
+    const screenColor: CubismTextureColor =
+      multiplyAndScreenColor.getDrawableScreenColor(index);
 
     this.gl.uniform4f(
       shaderSet.uniformBaseColorLocation,
@@ -694,10 +697,11 @@ export class CubismShader_WebGL {
       offscreenOpacity
     );
 
+    const multiplyAndScreenColor = model.getOverrideMultiplyAndScreenColor();
     const multiplyColor: CubismTextureColor =
-      model.getMultiplyColorOffscreen(offscreenIndex);
+      multiplyAndScreenColor.getOffscreenMultiplyColor(offscreenIndex);
     const screenColor: CubismTextureColor =
-      model.getScreenColorOffscreen(offscreenIndex);
+      multiplyAndScreenColor.getOffscreenScreenColor(offscreenIndex);
 
     this.gl.uniform4f(
       shaderSet.uniformBaseColorLocation,
@@ -925,25 +929,6 @@ export class CubismShader_WebGL {
       rect.y * 2.0 - 1.0,
       rect.getRight() * 2.0 - 1.0,
       rect.getBottom() * 2.0 - 1.0
-    );
-
-    const multiplyColor: CubismTextureColor = model.getMultiplyColor(index);
-    const screenColor: CubismTextureColor = model.getScreenColor(index);
-
-    this.gl.uniform4f(
-      shaderSet.uniformMultiplyColorLocation,
-      multiplyColor.r,
-      multiplyColor.g,
-      multiplyColor.b,
-      multiplyColor.a
-    );
-
-    this.gl.uniform4f(
-      shaderSet.uniformScreenColorLocation,
-      screenColor.r,
-      screenColor.g,
-      screenColor.b,
-      screenColor.a
     );
 
     // Blending
@@ -1183,15 +1168,6 @@ export class CubismShader_WebGL {
     this._shaderSets[0].uniformBaseColorLocation = this.gl.getUniformLocation(
       this._shaderSets[0].shaderProgram,
       'u_baseColor'
-    );
-    this._shaderSets[0].uniformMultiplyColorLocation =
-      this.gl.getUniformLocation(
-        this._shaderSets[0].shaderProgram,
-        'u_multiplyColor'
-      );
-    this._shaderSets[0].uniformScreenColorLocation = this.gl.getUniformLocation(
-      this._shaderSets[0].shaderProgram,
-      'u_screenColor'
     );
 
     // 通常（PremultipliedAlpha）
