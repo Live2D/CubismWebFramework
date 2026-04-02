@@ -28,8 +28,8 @@ Cubism 5.3 Editorに搭載された新機能のSDK対応については [こち�
 
 ### Node.js
 
-* 25.4.0
-* 24.13.0
+* 25.8.2
+* 24.14.1
 
 
 ### TypeScript
@@ -47,7 +47,7 @@ Cubism 5.3 Editorに搭載された新機能のSDK対応については [こち�
 
 コマンドパレットのタスク一覧から各種コマンドを実行することができます。
 
-NOTE: デバック用の設定は、`.vscode/tasks.json` に記述しています。
+NOTE: デバッグ用の設定は、`.vscode/tasks.json` に記述しています。
 
 ## タスク一覧
 
@@ -67,13 +67,13 @@ TypeScript の型チェックテストを行います。
 
 `src` ディレクトリ内の TypeScript ファイルの静的解析を行います。
 
-`.eslintrc.yml` を編集することで設定内容を変更できます。
+`eslint.config.mjs` を編集することで設定内容を変更できます。
 
 ### `npm: lint:fix`
 
 `src` ディレクトリ内の TypeScript ファイルの静的解析及び自動修正を行います。
 
-`.eslintrc.yml` を編集することで設定内容を変更できます。
+`eslint.config.mjs` を編集することで設定内容を変更できます。
 
 ### `npm: clean`
 

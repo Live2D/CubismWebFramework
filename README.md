@@ -28,8 +28,8 @@ For compatibility with previous versions of Cubism SDK, please refer to [here](h
 
 ### Node.js
 
-* 25.4.0
-* 24.13.0
+* 25.8.2
+* 24.14.1
 
 
 ### TypeScript
@@ -67,13 +67,13 @@ You can change the settings by editing `tsconfig.json`.
 
 Performs static analysis of TypeScript files in the `src` directory.
 
-You can change the settings by editing `.eslintrc.yml`.
+You can change the settings by editing `eslint.config.mjs`.
 
 ### `npm: lint:fix`
 
 Performs static analysis and automatic modification of TypeScript files in the `src` directory.
 
-You can change the settings by editing `.eslintrc.yml`.
+You can change the settings by editing `eslint.config.mjs`.
 
 ### `npm: clean`
 

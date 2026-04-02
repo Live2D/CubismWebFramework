@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+
+## [5-r.5] - 2026-04-02
+
+### Added
+
+* Add functionality to change motion calculation order.
+* Add `cubismlook` class that implements the target tracking feature.
+  * The target tracking feature can now specify parameter IDs through the `Framework`.
+
+### Changed
+
+* Change multiply and screen color functions to separate class with renamed methods.
+
+### Fixed
+
+* Fix unnecessary multiply color and screen color settings in mask drawing.
+
+### Removed
+
+* Remove deprecated functions from CubismMotion:
+  * `setIsLoop()` (use `setLoop()` instead)
+  * `isLoop()` (use `getLoop()` instead)
+  * `setIsLoopFadeIn()` (use `setLoopFadeIn()` instead)
+  * `isLoopFadeIn()` (use `getLoopFadeIn()` instead)
+* Remove deprecated functions from CubismExpressionMotionManager:
+  * `getCurrentPriority()` (priority is not used in expression motion playback)
+  * `getReservePriority()` (priority is not used in expression motion playback)
+  * `setReservePriority()` (priority is not used in expression motion playback)
+  * `startMotionPriority()` (use `startMotion()` instead)
+* Remove deprecated fields from CubismExpressionMotionManager:
+  * `_currentPriority` (priority is not used in expression motion playback)
+  * `_reservePriority` (priority is not used in expression motion playback)
+* Remove deprecated function from CubismExpressionMotion:
+  * `getFadeWeight()` (use `CubismExpressionMotionManager.getFadeWeight()` instead)
+* Remove deprecated field from CubismExpressionMotion:
+  * `_fadeWeight` (can cause bugs)
+* Remove deprecated functions from CubismModel:
+  * `getOverwriteFlagForModelCullings()` (renamed to `getOverrideFlagForModelCullings()`)
+  * `setOverwriteFlagForModelCullings()` (renamed to `setOverrideFlagForModelCullings()`)
+  * `getOverwriteFlagForDrawableCullings()` (renamed to `getOverrideFlagForDrawableCullings()`)
+  * `setOverwriteFlagForDrawableCullings()` (renamed to `setOverrideFlagForDrawableCullings()`)
+
+
 ## [5-r.5-beta.3.1] - 2026-02-19
 
 ### Fixed
@@ -390,6 +433,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.3.1...5-r.5
 [5-r.5-beta.3.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.3...5-r.5-beta.3.1
 [5-r.5-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.2...5-r.5-beta.3
 [5-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.1...5-r.5-beta.2

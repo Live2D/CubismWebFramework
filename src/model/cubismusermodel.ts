@@ -93,19 +93,6 @@ export class CubismUserModel {
   }
 
   /**
-   * 加速度の情報を設定する
-   *
-   * @param x X軸方向の加速度
-   * @param y Y軸方向の加速度
-   * @param z Z軸方向の加速度
-   */
-  public setAcceleration(x: number, y: number, z: number): void {
-    this._accelerationX = x;
-    this._accelerationY = y;
-    this._accelerationZ = z;
-  }
-
-  /**
    * モデル行列を取得する
    * @return モデル行列
    */
@@ -450,13 +437,6 @@ export class CubismUserModel {
     this._initialized = false;
     this._updating = false;
     this._opacity = 1.0;
-    this._lipsync = true;
-    this._lastLipSyncValue = 0.0;
-    this._dragX = 0.0;
-    this._dragY = 0.0;
-    this._accelerationX = 0.0;
-    this._accelerationY = 0.0;
-    this._accelerationZ = 0.0;
     this._mocConsistency = false;
     this._debugMode = false;
     this._renderer = null;
@@ -525,13 +505,6 @@ export class CubismUserModel {
   protected _initialized: boolean; // 初期化されたかどうか
   protected _updating: boolean; // 更新されたかどうか
   protected _opacity: number; // 不透明度
-  protected _lipsync: boolean; // リップシンクするかどうか
-  protected _lastLipSyncValue: number; // 最後のリップシンクの制御地
-  protected _dragX: number; // マウスドラッグのX位置
-  protected _dragY: number; // マウスドラッグのY位置
-  protected _accelerationX: number; // X軸方向の加速度
-  protected _accelerationY: number; // Y軸方向の加速度
-  protected _accelerationZ: number; // Z軸方向の加速度
   protected _mocConsistency: boolean; // MOC3整合性検証するかどうか
   protected _motionConsistency: boolean; // motion3.json整合性検証するかどうか
   protected _debugMode: boolean; // デバッグモードかどうか

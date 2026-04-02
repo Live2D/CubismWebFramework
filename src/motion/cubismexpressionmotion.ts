@@ -124,10 +124,6 @@ export class CubismExpressionMotion extends ACubismMotion {
       return;
     }
 
-    // CubismExpressionMotion._fadeWeight は廃止予定です。
-    // 互換性のために処理は残りますが、実際には使用しておりません。
-    this._fadeWeight = this.updateFadeWeight(motionQueueEntry, userTimeSeconds);
-
     // モデルに適用する値を計算
     for (let i = 0; i < expressionParameterValues.length; ++i) {
       const expressionParameterValue = expressionParameterValues[i];
@@ -237,21 +233,6 @@ export class CubismExpressionMotion extends ACubismMotion {
     return this._parameters;
   }
 
-  /**
-   * @brief 表情のフェードの値を取得
-   *
-   * 現在の表情のフェードのウェイト値を取得する
-   *
-   * @return 表情のフェードのウェイト値
-   *
-   * @deprecated CubismExpressionMotion.fadeWeightが削除予定のため非推奨。
-   * CubismExpressionMotionManager.getFadeWeight(index: number): number を使用してください。
-   * @see CubismExpressionMotionManager#getFadeWeight(index: number)
-   */
-  public getFadeWeight() {
-    return this._fadeWeight;
-  }
-
   protected parse(buffer: ArrayBuffer, size: number) {
     const json: CubismJson = CubismJson.create(buffer, size);
     if (!json) {
@@ -346,17 +327,9 @@ export class CubismExpressionMotion extends ACubismMotion {
   protected constructor() {
     super();
     this._parameters = new Array<ExpressionParameter>();
-    this._fadeWeight = 0.0;
   }
 
   private _parameters: Array<ExpressionParameter>; // 表情のパラメータ情報リスト
-
-  /**
-   * 表情の現在のウェイト
-   *
-   * @deprecated 不具合を引き起こす要因となるため非推奨。
-   */
-  private _fadeWeight: number;
 }
 
 /**

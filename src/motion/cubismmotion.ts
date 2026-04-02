@@ -653,53 +653,6 @@ export class CubismMotion extends ACubismMotion {
   }
 
   /**
-   * ループ情報の設定
-   * @param loop ループ情報
-   */
-  public setIsLoop(loop: boolean): void {
-    CubismLogWarning(
-      'setIsLoop() is a deprecated function. Please use setLoop().'
-    );
-    this._isLoop = loop;
-  }
-
-  /**
-   * ループ情報の取得
-   * @return true ループする
-   * @return false ループしない
-   */
-  public isLoop(): boolean {
-    CubismLogWarning(
-      'isLoop() is a deprecated function. Please use getLoop().'
-    );
-    return this._isLoop;
-  }
-
-  /**
-   * ループ時のフェードイン情報の設定
-   * @param loopFadeIn  ループ時のフェードイン情報
-   */
-  public setIsLoopFadeIn(loopFadeIn: boolean): void {
-    CubismLogWarning(
-      'setIsLoopFadeIn() is a deprecated function. Please use setLoopFadeIn().'
-    );
-    this._isLoopFadeIn = loopFadeIn;
-  }
-
-  /**
-   * ループ時のフェードイン情報の取得
-   *
-   * @return  true    する
-   * @return  false   しない
-   */
-  public isLoopFadeIn(): boolean {
-    CubismLogWarning(
-      'isLoopFadeIn() is a deprecated function. Please use getLoopFadeIn().'
-    );
-    return this._isLoopFadeIn;
-  }
-
-  /**
    * Sets the version of the Motion Behavior.
    *
    * @param Specifies the version of the Motion Behavior.
