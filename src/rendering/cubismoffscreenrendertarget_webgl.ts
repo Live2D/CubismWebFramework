@@ -215,14 +215,12 @@ export class CubismOffscreenRenderTarget_WebGL extends CubismRenderTarget_WebGL 
       );
     }
 
-    if (this._colorBuffer && this._gl) {
-      this._gl.deleteTexture(this._colorBuffer);
-      this._colorBuffer = null;
-    }
-    if (this._renderTexture && this._gl) {
-      this._gl.deleteFramebuffer(this._renderTexture);
-      this._renderTexture = null;
-    }
+    // Color buffer and framebuffer are borrowed from CubismWebGLOffscreenManager.
+    // The manager owns GPU lifetime (releaseStaleRenderTextures / context teardown).
+    // Deleting them here double-frees the pool slot and can delete previousFramebuffer
+    // when setOffscreenRenderTarget stored it as a fallback.
+    this._colorBuffer = null;
+    this._renderTexture = null;
 
     if (this._webGLOffscreenManager != null) {
       this._webGLOffscreenManager = null;
