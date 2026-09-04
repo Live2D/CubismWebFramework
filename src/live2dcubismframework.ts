@@ -16,7 +16,9 @@ import { Value } from './utils/cubismjson';
 
 export function strtod(s: string, endPtr: string[]): number {
   let index = 0;
-  for (let i = 1; ; i++) {
+  // Bound the scan: once i exceeds s.length, substring clamps and a complete
+  // number never becomes NaN, so an unbounded loop never terminates.
+  for (let i = 1; i <= s.length; i++) {
     const testC: string = s.slice(i - 1, i);
 
     // 指数・マイナスの可能性があるのでスキップする
