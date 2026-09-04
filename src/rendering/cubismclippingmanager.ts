@@ -581,8 +581,12 @@ export abstract class CubismClippingManager<
     childDrawableIndexList: Array<number>
   ): void {
     const partsHierarchy = model.getPartsHierarchy();
-    // NoParentIndex is -1; out-of-range indexes must not index the hierarchy.
-    if (partIndex < 0 || partIndex >= partsHierarchy.length) {
+    // NoParentIndex は -1。非整数や範囲外のインデックスでは階層を参照しない。
+    if (
+      !Number.isInteger(partIndex) ||
+      partIndex < 0 ||
+      partIndex >= partsHierarchy.length
+    ) {
       return;
     }
     const childDrawObjects = partsHierarchy[partIndex].childDrawObjects;
