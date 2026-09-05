@@ -580,8 +580,16 @@ export abstract class CubismClippingManager<
     partIndex: number,
     childDrawableIndexList: Array<number>
   ): void {
-    const childDrawObjects =
-      model.getPartsHierarchy()[partIndex].childDrawObjects;
+    const partsHierarchy = model.getPartsHierarchy();
+    // NoParentIndex は -1。非整数や範囲外のインデックスでは階層を参照しない。
+    if (
+      !Number.isInteger(partIndex) ||
+      partIndex < 0 ||
+      partIndex >= partsHierarchy.length
+    ) {
+      return;
+    }
+    const childDrawObjects = partsHierarchy[partIndex].childDrawObjects;
     childDrawableIndexList.push(...childDrawObjects.drawableIndices);
 
     for (let i = 0; i < childDrawObjects.offscreenIndices.length; ++i) {
