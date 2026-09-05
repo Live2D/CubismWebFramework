@@ -741,7 +741,8 @@ export class CubismRenderer_WebGL extends CubismRenderer {
 
     for (let i = 0; i < this._offscreenList.length; i++) {
       if (this._offscreenList[i] != null && this._offscreenList[i].isValid()) {
-        this._offscreenList[i].destroyRenderTarget();
+        // プールから借用した GPU オブジェクトは destroy しない
+        this._offscreenList[i].release();
       }
     }
     this._offscreenList.length = 0;
