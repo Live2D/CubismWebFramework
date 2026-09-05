@@ -204,8 +204,10 @@ export class CubismOffscreenRenderTarget_WebGL extends CubismRenderTarget_WebGL 
   }
 
   public release(): void {
+    const borrowedFromManager = this._webGLOffscreenManager != null;
+
     if (
-      this._webGLOffscreenManager != null &&
+      borrowedFromManager &&
       this._gl != null &&
       this._renderTexture != null
     ) {
@@ -215,12 +217,18 @@ export class CubismOffscreenRenderTarget_WebGL extends CubismRenderTarget_WebGL 
       );
     }
 
-    // Color buffer and framebuffer are borrowed from CubismWebGLOffscreenManager.
-    // The manager owns GPU lifetime (releaseStaleRenderTextures / context teardown).
-    // Deleting them here double-frees the pool slot and can delete previousFramebuffer
-    // when setOffscreenRenderTarget stored it as a fallback.
-    this._colorBuffer = null;
-    this._renderTexture = null;
+    if (borrowedFromManager) {
+      // Color buffer and framebuffer are borrowed from CubismWebGLOffscreenManager.
+      // The manager owns GPU lifetime (releaseStaleRenderTextures / context teardown).
+      // Deleting them here double-frees the pool slot and can delete previousFramebuffer
+      // when setOffscreenRenderTarget stored it as a fallback.
+      this._colorBuffer = null;
+      this._renderTexture = null;
+    } else if (this._gl) {
+      // Inherited createRenderTarget() locally owns the texture/FBO
+      // (_modelRenderTargets). destroyRenderTarget() is the matching owner.
+      this.destroyRenderTarget();
+    }
 
     if (this._webGLOffscreenManager != null) {
       this._webGLOffscreenManager = null;
