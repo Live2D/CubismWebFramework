@@ -390,8 +390,11 @@ export class CubismJson {
         case '8':
         case '9': {
           const afterString: string[] = new Array(1); // 参照渡しにするため
-          f = strtod(buffer.slice(i), afterString);
-          outEndPos[0] = buffer.indexOf(afterString[0]);
+          const numericSlice = buffer.slice(i);
+          f = strtod(numericSlice, afterString);
+          // afterString[0] が空だと indexOf('') は 0 を返し、パース位置が巻き戻る
+          const remainder = afterString[0] ?? '';
+          outEndPos[0] = i + numericSlice.length - remainder.length;
           return new JsonFloat(f);
         }
         case '"':
